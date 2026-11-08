@@ -3,7 +3,7 @@
 Native macOS menu bar app: find, point and mark up with the cursor while screen sharing, plus polished cursor skins. Goal and scope: `GOAL.md`. Specs: `docs/superpowers/specs/`. Research: `docs/research/`.
 
 ## Status
-Brainstorming. Nothing is built. Do not scaffold, install dependencies or write product code until the written design in `docs/superpowers/specs/` is approved. A labeled throwaway spike is allowed once the user says yes.
+Building. Task 1 scaffold done (package, XcodeGen app, menu bar shell). Follow the plan in `docs/superpowers/plans/`.
 
 ## App shape (decided)
 Menu bar agent (LSUIElement) with a sidebar settings window and a menu bar popover. No Dock app, no tabs.
