@@ -17,16 +17,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let statusItemController = StatusItemController()
     private let cursorMarker = UserDefaultsCursorMarker()
     private lazy var cursorHider: CursorHider = CursorHiders.makeDefault(markers: cursorMarker)
+    private var coordinator: AppCoordinator?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Before anything else: a previous run that died with the cursor hidden left the marker set.
         CursorRecovery.restoreIfStale(markers: cursorMarker, hider: cursorHider)
+        if environment.startsCoordinator {
+            let coordinator = AppCoordinator(hider: cursorHider)
+            coordinator.start()
+            self.coordinator = coordinator
+            statusItemController.coordinator = coordinator
+        }
         statusItemController.install()
         // Launch-at-login and Sparkle are added in later tasks; both are gated
         // on environment.allowsLaunchAtLogin / environment.allowsUpdater.
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        coordinator?.shutdown()
         cursorHider.restore()
     }
 }
