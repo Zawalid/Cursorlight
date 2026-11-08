@@ -1,0 +1,9 @@
+.superpowers/
+.build/
+build/
+*.xcodeproj
+xcuserdata/
+.DS_Store
+spike/capture-spike
+spike/*.png
+spike/cursor-hide
