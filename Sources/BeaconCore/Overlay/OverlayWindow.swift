@@ -5,6 +5,8 @@ import QuartzCore
 @MainActor
 public final class OverlayWindow: NSWindow {
     public let displayID: CGDirectDisplayID
+    /// How many times close() ran; lets tests prove stale windows were really closed.
+    public private(set) var closeCount = 0
 
     /// Layer that effects (spotlight, ripples, ink) are added to.
     public var rootLayer: CALayer {
@@ -32,6 +34,11 @@ public final class OverlayWindow: NSWindow {
         host.autoresizingMask = [.width, .height]
         contentView = host
         setFrame(frame, display: false)
+    }
+
+    public override func close() {
+        closeCount += 1
+        super.close()
     }
 
     public override var canBecomeKey: Bool { false }

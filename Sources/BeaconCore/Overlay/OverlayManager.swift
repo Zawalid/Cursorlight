@@ -4,15 +4,15 @@ import AppKit
 @MainActor
 public protocol ScreenProviding: AnyObject {
     var displayIDs: [CGDirectDisplayID] { get }
+    /// A fresh stream on every access, so the manager can stop and start again.
     var changes: AsyncStream<Void> { get }
-    /// Frame of a display in global screen coordinates.
-    func frame(for displayID: CGDirectDisplayID) -> CGRect
+    /// Frame of a display in global screen coordinates, or nil when the display is unknown.
+    func frame(for displayID: CGDirectDisplayID) -> CGRect?
 }
 
 extension ScreenProviding {
-    public func frame(for displayID: CGDirectDisplayID) -> CGRect {
+    public func frame(for displayID: CGDirectDisplayID) -> CGRect? {
         NSScreen.screens.first(where: { $0.displayID == displayID })?.frame
-            ?? CGRect(x: 0, y: 0, width: 800, height: 600)
     }
 }
 
@@ -22,21 +22,47 @@ extension NSScreen {
     }
 }
 
-/// Real displays, with a change stream fed by the screen-parameter notification.
+/// Real displays. Every `changes` access returns its own stream; the notification observer exists only while
+/// at least one stream is active.
 @MainActor
 public final class SystemScreens: ScreenProviding {
-    public let changes: AsyncStream<Void>
-    private let token: NSObjectProtocol
+    private var continuations: [UUID: AsyncStream<Void>.Continuation] = [:]
+    private var token: NSObjectProtocol?
 
-    public init() {
-        let (stream, continuation) = AsyncStream<Void>.makeStream()
-        changes = stream
-        token = NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
-        ) { _ in continuation.yield() }
-    }
+    public init() {}
 
     public var displayIDs: [CGDirectDisplayID] { NSScreen.screens.compactMap(\.displayID) }
+
+    public var changes: AsyncStream<Void> {
+        let id = UUID()
+        let (stream, continuation) = AsyncStream<Void>.makeStream()
+        continuations[id] = continuation
+        installObserverIfNeeded()
+        continuation.onTermination = { [weak self] _ in
+            Task { @MainActor in self?.remove(id) }
+        }
+        return stream
+    }
+
+    private func installObserverIfNeeded() {
+        guard token == nil else { return }
+        token = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                for continuation in self.continuations.values { continuation.yield() }
+            }
+        }
+    }
+
+    private func remove(_ id: UUID) {
+        continuations[id] = nil
+        if continuations.isEmpty, let token {
+            NotificationCenter.default.removeObserver(token)
+            self.token = nil
+        }
+    }
 }
 
 /// Keeps exactly one click-through overlay window per connected display.
@@ -105,7 +131,7 @@ public final class OverlayManager {
         }
         for id in current {
             if let window = windows[id] {
-                window.setFrame(screens.frame(for: id), display: false)
+                if let frame = screens.frame(for: id) { window.setFrame(frame, display: false) }
             } else {
                 makeWindow(for: id)
             }
@@ -113,7 +139,8 @@ public final class OverlayManager {
     }
 
     private func makeWindow(for id: CGDirectDisplayID) {
-        let window = OverlayWindow(displayID: id, frame: screens.frame(for: id))
+        guard let frame = screens.frame(for: id) else { return }
+        let window = OverlayWindow(displayID: id, frame: frame)
         window.orderFrontRegardless()
         windows[id] = window
     }
