@@ -7,6 +7,12 @@ public final class CursorTracker {
     public private(set) var position: CGPoint = NSEvent.mouseLocation
     public var onMove: ((CGPoint, TimeInterval) -> Void)?
 
+    /// Token for a handler added with `addMoveHandler`.
+    public struct HandlerID: Hashable, Sendable {
+        fileprivate let raw: UUID
+    }
+
+    private var handlers: [(id: HandlerID, handler: (CGPoint, TimeInterval) -> Void)] = []
     private var globalMonitor: Any?
     private var localMonitor: Any?
 
@@ -34,8 +40,26 @@ public final class CursorTracker {
         localMonitor = nil
     }
 
+    /// Adds a move handler alongside `onMove`, so several consumers can follow the pointer.
+    @discardableResult
+    public func addMoveHandler(_ handler: @escaping (CGPoint, TimeInterval) -> Void) -> HandlerID {
+        let id = HandlerID(raw: UUID())
+        handlers.append((id, handler))
+        return id
+    }
+
+    public func removeMoveHandler(_ id: HandlerID) {
+        handlers.removeAll { $0.id == id }
+    }
+
     private func handleMove(at timestamp: TimeInterval) {
-        position = NSEvent.mouseLocation
+        deliver(position: NSEvent.mouseLocation, timestamp: timestamp)
+    }
+
+    /// Single entry point for a new position; tests call it directly.
+    func deliver(position: CGPoint, timestamp: TimeInterval) {
+        self.position = position
         onMove?(position, timestamp)
+        for entry in handlers { entry.handler(position, timestamp) }
     }
 }
