@@ -1,3 +1,5 @@
+> **INVALIDATED 2026-11-08 (same day).** The user ran the built app and still saw the real cursor on top of the skin. This spike measured what a ScreenCaptureKit screenshot draws, not what is on the physical screen, so its "hidden" result was a false positive. Do not rely on the verdict below. See `docs/research/2026-11-08-cursor-approaches.md`.
+
 # Cursor-hide spike verdict (Task 0, 2026-11-08)
 
 Throwaway code: `spike/cursor-hide.swift`, `cursor-hide2.swift`, `cursor-hide3.swift`. Run in the Terminal panel on macOS 26.7, one Retina display, Finder frontmost.
