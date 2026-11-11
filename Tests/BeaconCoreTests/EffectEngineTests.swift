@@ -191,69 +191,110 @@ final class PointerGeometryTests: XCTestCase {
 }
 
 @MainActor
+private final class FakeClock {
+    var now: TimeInterval = 100
+}
+
+@MainActor
 final class BeaconHaloTests: XCTestCase {
     private var window: OverlayWindow?
+    private let clock = FakeClock()
 
     override func tearDown() async throws {
         window?.close()
         window = nil
     }
 
-    private func makeHalo(restDelay: TimeInterval = 10, fade: TimeInterval = 0.02) -> BeaconHalo {
+    private func makeHalo(restDelay: TimeInterval = 1.5) -> BeaconHalo {
         let window = OverlayWindow(displayID: 1, frame: CGRect(x: 0, y: 0, width: 800, height: 600))
         self.window = window
-        let halo = BeaconHalo(dim: 0.25, restDelay: restDelay, fadeDuration: fade)
+        let clock = clock
+        let halo = BeaconHalo(dim: 0.25, restDelay: restDelay, fadeDuration: 0.45, now: { clock.now })
         halo.activate(on: window, tracker: CursorTracker())
         return halo
     }
 
-    private func waitUntil(timeout: TimeInterval = 2, _ condition: () -> Bool) async {
-        let deadline = Date().addingTimeInterval(timeout)
-        while !condition(), Date() < deadline {
-            try? await Task.sleep(nanoseconds: 10_000_000)
-        }
+    func testHasRestedAtTheBoundary() {
+        XCTAssertTrue(BeaconHalo.hasRested(lastMove: 10, now: 11.5, restAfter: 1.5))
+        XCTAssertFalse(BeaconHalo.hasRested(lastMove: 10, now: 11.499, restAfter: 1.5))
+        XCTAssertTrue(BeaconHalo.hasRested(lastMove: 10, now: 20, restAfter: 1.5))
     }
 
     func testHaloIsCenteredOnThePointerAndHiddenElsewhere() {
         let halo = makeHalo()
-        halo.pointerMoved(to: CGPoint(x: 123.5, y: 456.25), at: 0)
+        halo.pointerMoved(to: CGPoint(x: 123.5, y: 456.25), at: clock.now)
         XCTAssertEqual(halo.body.position, CGPoint(x: 123.5, y: 456.25))
         XCTAssertFalse(halo.root.isHidden)
-        halo.pointerMoved(to: nil, at: 0.1)
+        halo.pointerMoved(to: nil, at: clock.now)
         XCTAssertTrue(halo.root.isHidden)
         halo.deactivate()
         XCTAssertNil(halo.root.superlayer)
     }
 
-    func testHaloFinishesAfterRest() async {
-        let halo = makeHalo(restDelay: 0.05)
+    func testHaloFadesAndFinishesAfterRestUsingEventTime() {
+        let halo = makeHalo()
         var finished = false
         halo.onFinish = { finished = true }
-        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 0)
-        await waitUntil { finished }
+        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
+
+        clock.now = 101.49
+        halo.checkRest()
+        XCTAssertFalse(halo.isFading, "not rested just before 1.5 s")
+
+        clock.now = 101.5
+        halo.checkRest()
+        XCTAssertTrue(halo.isFading, "rested exactly at 1.5 s")
+        XCTAssertFalse(finished)
+
+        halo.completeFade()
         XCTAssertTrue(finished)
     }
 
-    func testMovementPostponesTheFade() async {
-        let halo = makeHalo(restDelay: 0.3)
-        var finished = false
-        halo.onFinish = { finished = true }
-        for step in 0..<8 {
-            halo.pointerMoved(to: CGPoint(x: 10 + step, y: 10), at: Double(step) * 0.1)
-            try? await Task.sleep(nanoseconds: 100_000_000)
-        }
-        XCTAssertFalse(finished, "a moving pointer keeps the halo alive")
-        await waitUntil { finished }
-        XCTAssertTrue(finished)
+    func testMovementResetsTheRest() {
+        let halo = makeHalo()
+        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
+        halo.pointerMoved(to: CGPoint(x: 20, y: 10), at: 101)
+
+        clock.now = 102
+        halo.checkRest()
+        XCTAssertFalse(halo.isFading, "only 1 s since the last move")
+
+        clock.now = 102.5
+        halo.checkRest()
+        XCTAssertTrue(halo.isFading)
     }
 
-    func testHiddenHaloDoesNotFinish() async {
-        let halo = makeHalo(restDelay: 0.05)
+    func testMovingDuringTheFadeRevivesTheHalo() {
+        let halo = makeHalo()
         var finished = false
         halo.onFinish = { finished = true }
-        halo.pointerMoved(to: nil, at: 0)
-        try? await Task.sleep(nanoseconds: 200_000_000)
-        XCTAssertFalse(finished, "only the display that has the pointer runs the rest timer")
+        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
+        clock.now = 102
+        halo.checkRest()
+        XCTAssertTrue(halo.isFading)
+
+        halo.pointerMoved(to: CGPoint(x: 30, y: 10), at: 102)
+        XCTAssertFalse(halo.isFading)
+        halo.completeFade()
+        XCTAssertFalse(finished, "a revived halo does not finish")
+    }
+
+    func testHiddenHaloDoesNotFade() {
+        let halo = makeHalo()
+        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
+        halo.pointerMoved(to: nil, at: 100.1)
+        clock.now = 200
+        halo.checkRest()
+        XCTAssertFalse(halo.isFading, "only the display that has the pointer runs the rest timer")
+    }
+
+    func testDeactivateClearsInFlightAnimations() {
+        let halo = makeHalo()
+        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
+        XCTAssertNotNil(halo.body.animation(forKey: "bloom"))
+        halo.deactivate()
+        XCTAssertNil(halo.body.animationKeys())
+        XCTAssertNil(halo.root.animationKeys())
     }
 
     func testThemeColorsTheRing() {

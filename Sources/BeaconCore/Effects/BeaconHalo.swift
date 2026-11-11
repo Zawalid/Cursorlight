@@ -29,6 +29,8 @@ public final class BeaconHalo: Effect {
 
     private let dimAlpha: CGFloat
     private let restDelay: TimeInterval
+    /// System uptime clock, the same timebase as `NSEvent.timestamp`; injectable so rest logic is testable.
+    private let now: () -> TimeInterval
     private let fadeDuration: TimeInterval
     private var theme: Theme = .neon
     private var scale: CGFloat = 2
@@ -36,16 +38,24 @@ public final class BeaconHalo: Effect {
     private enum Phase { case detached, hidden, shown, fading }
     private var phase = Phase.detached
     private var hasBloomed = false
-    private var lastMove = ContinuousClock.now
+    /// Event time (system uptime) of the last pointer move.
+    private var lastMove: TimeInterval = 0
     private var restTask: Task<Void, Never>?
     private var fadeTask: Task<Void, Never>?
 
     /// - Parameters:
     ///   - dim: alpha of the dim over the rest of the screen, clamped to 0...0.6.
     ///   - restDelay: seconds without movement before the halo fades.
-    public init(dim: CGFloat = 0.25, restDelay: TimeInterval = 1.5, fadeDuration: TimeInterval = 0.45) {
+    ///   - now: current time in system uptime, the timebase of the `time` passed to `pointerMoved(to:at:)`.
+    public init(
+        dim: CGFloat = 0.25,
+        restDelay: TimeInterval = 1.5,
+        fadeDuration: TimeInterval = 0.45,
+        now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+    ) {
         dimAlpha = min(max(dim, 0), 0.6)
         self.restDelay = restDelay
+        self.now = now
         self.fadeDuration = fadeDuration
         buildLayers()
     }
@@ -73,7 +83,10 @@ public final class BeaconHalo: Effect {
         restTask = nil
         fadeTask = nil
         phase = .detached
-        withoutAnimation { root.removeFromSuperlayer() }
+        withoutAnimation {
+            for layer in [root, body, ripple, dim] { layer.removeAllAnimations() }
+            root.removeFromSuperlayer()
+        }
     }
 
     public func apply(theme: Theme) {
@@ -127,7 +140,7 @@ public final class BeaconHalo: Effect {
             revive()
         }
         phase = .shown
-        lastMove = .now
+        lastMove = time
         if restTask == nil { startRestTimer() }
     }
 
@@ -261,20 +274,44 @@ public final class BeaconHalo: Effect {
         ripple.add(wave, forKey: "ripple")
     }
 
+    /// True once the pointer has not moved for `restAfter` seconds. All times are system uptime.
+    nonisolated static func hasRested(lastMove: TimeInterval, now: TimeInterval, restAfter: TimeInterval) -> Bool {
+        now - lastMove >= restAfter
+    }
+
+    var isFading: Bool { phase == .fading }
+
+    /// Starts the fade if the pointer has rested long enough. The timer calls it; tests call it with a fake clock.
+    func checkRest() {
+        guard phase == .shown, Self.hasRested(lastMove: lastMove, now: now(), restAfter: restDelay) else { return }
+        beginFade()
+    }
+
+    /// Ends a fade that ran to completion. The fade timer calls it; tests call it directly.
+    func completeFade() {
+        guard phase == .fading else { return }
+        fadeTask?.cancel()
+        fadeTask = nil
+        onFinish?()
+    }
+
+    /// Sleeps until the rest deadline, re-checking after each move pushed it back.
     private func startRestTimer() {
         restTask = Task { [weak self] in
             while true {
-                guard let self, !Task.isCancelled else { return }
-                let elapsed = ContinuousClock.now - self.lastMove
-                let remaining = Duration.seconds(self.restDelay) - elapsed
-                if remaining <= .zero { break }
-                try? await Task.sleep(for: remaining)
+                guard let self, !Task.isCancelled, self.phase == .shown else { return }
+                let current = self.now()
+                if Self.hasRested(lastMove: self.lastMove, now: current, restAfter: self.restDelay) { break }
+                let remaining = self.restDelay - (current - self.lastMove)
+                try? await Task.sleep(for: .seconds(remaining))
             }
-            self?.beginFade()
+            self?.restTask = nil
+            self?.checkRest()
         }
     }
 
     private func beginFade() {
+        restTask?.cancel()
         restTask = nil
         guard phase == .shown else { return }
         phase = .fading
@@ -291,9 +328,8 @@ public final class BeaconHalo: Effect {
         let delay = fadeDuration
         fadeTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
-            guard let self, !Task.isCancelled, self.phase == .fading else { return }
-            self.fadeTask = nil
-            self.onFinish?()
+            guard let self, !Task.isCancelled else { return }
+            self.completeFade()
         }
     }
 
