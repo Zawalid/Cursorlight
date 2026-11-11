@@ -1,22 +1,18 @@
 import AppKit
 
-/// Turns effects on and off across every overlay window and feeds them the pointer.
+/// Turns effects on and off across every overlay window and feeds them the pointer. The cursor highlight and click
+/// ripples run in `HighlightController`; this engine hosts the per-window effects added later (laser, ink).
 @MainActor
 public final class EffectEngine {
     public typealias Factory = @MainActor (EffectID) -> (any Effect)?
 
     public private(set) var active: Set<EffectID> = []
 
-    public var theme: Theme = .neon {
+    public var style: HighlightStyle = .aura {
         didSet {
-            guard theme != oldValue else { return }
-            for attachment in attachments.values.joined() { attachment.effect.apply(theme: theme) }
+            guard style != oldValue else { return }
+            for attachment in attachments.values.joined() { attachment.effect.apply(style: style) }
         }
-    }
-
-    /// Dim of the rest of the screen behind the halo, 0 to 0.6. Applies from the next activation.
-    public var beaconDim: CGFloat = 0.25 {
-        didSet { beaconDim = min(max(beaconDim, 0), 0.6) }
     }
 
     private struct Attachment {
@@ -80,7 +76,7 @@ public final class EffectEngine {
 
     private func attach(_ id: EffectID, to window: OverlayWindow) -> Attachment? {
         guard let effect = factory.map({ $0(id) }) ?? builtIn(id) else { return nil }
-        effect.apply(theme: theme)
+        effect.apply(style: style)
         effect.onFinish = { [weak self] in self?.deactivate(id) }
         effect.activate(on: window, tracker: tracker)
         return Attachment(window: window, effect: effect)
@@ -88,8 +84,8 @@ public final class EffectEngine {
 
     private func builtIn(_ id: EffectID) -> (any Effect)? {
         switch id {
-        case .beacon: BeaconHalo(dim: beaconDim)
-        case .laser, .ink, .pulse: nil
+        case .beacon, .pulse: nil  // drawn by HighlightController
+        case .laser, .ink: nil  // not built yet
         }
     }
 

@@ -5,7 +5,9 @@ import BeaconCore
 final class StatusItemController: NSObject, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var sizeItems: [(scale: Float, item: NSMenuItem)] = []
-    private var themeItems: [(id: String, item: NSMenuItem)] = []
+    private var styleItems: [(style: HighlightStyle, item: NSMenuItem)] = []
+    private var highlightItem: NSMenuItem?
+    private var ripplesItem: NSMenuItem?
     var coordinator: AppCoordinator?
 
     func install() {
@@ -21,6 +23,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     private func makeMenu() -> NSMenu {
         let menu = NSMenu(title: Branding.appName)
+        menu.delegate = self
 
         let settings = NSMenuItem(title: "Settings…", action: nil, keyEquivalent: ",")
         settings.isEnabled = false
@@ -29,7 +32,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         if let coordinator {
-            addHaloItems(to: menu)
+            addHighlightItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
             addCursorItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
@@ -45,23 +48,32 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         return menu
     }
 
-    private func addHaloItems(to menu: NSMenu) {
-        let show = NSMenuItem(title: "Show halo", action: #selector(showHalo), keyEquivalent: "")
-        show.target = self
-        menu.addItem(show)
+    private func addHighlightItems(to menu: NSMenu, coordinator: AppCoordinator) {
+        let toggle = NSMenuItem(title: "Turn highlight on", action: #selector(toggleHighlight), keyEquivalent: "")
+        toggle.target = self
+        toggle.toolTip = "Shake the pointer to turn it on or off."
+        menu.addItem(toggle)
+        highlightItem = toggle
 
-        let submenu = NSMenu(title: "Halo theme")
+        let submenu = NSMenu(title: "Highlight style")
         submenu.delegate = self
-        for theme in Theme.all {
-            let item = NSMenuItem(title: theme.name, action: #selector(setTheme(_:)), keyEquivalent: "")
+        for style in HighlightStyle.allCases {
+            let item = NSMenuItem(title: style.displayName, action: #selector(setStyle(_:)), keyEquivalent: "")
             item.target = self
-            item.representedObject = theme.id
+            item.representedObject = style.rawValue
             submenu.addItem(item)
-            themeItems.append((theme.id, item))
+            styleItems.append((style, item))
         }
-        let parent = NSMenuItem(title: "Halo theme", action: nil, keyEquivalent: "")
+        let parent = NSMenuItem(title: "Highlight style", action: nil, keyEquivalent: "")
         parent.submenu = submenu
         menu.addItem(parent)
+
+        let ripples = NSMenuItem(title: "Click ripples", action: #selector(toggleRipples), keyEquivalent: "")
+        ripples.target = self
+        menu.addItem(ripples)
+        ripplesItem = ripples
+
+        coordinator.highlight.onChange = { [weak self] in self?.refreshChecks() }
     }
 
     private static let sizes: [(title: String, scale: Float)] = [
@@ -96,10 +108,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     private func refreshChecks() {
-        let themeID = coordinator?.haloTheme.id
-        for (id, item) in themeItems {
-            item.state = id == themeID ? .on : .off
+        let highlight = coordinator?.highlight
+        for (style, item) in styleItems {
+            item.state = style == highlight?.style ? .on : .off
         }
+        highlightItem?.title = highlight?.isOn == true ? "Turn highlight off" : "Turn highlight on"
+        ripplesItem?.state = highlight?.ripplesEnabled == true ? .on : .off
         let current = coordinator?.cursorSize.currentScale
         for (scale, item) in sizeItems {
             let isCurrent = current.map { abs($0 - scale) < 0.05 } ?? false
@@ -112,15 +126,20 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         coordinator?.setCursorScale(number.floatValue)
     }
 
-    @objc private func showHalo() {
-        coordinator?.showHalo()
+    @objc private func toggleHighlight() {
+        coordinator?.toggleHighlight()
+        refreshChecks()
     }
 
-    /// Picking a theme also shows the halo, so the choice is visible right away.
-    @objc private func setTheme(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String, let theme = Theme.named(id) else { return }
-        coordinator?.setHaloTheme(theme)
-        coordinator?.showHalo()
+    @objc private func setStyle(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let style = HighlightStyle(rawValue: raw) else { return }
+        coordinator?.setHighlightStyle(style)
+        refreshChecks()
+    }
+
+    @objc private func toggleRipples() {
+        guard let highlight = coordinator?.highlight else { return }
+        coordinator?.setClickRipples(!highlight.ripplesEnabled)
         refreshChecks()
     }
 

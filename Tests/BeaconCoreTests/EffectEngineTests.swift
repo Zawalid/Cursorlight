@@ -9,7 +9,7 @@ private final class FakeEffect: Effect {
     var onFinish: (() -> Void)?
     private(set) var activations = 0
     private(set) var deactivations = 0
-    private(set) var themes: [Theme] = []
+    private(set) var styles: [HighlightStyle] = []
     private(set) var moves: [CGPoint?] = []
     private(set) var window: OverlayWindow?
 
@@ -21,7 +21,7 @@ private final class FakeEffect: Effect {
     }
 
     func deactivate() { deactivations += 1 }
-    func apply(theme: Theme) { themes.append(theme) }
+    func apply(style: HighlightStyle) { styles.append(style) }
     func pointerMoved(to layerPoint: CGPoint?, at time: TimeInterval) { moves.append(layerPoint) }
 }
 
@@ -69,15 +69,15 @@ final class EffectEngineTests: XCTestCase {
         XCTAssertTrue(made.allSatisfy { $0.deactivations == 1 })
     }
 
-    func testThemeChangeAppliesToActiveEffects() {
+    func testStyleChangeAppliesToActiveEffects() {
         let engine = makeEngine(frames: [1: CGRect(x: 0, y: 0, width: 800, height: 600)])
         engine.activate(.beacon)
-        XCTAssertEqual(made.first?.themes.last, .neon)
-        engine.theme = .spotlight
-        XCTAssertEqual(made.first?.themes.last, .spotlight)
+        XCTAssertEqual(made.first?.styles.last, .aura)
+        engine.style = .comet
+        XCTAssertEqual(made.first?.styles.last, .comet)
         engine.deactivate(.beacon)
-        engine.theme = .ink
-        XCTAssertEqual(made.first?.themes.last, .spotlight, "inactive effects are not touched")
+        engine.style = .lens
+        XCTAssertEqual(made.first?.styles.last, .comet, "inactive effects are not touched")
     }
 
     func testDeactivateOneLeavesOthers() {
@@ -123,22 +123,13 @@ final class EffectEngineTests: XCTestCase {
         XCTAssertTrue(engine.active.isEmpty)
     }
 
-    func testDimIsClamped() {
-        let engine = makeEngine(frames: [1: CGRect(x: 0, y: 0, width: 800, height: 600)])
-        XCTAssertEqual(engine.beaconDim, 0.25)
-        engine.beaconDim = 0.9
-        XCTAssertEqual(engine.beaconDim, 0.6)
-        engine.beaconDim = -1
-        XCTAssertEqual(engine.beaconDim, 0)
-    }
-
-    func testThemesAreDistinctAndLookedUpById() {
-        let all = Theme.all
-        XCTAssertEqual(all.map(\.id), ["neon", "ink", "spotlight", "minimal"])
-        XCTAssertEqual(Set(all.map(\.name)).count, 4)
-        XCTAssertEqual(Theme.named("ink"), .ink)
-        XCTAssertNil(Theme.named("nope"))
-        XCTAssertTrue(all.allSatisfy { (0...1).contains($0.glow) })
+    func testBuiltInsLeaveTheHighlightToItsController() {
+        windows = [OverlayWindow(displayID: 1, frame: CGRect(x: 0, y: 0, width: 800, height: 600))]
+        let list = windows
+        let engine = EffectEngine(tracker: CursorTracker(), windows: { list })
+        engine.activate(.beacon)
+        engine.activate(.pulse)
+        XCTAssertTrue(engine.active.isEmpty)
     }
 }
 
@@ -187,121 +178,5 @@ final class PointerGeometryTests: XCTestCase {
     func testPixelAlignmentSnapsToDevicePixels() {
         XCTAssertEqual(PointerGeometry.pixelAligned(CGPoint(x: 10.3, y: 4.8), scale: 1), CGPoint(x: 10, y: 5))
         XCTAssertEqual(PointerGeometry.pixelAligned(CGPoint(x: 10.3, y: 4.8), scale: 2), CGPoint(x: 10.5, y: 5))
-    }
-}
-
-@MainActor
-private final class FakeClock {
-    var now: TimeInterval = 100
-}
-
-@MainActor
-final class BeaconHaloTests: XCTestCase {
-    private var window: OverlayWindow?
-    private let clock = FakeClock()
-
-    override func tearDown() async throws {
-        window?.close()
-        window = nil
-    }
-
-    private func makeHalo(restDelay: TimeInterval = 1.5) -> BeaconHalo {
-        let window = OverlayWindow(displayID: 1, frame: CGRect(x: 0, y: 0, width: 800, height: 600))
-        self.window = window
-        let clock = clock
-        let halo = BeaconHalo(dim: 0.25, restDelay: restDelay, fadeDuration: 0.45, now: { clock.now })
-        halo.activate(on: window, tracker: CursorTracker())
-        return halo
-    }
-
-    func testHasRestedAtTheBoundary() {
-        XCTAssertTrue(BeaconHalo.hasRested(lastMove: 10, now: 11.5, restAfter: 1.5))
-        XCTAssertFalse(BeaconHalo.hasRested(lastMove: 10, now: 11.499, restAfter: 1.5))
-        XCTAssertTrue(BeaconHalo.hasRested(lastMove: 10, now: 20, restAfter: 1.5))
-    }
-
-    func testHaloIsCenteredOnThePointerAndHiddenElsewhere() {
-        let halo = makeHalo()
-        halo.pointerMoved(to: CGPoint(x: 123.5, y: 456.25), at: clock.now)
-        XCTAssertEqual(halo.body.position, CGPoint(x: 123.5, y: 456.25))
-        XCTAssertFalse(halo.root.isHidden)
-        halo.pointerMoved(to: nil, at: clock.now)
-        XCTAssertTrue(halo.root.isHidden)
-        halo.deactivate()
-        XCTAssertNil(halo.root.superlayer)
-    }
-
-    func testHaloFadesAndFinishesAfterRestUsingEventTime() {
-        let halo = makeHalo()
-        var finished = false
-        halo.onFinish = { finished = true }
-        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
-
-        clock.now = 101.49
-        halo.checkRest()
-        XCTAssertFalse(halo.isFading, "not rested just before 1.5 s")
-
-        clock.now = 101.5
-        halo.checkRest()
-        XCTAssertTrue(halo.isFading, "rested exactly at 1.5 s")
-        XCTAssertFalse(finished)
-
-        halo.completeFade()
-        XCTAssertTrue(finished)
-    }
-
-    func testMovementResetsTheRest() {
-        let halo = makeHalo()
-        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
-        halo.pointerMoved(to: CGPoint(x: 20, y: 10), at: 101)
-
-        clock.now = 102
-        halo.checkRest()
-        XCTAssertFalse(halo.isFading, "only 1 s since the last move")
-
-        clock.now = 102.5
-        halo.checkRest()
-        XCTAssertTrue(halo.isFading)
-    }
-
-    func testMovingDuringTheFadeRevivesTheHalo() {
-        let halo = makeHalo()
-        var finished = false
-        halo.onFinish = { finished = true }
-        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
-        clock.now = 102
-        halo.checkRest()
-        XCTAssertTrue(halo.isFading)
-
-        halo.pointerMoved(to: CGPoint(x: 30, y: 10), at: 102)
-        XCTAssertFalse(halo.isFading)
-        halo.completeFade()
-        XCTAssertFalse(finished, "a revived halo does not finish")
-    }
-
-    func testHiddenHaloDoesNotFade() {
-        let halo = makeHalo()
-        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
-        halo.pointerMoved(to: nil, at: 100.1)
-        clock.now = 200
-        halo.checkRest()
-        XCTAssertFalse(halo.isFading, "only the display that has the pointer runs the rest timer")
-    }
-
-    func testDeactivateClearsInFlightAnimations() {
-        let halo = makeHalo()
-        halo.pointerMoved(to: CGPoint(x: 10, y: 10), at: 100)
-        XCTAssertNotNil(halo.body.animation(forKey: "bloom"))
-        halo.deactivate()
-        XCTAssertNil(halo.body.animationKeys())
-        XCTAssertNil(halo.root.animationKeys())
-    }
-
-    func testThemeColorsTheRing() {
-        let halo = makeHalo()
-        halo.apply(theme: .ink)
-        XCTAssertEqual(halo.ring.strokeColor, Theme.ink.primary)
-        halo.apply(theme: .minimal)
-        XCTAssertEqual(halo.ring.strokeColor, Theme.minimal.primary)
     }
 }

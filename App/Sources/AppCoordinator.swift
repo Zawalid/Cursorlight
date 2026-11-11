@@ -1,16 +1,18 @@
 import AppKit
 import BeaconCore
 
-/// Owns the live pieces (overlays, pointer tracking, effects, cursor size).
+/// Owns the live pieces (overlays, pointer and button tracking, the highlight, cursor size).
 @MainActor
 final class AppCoordinator {
-    private static let themeKey = "haloTheme"
+    private static let styleKey = "highlightStyle"
+    private static let ripplesKey = "clickRipples"
 
     private let overlays = OverlayManager(screens: SystemScreens())
     private let tracker = CursorTracker()
+    private let clicks = ClickMonitor()
     private var shake = ShakeRecognizer(sensitivity: 50)
     private let defaults: UserDefaults
-    let effects: EffectEngine
+    let highlight: HighlightController
     let cursorSize: CursorSizeController
 
     /// Called after the cursor size changes, so the menu can refresh its checkmark.
@@ -19,38 +21,45 @@ final class AppCoordinator {
     init(cursorSize: CursorSizeController, defaults: UserDefaults = .standard) {
         self.cursorSize = cursorSize
         self.defaults = defaults
-        effects = EffectEngine(overlays: overlays, tracker: tracker)
-        if let id = defaults.string(forKey: Self.themeKey), let theme = Theme.named(id) {
-            effects.theme = theme
-        }
+        let style = defaults.string(forKey: Self.styleKey).flatMap(HighlightStyle.init(rawValue:)) ?? .aura
+        let ripples = defaults.object(forKey: Self.ripplesKey) as? Bool ?? true
+        highlight = HighlightController(overlays: overlays, style: style, ripplesEnabled: ripples)
     }
 
     func start() {
         overlays.start()
+        highlight.start()
         tracker.onMove = { [weak self] position, time in
             self?.pointerMoved(to: position, at: time)
         }
         tracker.start()
+        clicks.onButton = { [weak self] button, isDown, position in
+            self?.highlight.mouseButton(button, isDown: isDown, at: position)
+        }
+        clicks.start()
     }
 
     private func pointerMoved(to position: CGPoint, at time: TimeInterval) {
-        effects.pointerMoved(to: position, at: time)
+        highlight.pointerMoved()
         if shake.feed(position: position, time: time) {
-            effects.activate(.beacon)
+            highlight.toggle()
         }
     }
 
-    /// From the menu: the tracker may not have seen the latest position while the menu was open.
-    func showHalo() {
-        effects.activate(.beacon)
-        effects.pointerMoved(to: NSEvent.mouseLocation, at: ProcessInfo.processInfo.systemUptime)
+    func toggleHighlight() {
+        highlight.toggle()
     }
 
-    var haloTheme: Theme { effects.theme }
+    /// Picking a style also turns the highlight on, so the choice is visible right away.
+    func setHighlightStyle(_ style: HighlightStyle) {
+        highlight.setStyle(style)
+        highlight.setOn(true)
+        defaults.set(style.rawValue, forKey: Self.styleKey)
+    }
 
-    func setHaloTheme(_ theme: Theme) {
-        effects.theme = theme
-        defaults.set(theme.id, forKey: Self.themeKey)
+    func setClickRipples(_ enabled: Bool) {
+        highlight.setRipplesEnabled(enabled)
+        defaults.set(enabled, forKey: Self.ripplesKey)
     }
 
     func setCursorScale(_ scale: Float) {
@@ -67,7 +76,9 @@ final class AppCoordinator {
         cursorSize.reset()
         tracker.onMove = nil
         tracker.stop()
-        effects.deactivateAll()
+        clicks.onButton = nil
+        clicks.stop()
+        highlight.stop()
         overlays.stop()
     }
 }

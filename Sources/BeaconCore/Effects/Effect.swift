@@ -11,11 +11,12 @@ public enum EffectID: String, CaseIterable, Hashable, Sendable {
 @MainActor
 public protocol Effect: AnyObject {
     var id: EffectID { get }
-    /// Set by the engine. An effect that ends on its own (the halo after rest) calls it once it is done.
+    /// Set by the engine. An effect that ends on its own (a laser stroke that faded) calls it once it is done.
     var onFinish: (() -> Void)? { get set }
     func activate(on window: OverlayWindow, tracker: CursorTracker)
     func deactivate()
-    func apply(theme: Theme)
+    /// The selected highlight style; effects take their accent from `Palette.accent(for:)`.
+    func apply(style: HighlightStyle)
     /// - Parameter layerPoint: pointer position in the window's root layer coordinates, or nil when the pointer is
     ///   on another display.
     func pointerMoved(to layerPoint: CGPoint?, at time: TimeInterval)
