@@ -22,3 +22,10 @@ Throwaway: `spike/cursor-replace.swift`. Function names came from listing SkyLig
 - The original arrow reads back fine (rc 0, 28x40 points, hotspot 5,5, 4 images, so several scales).
 - Registering a 48-point red ring as the Arrow returned rc 0, and re-registering the saved original on exit also returned rc 0.
 - Whether the arrow VISIBLY changed on the screen is to be confirmed by the user's eyes, not by a screenshot.
+
+## Spike 0b result (2026-11-11): replacing the arrow does NOT work with the plain calls
+User saw no change. A read-back confirmed it: after `SLSRegisterCursorWithImages` returned 0, the registry still held the original (28x40 points, 4 images) and the cursor seed did not change; the returned seed was the 0xAAAAAAAA sentinel (never written). `SLSRemoveRegisteredCursor` returned 1000 (illegal argument). Conclusion: on macOS 26.7 the call is accepted but ignored, so the signature or preconditions differ from what we assumed, or the system blocks it for this kind of process.
+Prior art that does work on macOS 26: MaCursor (github.com/writronic/MaCursor, GPL-3.0, fork of Mousecape), which ships a login-item helper tool and cursor identifiers for macOS 26 "S-variant" cursors. Its license (GPL-3.0) means its code cannot go into a closed-source paid app; Mousecape's license forbids commercial use outright. Only our own clean-room work could be used. Next lead would be to disassemble SkyLight's `SLSRegisterCursorWithImages2` (REA tool) on this Mac.
+
+## Spike 0c: system cursor scale (2026-11-11)
+`SLSSetCursorScale(cid, 3.0)` returned 0 and the read-back returned 3.0 (set worked in the registry, unlike the registration). Visible effect on screen is for the user to confirm. If it works, a system-wide cursor size slider is a real, simple, no-overlay feature (it is also what MaCursor offers as "Cursor Scale", 0.5x to 4x).
