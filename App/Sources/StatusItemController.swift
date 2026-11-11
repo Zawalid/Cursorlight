@@ -4,7 +4,7 @@ import BeaconCore
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
     private var statusItem: NSStatusItem?
-    private var skinItems: [String: NSMenuItem] = [:]
+    private var sizeItems: [(scale: Float, item: NSMenuItem)] = []
     var coordinator: AppCoordinator?
 
     func install() {
@@ -42,37 +42,51 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         return menu
     }
 
+    private static let sizes: [(title: String, scale: Float)] = [
+        ("1x", 1.0), ("1.5x", 1.5), ("2x", 2.0), ("3x", 3.0),
+    ]
+
     private func addCursorItems(to menu: NSMenu, coordinator: AppCoordinator) {
-        let submenu = NSMenu(title: "Try cursor skin")
-        for skin in BuiltInSkins.all {
-            let item = NSMenuItem(title: skin.name, action: #selector(trySkin(_:)), keyEquivalent: "")
+        let submenu = NSMenu(title: "Cursor size")
+        submenu.delegate = self
+        for size in Self.sizes {
+            let item = NSMenuItem(title: size.title, action: #selector(setSize(_:)), keyEquivalent: "")
             item.target = self
-            item.representedObject = skin.id
+            item.representedObject = NSNumber(value: size.scale)
             submenu.addItem(item)
-            skinItems[skin.id] = item
+            sizeItems.append((size.scale, item))
         }
-        let parent = NSMenuItem(title: "Try cursor skin", action: nil, keyEquivalent: "")
+        submenu.addItem(.separator())
+        let reset = NSMenuItem(title: "Reset", action: #selector(resetSize), keyEquivalent: "")
+        reset.target = self
+        submenu.addItem(reset)
+
+        let parent = NSMenuItem(title: "Cursor size", action: nil, keyEquivalent: "")
         parent.submenu = submenu
         menu.addItem(parent)
 
-        let restore = NSMenuItem(title: "Restore cursor", action: #selector(restoreCursor), keyEquivalent: "")
-        restore.target = self
-        menu.addItem(restore)
+        coordinator.onSizeChange = { [weak self] in self?.refreshChecks() }
+        refreshChecks()
+    }
 
-        coordinator.onTrialChange = { [weak self] in self?.refreshChecks() }
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        refreshChecks()
     }
 
     private func refreshChecks() {
-        let active = coordinator?.trialSkinID
-        for (id, item) in skinItems { item.state = id == active ? .on : .off }
+        let current = coordinator?.cursorSize.currentScale
+        for (scale, item) in sizeItems {
+            let isCurrent = current.map { abs($0 - scale) < 0.05 } ?? false
+            item.state = isCurrent ? .on : .off
+        }
     }
 
-    @objc private func trySkin(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String, let skin = BuiltInSkins.skin(id: id) else { return }
-        coordinator?.tryTrial(skin)
+    @objc private func setSize(_ sender: NSMenuItem) {
+        guard let number = sender.representedObject as? NSNumber else { return }
+        coordinator?.setCursorScale(number.floatValue)
     }
 
-    @objc private func restoreCursor() {
-        coordinator?.restoreCursor()
+    @objc private func resetSize() {
+        coordinator?.resetCursorScale()
     }
 }

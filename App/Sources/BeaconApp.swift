@@ -15,15 +15,14 @@ struct BeaconApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let environment = AppEnvironment()
     private let statusItemController = StatusItemController()
-    private let cursorMarker = UserDefaultsCursorMarker()
-    private lazy var cursorHider: CursorHider = CursorHiders.makeDefault(markers: cursorMarker)
+    private let cursorSize = CursorSizeController(scaling: SystemCursorScale(), markers: UserDefaultsScaleMarker())
     private var coordinator: AppCoordinator?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Before anything else: a previous run that died with the cursor hidden left the marker set.
-        CursorRecovery.restoreIfStale(markers: cursorMarker, hider: cursorHider)
         if environment.startsCoordinator {
-            let coordinator = AppCoordinator(hider: cursorHider)
+            // Before anything else: a previous run that died with the cursor resized left the marker set.
+            cursorSize.restoreIfStale()
+            let coordinator = AppCoordinator(cursorSize: cursorSize)
             coordinator.start()
             self.coordinator = coordinator
             statusItemController.coordinator = coordinator
@@ -35,6 +34,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         coordinator?.shutdown()
-        cursorHider.restore()
     }
 }

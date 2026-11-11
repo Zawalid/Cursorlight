@@ -1,56 +1,36 @@
 import AppKit
 import BeaconCore
 
-/// Owns the live pieces (overlays, pointer tracking, skin drawing) and the temporary skin trial.
+/// Owns the live pieces (overlays, cursor size).
 @MainActor
 final class AppCoordinator {
-    static let trialDuration: TimeInterval = 10
-
     private let overlays = OverlayManager(screens: SystemScreens())
     private let tracker = CursorTracker()
-    private let hider: CursorHider
-    private let renderer: SkinRenderer
-    private var trialTimer: Timer?
+    let cursorSize: CursorSizeController
 
-    private(set) var trialSkinID: String?
-    /// Called after a trial starts or ends, so the menu can refresh its checkmark.
-    var onTrialChange: (() -> Void)?
+    /// Called after the cursor size changes, so the menu can refresh its checkmark.
+    var onSizeChange: (() -> Void)?
 
-    init(hider: CursorHider) {
-        self.hider = hider
-        renderer = SkinRenderer(hider: hider, tracker: tracker, overlays: overlays)
+    init(cursorSize: CursorSizeController) {
+        self.cursorSize = cursorSize
     }
 
     func start() {
         overlays.start()
     }
 
-    /// Shows `skin` for `trialDuration` seconds, then restores the real cursor. Replaces any running trial.
-    func tryTrial(_ skin: Skin) {
-        trialTimer?.invalidate()
-        renderer.apply(skin, sizeMultiplier: 1)
-        trialSkinID = skin.id
-        let timer = Timer(timeInterval: Self.trialDuration, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated { self?.restoreCursor() }
-        }
-        // Common modes so the restore still fires while a menu is being tracked.
-        RunLoop.main.add(timer, forMode: .common)
-        trialTimer = timer
-        onTrialChange?()
+    func setCursorScale(_ scale: Float) {
+        cursorSize.apply(scale)
+        onSizeChange?()
     }
 
-    /// Restores the real cursor immediately. Safe to call at any time.
-    func restoreCursor() {
-        trialTimer?.invalidate()
-        trialTimer = nil
-        renderer.stop()
-        hider.restore()
-        trialSkinID = nil
-        onTrialChange?()
+    func resetCursorScale() {
+        cursorSize.reset()
+        onSizeChange?()
     }
 
     func shutdown() {
-        restoreCursor()
+        cursorSize.reset()
         tracker.stop()
         overlays.stop()
     }
