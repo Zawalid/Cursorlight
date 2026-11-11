@@ -53,7 +53,7 @@ Menu bar agent (no Dock icon), a sidebar settings window, and a menu bar popover
 All rebindable and individually switchable off. Each trigger can be mapped to an effect. **(my call):** defaults are shake = Beacon, double-tap Option = Laser, hold hotkey = Ink. Shake recognition reuses the approach in Veil (NSEvent global and local mouse monitors).
 
 ### 4.2 Effects (v1)
-- **Beacon:** glowing halo with a spring bloom on summon; optional dim of the rest of the screen; fades when the cursor rests. Shake-to-find uses the user's skin, enlarged.
+- **Beacon:** highlight around the cursor with a spring bloom on summon; optional dim of the rest of the screen. DECIDED 2026-11-11 (user): it stays on until the next shake (toggle), it does not fade at rest; a short pulse marks the moment it appears. The first version (tight 40-point ring, fade after 1.5 s) was rejected as looking and feeling bad; the look is being redesigned from `docs/research/2026-11-11-design-primitives.md`. Shake-to-find uses the user's skin, enlarged.
 - **Laser:** glowing comet trail that fades after about a second.
 - **Ink:** hold the hotkey and draw. Strokes fade on their own, nothing to clear. Circles, arrows and underlines are cleaned up into perfect shapes. Styles: marker, highlighter, chalk, neon.
 - **Click pulse:** ripple on click.
