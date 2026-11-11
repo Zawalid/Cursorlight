@@ -5,6 +5,7 @@ import BeaconCore
 final class StatusItemController: NSObject, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var sizeItems: [(scale: Float, item: NSMenuItem)] = []
+    private var themeItems: [(id: String, item: NSMenuItem)] = []
     var coordinator: AppCoordinator?
 
     func install() {
@@ -28,6 +29,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         if let coordinator {
+            addHaloItems(to: menu)
+            menu.addItem(.separator())
             addCursorItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
         }
@@ -40,6 +43,25 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         quit.target = NSApp
         menu.addItem(quit)
         return menu
+    }
+
+    private func addHaloItems(to menu: NSMenu) {
+        let show = NSMenuItem(title: "Show halo", action: #selector(showHalo), keyEquivalent: "")
+        show.target = self
+        menu.addItem(show)
+
+        let submenu = NSMenu(title: "Halo theme")
+        submenu.delegate = self
+        for theme in Theme.all {
+            let item = NSMenuItem(title: theme.name, action: #selector(setTheme(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = theme.id
+            submenu.addItem(item)
+            themeItems.append((theme.id, item))
+        }
+        let parent = NSMenuItem(title: "Halo theme", action: nil, keyEquivalent: "")
+        parent.submenu = submenu
+        menu.addItem(parent)
     }
 
     private static let sizes: [(title: String, scale: Float)] = [
@@ -74,6 +96,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     private func refreshChecks() {
+        let themeID = coordinator?.haloTheme.id
+        for (id, item) in themeItems {
+            item.state = id == themeID ? .on : .off
+        }
         let current = coordinator?.cursorSize.currentScale
         for (scale, item) in sizeItems {
             let isCurrent = current.map { abs($0 - scale) < 0.05 } ?? false
@@ -84,6 +110,18 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func setSize(_ sender: NSMenuItem) {
         guard let number = sender.representedObject as? NSNumber else { return }
         coordinator?.setCursorScale(number.floatValue)
+    }
+
+    @objc private func showHalo() {
+        coordinator?.showHalo()
+    }
+
+    /// Picking a theme also shows the halo, so the choice is visible right away.
+    @objc private func setTheme(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String, let theme = Theme.named(id) else { return }
+        coordinator?.setHaloTheme(theme)
+        coordinator?.showHalo()
+        refreshChecks()
     }
 
     @objc private func resetSize() {
