@@ -69,6 +69,8 @@ public final class SystemScreens: ScreenProviding {
 @MainActor
 public final class OverlayManager {
     public private(set) var windows: [CGDirectDisplayID: OverlayWindow] = [:]
+    /// Called after every change to `windows` (rebuild, display sync, stop), so window users can follow.
+    public var onWindowsChanged: (() -> Void)?
 
     private let screens: ScreenProviding
     private var changeTask: Task<Void, Never>?
@@ -114,12 +116,14 @@ public final class OverlayManager {
         for observer in observers { observer.center.removeObserver(observer.token) }
         observers.removeAll()
         closeAll()
+        onWindowsChanged?()
     }
 
     /// Closes every window and recreates one per current display, so nothing stale survives a wake or reconfiguration.
     public func rebuild() {
         closeAll()
         for id in screens.displayIDs { makeWindow(for: id) }
+        onWindowsChanged?()
     }
 
     /// Cheaper reconcile: drops windows for removed displays, adds new ones, re-frames the rest.
@@ -136,6 +140,7 @@ public final class OverlayManager {
                 makeWindow(for: id)
             }
         }
+        onWindowsChanged?()
     }
 
     private func makeWindow(for id: CGDirectDisplayID) {

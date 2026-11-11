@@ -114,6 +114,9 @@ final class EasingTests: XCTestCase {
         XCTAssertGreaterThan(Easing.outExpo(0.5), 0.85, "out-expo lands early")
         XCTAssertLessThan(Easing.easeIn(0.5), 0.5, "ease-in starts gently")
         XCTAssertEqual(Easing.outCubic(0.5), 0.875, accuracy: 1e-12)
+        for y in [0.0, 0.1, 0.37, 0.8, 0.99, 1.0] {
+            XCTAssertEqual(Easing.outExpo(Easing.outExpo.inverse(y)), y, accuracy: 1e-6)
+        }
     }
 
     func testPopOvershootsOnlySlightly() {
@@ -297,7 +300,38 @@ final class HighlightToggleTests: XCTestCase {
         toggle.toggle(at: 0.1)
         XCTAssertEqual(toggle.level(at: 0.1), level, accuracy: 1e-12, "no jump")
         toggle.toggle(at: 0.15)
-        XCTAssertEqual(toggle.phase, .appearing(start: 0.15), "turning on again replays the entrance pulse")
+        XCTAssertTrue(toggle.isOn)
+        XCTAssertEqual(toggle.level(at: 0.15), level * (1 - Easing.easeIn(0.2)), accuracy: 1e-6, "continues from the exit")
+    }
+
+    func testTurningOnMidExitIsContinuousAndRisesToFull() {
+        var toggle = HighlightToggle(appearDuration: 0.45, disappearDuration: 0.25)
+        toggle.turnOn(at: 0)
+        toggle.advance(to: 1)
+        toggle.turnOff(at: 1)
+        let mid = 1.125
+        let before = toggle.level(at: mid)
+        XCTAssertGreaterThan(before, 0.2)
+        XCTAssertLessThan(before, 0.95)
+        toggle.turnOn(at: mid)
+        XCTAssertEqual(toggle.level(at: mid), before, accuracy: 1e-6, "no drop to zero when turned back on")
+        var previous = before
+        var t = mid
+        while t < mid + 0.6 {
+            t += 1.0 / 120
+            toggle.advance(to: t)
+            let level = toggle.level(at: t)
+            XCTAssertGreaterThanOrEqual(level, previous - 1e-9, "rises monotonically")
+            previous = level
+        }
+        XCTAssertEqual(toggle.phase, .on(appearedAt: toggle.appearStart ?? -1))
+        XCTAssertEqual(previous, 1)
+    }
+
+    func testTurningOnFromOffStartsTheEntranceNow() {
+        var toggle = HighlightToggle(appearDuration: 0.4, disappearDuration: 0.25)
+        toggle.turnOn(at: 3)
+        XCTAssertEqual(toggle.phase, .appearing(start: 3))
     }
 
     func testTurningOnTwiceIsIdempotent() {

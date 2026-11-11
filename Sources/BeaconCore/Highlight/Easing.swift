@@ -18,6 +18,17 @@ public struct CubicBezier: Equatable, Sendable {
         return sample(y1, y2, solve(t))
     }
 
+    /// Progress whose eased value is `value` (the curves used here are monotonic). Clamped to 0...1.
+    public func inverse(_ value: Double) -> Double {
+        let target = min(max(value, 0), 1)
+        var low = 0.0, high = 1.0
+        for _ in 0..<50 {
+            let mid = (low + high) / 2
+            if self(mid) < target { low = mid } else { high = mid }
+        }
+        return (low + high) / 2
+    }
+
     private func sample(_ a: Double, _ b: Double, _ s: Double) -> Double {
         let u = 1 - s
         return 3 * u * u * s * a + 3 * u * s * s * b + s * s * s

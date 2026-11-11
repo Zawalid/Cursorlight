@@ -51,9 +51,13 @@ public struct HighlightToggle: Equatable, Sendable {
         if isOn { turnOff(at: time) } else { turnOn(at: time) }
     }
 
+    /// Turning on during an exit continues from the visible level: the entrance is placed so its out-expo curve
+    /// passes through that level now, so nothing blinks out before coming back.
     public mutating func turnOn(at time: TimeInterval) {
         guard !isOn else { return }
-        phase = .appearing(start: time)
+        let current = level(at: time)
+        let progress = current > 0 ? Easing.outExpo.inverse(current) : 0
+        phase = .appearing(start: time - progress * appearDuration)
     }
 
     public mutating func turnOff(at time: TimeInterval) {
