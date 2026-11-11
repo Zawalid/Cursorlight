@@ -48,6 +48,8 @@ Overlays reach viewers in full-screen share, but not in single-window share. Det
 
 **Decision (2026-11-08):** v1 supports full-screen share. The Share-safe check warns the user when they share a single window, because effects will not be visible to viewers. Mirror mode (live copy of a window with effects drawn in) is deferred, not v1.
 
+**Revision 2026-11-11:** the cursor-skin approach changed. See `docs/superpowers/specs/2026-11-08-beacon-v1-design.md` section 4.3: v1 uses the system cursor size plus effects around the real cursor; custom arrows are a later research task.
+
 ## Open technical risk (spike first)
 Overlay windows are only captured by Zoom, Meet and Teams when the user shares the entire screen, not a single window. Replacing the system cursor is not supported by public API; the usual route is to hide the real cursor and draw an overlay. Before building features, run a throwaway spike to find out:
 - what each conferencing app captures (full screen vs window share),

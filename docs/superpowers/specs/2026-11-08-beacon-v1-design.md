@@ -61,16 +61,12 @@ All rebindable and individually switchable off. Each trigger can be mapped to an
 
 Magnifier, numbered pins and emphasis box were discussed in brainstorming but are **not in v1 (my call)** to keep scope small. They are first candidates for v1.1.
 
-### 4.3 Cursor skins
-- A handful of skins **(my call: 5 to 6)**, each with arrow, hand and I-beam variants so the cursor set is one family.
-- Larger-than-system option that stays crisp, with a clean shadow so it survives video compression.
-- Optional light spring smoothing of the drawn cursor, **default off or very light (my call)**, because lag hurts real pointing.
-- Optional idle behavior: shrinks when still, pulses when it moves again.
-- Dynamic contrast against the background is a stretch goal, not required.
-
-Mechanism: macOS has no public API to replace the system cursor globally. The expected route is to hide the real cursor and draw the skin in an overlay. Any private API must sit behind a protocol with a public fallback, in one isolated folder (project rule). **Decided by the user (2026-11-08): cursor skins are required for v1.** If no acceptable way to hide and replace the real cursor is found, the release is blocked and the user is consulted; v1 does not quietly ship without skins. The plan must therefore start with a cursor-hide spike, and stop and report if it fails.
-
-**Open for the builder:** choose the least invasive way to hide the real cursor, and verify it behaves with hand and I-beam states and with other apps changing the cursor.
+### 4.3 Cursor look (revised 2026-11-11)
+The first approach (hide the real cursor and draw a skin in an overlay) failed on the user's screen: the real cursor stayed visible on top. Replacing the real arrow through the SkyLight registration calls was accepted but ignored on macOS 26.7 (see `docs/research/2026-11-08-cursor-approaches.md`). What works and was seen working by the user: the system cursor scale (`SLSSetCursorScale`, read back as set).
+- **v1:** a system-wide cursor size setting (about 0.5x to 4x, presets 1x, 1.5x, 2x, 3x), applied through the private scale call behind a protocol in `Sources/BeaconCore/Private/`. The cursor stays the real one, so it shows up in screen shares. The scale is restored on quit, and a persisted marker of the original scale restores it on the next launch after a crash.
+- **Around the cursor:** halo, glow, laser, click pulse and Ink styles (section 4.2) give the "polished look". Themes style those.
+- **Later, research task (not v1):** custom cursor arrows by replacing the system cursor images. The SkyLight call is accepted but ignored today; needs our own disassembly of `SLSRegisterCursorWithImages2`. Prior art (Mousecape, MaCursor) is non-commercial or GPL-3 and must not be copied.
+- **Decision note:** the earlier rule "skins are required for v1, block the release otherwise" is superseded by this section. This was the controller's ruling after the user confirmed that cursor size works; the user may overrule it.
 
 ### 4.4 Profiles, apps, displays
 - Profiles: Stream, Meeting, Recording. Each stores skin, theme, effects on or off and trigger mapping. Switchable from the popover.

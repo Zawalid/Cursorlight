@@ -1,4 +1,4 @@
-// THROWAWAY SPIKE (Task 0c). Does the system cursor SCALE call work? Reads, sets 3x for 8 s, reads back, restores.
+// THROWAWAY SPIKE (Task 0c). Does the system cursor SCALE call work? Reads, sets 3x for 15 s, reads back, restores.
 import AppKit
 typealias CID = Int32
 typealias MainConnFn = @convention(c) () -> CID
@@ -20,6 +20,6 @@ let s1 = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main); s1.setEv
 let s2 = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main); s2.setEventHandler { restore(); exit(0) }; s2.resume()
 let r1 = setScale(cid, 3.0)
 var after: Float = 0; _ = getScale(cid, &after)
-print("RESULT set 3.0 rc=\(r1), read back=\(after). LOOK AT YOUR CURSOR (should be about 3x bigger) for 8 s")
-DispatchQueue.main.asyncAfter(deadline: .now() + 8) { restore(); exit(0) }
+print("RESULT set 3.0 rc=\(r1), read back=\(after). LOOK AT YOUR CURSOR (should be about 3x bigger) for 15 s")
+DispatchQueue.main.asyncAfter(deadline: .now() + 15) { restore(); exit(0) }
 app.run()
