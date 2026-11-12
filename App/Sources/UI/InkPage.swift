@@ -4,7 +4,7 @@ import SwiftUI
 /// A looping before-and-after: a rough loop is drawn, snaps into an ellipse, then fades.
 struct InkPreview: View {
     let style: InkStyle
-    let color: InkColor
+    let rgba: RGBA
     let cleanup: Bool
     let fade: Double
     var width: Double = 1
@@ -59,15 +59,15 @@ struct InkPreview: View {
             points = zip(rough, clean).map { CGPoint(x: $0.x + ($1.x - $0.x) * e, y: $0.y + ($1.y - $0.y) * e) }
         }
         let alpha = t > holdEnd ? max(0, 1 - (t - holdEnd) / (cycle - holdEnd)) : 1
-        Self.stroke(&context, points: points, style: style, color: color, alpha: alpha, widthScale: width)
+        Self.stroke(&context, points: points, style: style, rgba: rgba, alpha: alpha, widthScale: width)
     }
 
-    static func stroke(_ context: inout GraphicsContext, points: [CGPoint], style: InkStyle, color: InkColor, alpha: Double, widthScale: Double = 1) {
+    static func stroke(_ context: inout GraphicsContext, points: [CGPoint], style: InkStyle, rgba: RGBA, alpha: Double, widthScale: Double = 1) {
         guard points.count > 1 else { return }
         var path = Path()
         path.move(to: points[0])
         for p in points.dropFirst() { path.addLine(to: p) }
-        let tint = Color(rgba: color.rgba)
+        let tint = Color(rgba: rgba)
         let scale = CGFloat(widthScale)
         let round = StrokeStyle(lineWidth: style.width * scale, lineCap: .round, lineJoin: .round)
         if style.hasKeyline {
@@ -76,7 +76,7 @@ struct InkPreview: View {
         if let glow = style.glow {
             context.stroke(path, with: .color(tint.opacity(Double(glow.alpha) * alpha)), style: StrokeStyle(lineWidth: glow.width * scale, lineCap: .round, lineJoin: .round))
         }
-        let core = style.lightCore ? Color(rgba: color.rgba.mixed(with: Palette.light, 0.75)) : tint
+        let core = style.lightCore ? Color(rgba: rgba.mixed(with: Palette.light, 0.75)) : tint
         var coreStyle = round
         if let dash = style.dash { coreStyle.dash = dash.map { $0 * style.width * scale } }
         context.stroke(path, with: .color(core.opacity(Double(style.alpha) * alpha)), style: coreStyle)
@@ -85,7 +85,7 @@ struct InkPreview: View {
 
 struct InkSwatchStroke: View {
     let style: InkStyle
-    let color: InkColor
+    let rgba: RGBA
     var width: Double = 1
 
     var body: some View {
@@ -94,7 +94,7 @@ struct InkSwatchStroke: View {
                 let x = size.width * (0.12 + 0.76 * Double(i) / 30)
                 return CGPoint(x: x, y: size.height * (0.5 + 0.22 * sin(Double(i) / 4.2)))
             }
-            InkPreview.stroke(&context, points: points, style: style, color: color, alpha: 1, widthScale: min(width, 1.3))
+            InkPreview.stroke(&context, points: points, style: style, rgba: rgba, alpha: 1, widthScale: min(width, 1.3))
         }
     }
 }

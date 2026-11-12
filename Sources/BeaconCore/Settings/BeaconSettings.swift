@@ -24,6 +24,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var inkFadeAfter: Double
     /// Pen thickness as a multiple of the pen style's width.
     public var inkWidth: Double
+    /// A custom pen color as `#RRGGBB`; nil uses `inkColor`.
+    public var inkCustom: String?
     /// Which shapes cleanup may snap to.
     public var inkShapes: InkShapeSet
     /// Off keeps strokes on screen until cleared.
@@ -44,6 +46,9 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public static let inkFadeRange: ClosedRange<Double> = 0.8...8
     public static let inkWidthRange: ClosedRange<Double> = 0.6...2.5
 
+    /// The pen color in use, custom or preset.
+    public var penColor: RGBA { inkCustom.map { RGBA(hex: $0) } ?? inkColor.rgba }
+
     public var look: HighlightLook {
         HighlightLook(accent: accent, size: highlightSize, intensity: highlightIntensity, lensDim: lensDim, options: highlightOptions)
     }
@@ -63,6 +68,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         triggers: TriggerSettings(),
         inkFadeAfter: 2,
         inkWidth: 1,
+        inkCustom: nil,
         inkShapes: .all,
         inkFades: true,
         welcomeSeen: false,
@@ -82,6 +88,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         triggers: TriggerSettings = TriggerSettings(),
         inkFadeAfter: Double = 2,
         inkWidth: Double = 1,
+        inkCustom: String? = nil,
         inkShapes: InkShapeSet = .all,
         inkFades: Bool = true,
         welcomeSeen: Bool = false,
@@ -107,6 +114,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.triggers = triggers
         self.inkFadeAfter = inkFadeAfter
         self.inkWidth = inkWidth
+        self.inkCustom = inkCustom
         self.inkShapes = inkShapes
         self.inkFades = inkFades
         self.welcomeSeen = welcomeSeen
@@ -121,7 +129,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
-        case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, inkWidth, inkShapes, inkFades, welcomeSeen
+        case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, inkWidth, inkCustom, inkShapes, inkFades, welcomeSeen
         case profiles, baseProfileID, appRules, displayScope, highlightOptions, hideRules, toolbar
     }
 
@@ -142,6 +150,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         triggers = (try? c.decode(TriggerSettings.self, forKey: .triggers)) ?? d.triggers
         inkFadeAfter = (try? c.decode(Double.self, forKey: .inkFadeAfter)) ?? d.inkFadeAfter
         inkWidth = (try? c.decode(Double.self, forKey: .inkWidth)) ?? d.inkWidth
+        inkCustom = (try? c.decode(String.self, forKey: .inkCustom)).flatMap { RGBA.isValidHex($0) ? $0 : nil }
         inkShapes = (try? c.decode(InkShapeSet.self, forKey: .inkShapes)) ?? d.inkShapes
         inkFades = (try? c.decode(Bool.self, forKey: .inkFades)) ?? d.inkFades
         welcomeSeen = (try? c.decode(Bool.self, forKey: .welcomeSeen)) ?? d.welcomeSeen
@@ -159,7 +168,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
                 highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
                 highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
                 inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter,
-                inkWidth: inkWidth, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions
+                inkWidth: inkWidth, inkCustom: inkCustom, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions
             ))
         }
     }
@@ -186,7 +195,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
             highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
             highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
             inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter,
-            inkWidth: inkWidth, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions
+            inkWidth: inkWidth, inkCustom: inkCustom, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions
         )
     }
 
@@ -202,6 +211,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkCleanup = s.inkCleanup
         inkFadeAfter = s.inkFadeAfter
         inkWidth = s.inkWidth
+        inkCustom = s.inkCustom
         inkShapes = s.inkShapes
         inkFades = s.inkFades
         highlightOptions = s.options

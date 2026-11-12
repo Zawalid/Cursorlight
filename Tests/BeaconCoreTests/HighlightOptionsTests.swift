@@ -276,3 +276,54 @@ final class ToolbarSettingsTests: XCTestCase {
         XCTAssertEqual(TriggerRouter(settings: TriggerSettings()).route(.hotkey(.toggleToolbar), active: .init()), [.toggleToolbar])
     }
 }
+
+final class CustomColorTests: XCTestCase {
+    func testCustomAccentDrawsInTheChosenColor() {
+        var options = HighlightOptions()
+        options.customAccent = "#12AB34"
+        let look = HighlightLook(accent: .custom, options: options)
+        XCTAssertEqual(look.accentColor(for: .comet).hexString, "#12AB34")
+        XCTAssertEqual(look.resolvedAccent?.hexString, "#12AB34")
+        XCTAssertEqual(HighlightLook(accent: .coral).accentColor(for: .comet), Palette.accent(for: .comet) == RGBA(hex: Branding.accentHex) ? Palette.accent(for: .comet) : RGBA(hex: Branding.accentHex))
+        XCTAssertNil(HighlightLook(accent: .styleDefault).resolvedAccent)
+    }
+
+    func testHexHelpers() {
+        XCTAssertTrue(RGBA.isValidHex("#a1B2c3"))
+        XCTAssertTrue(RGBA.isValidHex("A1B2C3"))
+        XCTAssertFalse(RGBA.isValidHex("#12345"))
+        XCTAssertFalse(RGBA.isValidHex("#GGGGGG"))
+        XCTAssertEqual(RGBA(hex: "#336699").hexString, "#336699")
+    }
+
+    func testBadCustomAccentFallsBack() {
+        var options = HighlightOptions()
+        options.customAccent = "nope"
+        XCTAssertEqual(options.sanitized().customAccent, HighlightOptions().customAccent)
+    }
+
+    func testCustomPenColorTravelsWithTheStroke() {
+        var model = InkModel()
+        model.begin(at: .zero, style: .marker, color: .red, customColor: RGBA(hex: "#0099FF"))
+        model.append(CGPoint(x: 30, y: 0))
+        XCTAssertEqual(model.step(time: 0).strokes.first?.rgba.hexString, "#0099FF")
+        var plain = InkModel()
+        plain.begin(at: .zero, style: .marker, color: .red)
+        plain.append(CGPoint(x: 30, y: 0))
+        XCTAssertEqual(plain.step(time: 0).strokes.first?.rgba, InkColor.red.rgba)
+    }
+
+    func testPenAndAccentColorsSurviveSettingsRoundTrip() throws {
+        var settings = BeaconSettings.defaults
+        settings.accent = .custom
+        settings.highlightOptions.customAccent = "#AA00FF"
+        settings.inkCustom = "#00FFAA"
+        let decoded = try JSONDecoder().decode(BeaconSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.look.resolvedAccent?.hexString, "#AA00FF")
+        XCTAssertEqual(decoded.penColor.hexString, "#00FFAA")
+        XCTAssertEqual(decoded.snapshot.inkCustom, "#00FFAA")
+        let scene = Profile(id: "x", name: "X", snapshot: decoded.snapshot)
+        XCTAssertEqual(scene.penColor.hexString, "#00FFAA")
+        XCTAssertEqual(scene.highlightColor.hexString, "#AA00FF")
+    }
+}

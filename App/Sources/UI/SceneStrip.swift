@@ -218,7 +218,7 @@ private struct SceneCard: View {
 
     /// The pen color of the scene, so Draw looks are visible at a glance.
     private var penDot: some View {
-        Circle().fill(Color(rgba: profile.snapshot.inkColor.rgba))
+        Circle().fill(Color(rgba: profile.penColor))
             .frame(width: 8, height: 8)
             .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 1))
             .padding(7)

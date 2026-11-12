@@ -21,6 +21,18 @@ public struct RGBA: Equatable, Hashable, Sendable {
         )
     }
 
+    /// `#RRGGBB`, for storing a chosen color.
+    public var hexString: String {
+        func byte(_ v: Double) -> Int { Int((min(max(v, 0), 1) * 255).rounded()) }
+        return String(format: "#%02X%02X%02X", byte(red), byte(green), byte(blue))
+    }
+
+    /// True for exactly six hex digits, with or without a leading `#`.
+    public static func isValidHex(_ text: String) -> Bool {
+        let digits = text.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        return digits.count == 6 && UInt32(digits, radix: 16) != nil
+    }
+
     public var cgColor: CGColor { CGColor(srgbRed: red, green: green, blue: blue, alpha: alpha) }
 
     public func with(alpha: Double) -> RGBA { RGBA(red, green, blue, alpha) }

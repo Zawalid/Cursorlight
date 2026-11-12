@@ -13,6 +13,8 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
     public var inkCleanup: Bool
     public var inkFadeAfter: Double
     public var inkWidth: Double
+    /// A custom pen color as `#RRGGBB`; nil uses `inkColor`.
+    public var inkCustom: String?
     public var inkShapes: InkShapeSet
     public var inkFades: Bool
     public var options: HighlightOptions
@@ -22,6 +24,7 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         highlightIntensity: Double = 1, lensDim: Double = 0.5, clickRipples: Bool = true, inkStyle: InkStyle = .marker,
         inkColor: InkColor = .red, inkCleanup: Bool = true, inkFadeAfter: Double = 2,
         inkWidth: Double = 1,
+        inkCustom: String? = nil,
         inkShapes: InkShapeSet = .all,
         inkFades: Bool = true,
         options: HighlightOptions = HighlightOptions()
@@ -37,6 +40,7 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         self.inkCleanup = inkCleanup
         self.inkFadeAfter = inkFadeAfter
         self.inkWidth = inkWidth
+        self.inkCustom = inkCustom
         self.inkShapes = inkShapes
         self.inkFades = inkFades
         self.options = options
@@ -44,7 +48,7 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case highlightStyle, accent, highlightSize, highlightIntensity, lensDim, clickRipples
-        case inkStyle, inkColor, inkCleanup, inkFadeAfter, inkWidth, inkShapes, inkFades, options
+        case inkStyle, inkColor, inkCleanup, inkFadeAfter, inkWidth, inkCustom, inkShapes, inkFades, options
     }
 
     /// Tolerant: a missing field takes its default.
@@ -62,6 +66,7 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         inkCleanup = (try? c.decode(Bool.self, forKey: .inkCleanup)) ?? d.inkCleanup
         inkFadeAfter = (try? c.decode(Double.self, forKey: .inkFadeAfter)) ?? d.inkFadeAfter
         inkWidth = (try? c.decode(Double.self, forKey: .inkWidth)) ?? d.inkWidth
+        inkCustom = (try? c.decode(String.self, forKey: .inkCustom)).flatMap { RGBA.isValidHex($0) ? $0 : nil }
         inkShapes = (try? c.decode(InkShapeSet.self, forKey: .inkShapes)) ?? d.inkShapes
         inkFades = (try? c.decode(Bool.self, forKey: .inkFades)) ?? d.inkFades
         options = ((try? c.decode(HighlightOptions.self, forKey: .options)) ?? d.options).sanitized()
@@ -103,7 +108,13 @@ public struct Profile: Codable, Equatable, Identifiable, Sendable {
 
     /// The color the highlight really draws in: the chosen accent, or the style's own.
     public var highlightColor: RGBA {
-        snapshot.accent.color ?? Palette.accent(for: snapshot.highlightStyle)
+        if snapshot.accent == .custom { return RGBA(hex: snapshot.options.customAccent) }
+        return snapshot.accent.color ?? Palette.accent(for: snapshot.highlightStyle)
+    }
+
+    /// The pen color of the scene, custom or preset.
+    public var penColor: RGBA {
+        snapshot.inkCustom.map { RGBA(hex: $0) } ?? snapshot.inkColor.rgba
     }
 
     /// Longest name a scene can have.

@@ -52,6 +52,7 @@ final class AppCoordinator {
             fadeAfter: current.inkFadeAfter
         )
         ink.setWidthScale(current.inkWidth)
+        ink.setCustomColor(current.inkCustom.map { RGBA(hex: $0) })
         ink.setShapes(current.inkShapes)
         ink.setFades(current.inkFades)
         // The overlay manager has one hook; both controllers follow window changes through it.
@@ -196,6 +197,7 @@ final class AppCoordinator {
         ink.setCleanupEnabled(current.inkCleanup)
         ink.setFadeAfter(current.inkFadeAfter)
         ink.setWidthScale(current.inkWidth)
+        ink.setCustomColor(current.inkCustom.map { RGBA(hex: $0) })
         ink.setShapes(current.inkShapes)
         ink.setFades(current.inkFades)
         settings.liveProfileID = id
@@ -475,9 +477,17 @@ final class AppCoordinator {
         settings.update { $0.inkStyle = style }
     }
 
+    /// Picking a preset pen color clears any custom one.
     func setInkColor(_ color: InkColor) {
         ink.setColor(color)
-        settings.update { $0.inkColor = color }
+        ink.setCustomColor(nil)
+        settings.update { $0.inkColor = color; $0.inkCustom = nil }
+    }
+
+    func setInkCustom(_ hex: String) {
+        guard RGBA.isValidHex(hex) else { return }
+        settings.update { $0.inkCustom = hex.hasPrefix("#") ? hex : "#" + hex }
+        ink.setCustomColor(settings.settings.inkCustom.map { RGBA(hex: $0) })
     }
 
     func setInkShapes(_ shapes: InkShapeSet) {

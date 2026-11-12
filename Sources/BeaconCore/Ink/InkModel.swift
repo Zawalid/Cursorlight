@@ -10,6 +10,10 @@ public struct InkStrokeFrame: Equatable, Sendable {
     public var alpha: CGFloat
     /// Multiplies the pen width of the style.
     public var widthScale: CGFloat = 1
+    /// A custom color; nil uses `color`.
+    public var customColor: RGBA? = nil
+
+    public var rgba: RGBA { customColor ?? color.rgba }
 }
 
 public struct InkFrame: Equatable, Sendable {
@@ -26,6 +30,7 @@ public struct InkModel: Equatable, Sendable {
         var style: InkStyle
         var color: InkColor
         var widthScale: CGFloat = 1
+        var customColor: RGBA?
         var endTime: TimeInterval?
         /// Raw stroke resampled to the morph point count, and the target shape resampled the same way.
         var morphFrom: [CGPoint]?
@@ -64,10 +69,10 @@ public struct InkModel: Equatable, Sendable {
 
     // MARK: Input
 
-    public mutating func begin(at point: CGPoint, style: InkStyle, color: InkColor, widthScale: CGFloat = 1) {
+    public mutating func begin(at point: CGPoint, style: InkStyle, color: InkColor, widthScale: CGFloat = 1, customColor: RGBA? = nil) {
         if isDrawing { end(at: 0) }
         guard point.x.isFinite, point.y.isFinite else { return }
-        strokes.append(Stroke(id: nextID, points: [point], style: style, color: color, widthScale: widthScale))
+        strokes.append(Stroke(id: nextID, points: [point], style: style, color: color, widthScale: widthScale, customColor: customColor))
         nextID += 1
     }
 
@@ -113,7 +118,7 @@ public struct InkModel: Equatable, Sendable {
         return InkFrame(strokes: strokes.map { stroke in
             InkStrokeFrame(
                 id: stroke.id, points: points(of: stroke, at: time), style: stroke.style, color: stroke.color,
-                alpha: alpha(of: stroke, at: time), widthScale: stroke.widthScale
+                alpha: alpha(of: stroke, at: time), widthScale: stroke.widthScale, customColor: stroke.customColor
             )
         })
     }

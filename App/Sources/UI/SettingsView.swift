@@ -30,7 +30,7 @@ struct SettingsView: View {
     private func Canvas_() -> some View {
         ZStack {
             if page == .ink {
-                InkPreview(style: model.settings.inkStyle, color: model.settings.inkColor, cleanup: model.settings.inkCleanup, fade: model.settings.inkFadeAfter, width: model.settings.inkWidth)
+                InkPreview(style: model.settings.inkStyle, rgba: model.settings.penColor, cleanup: model.settings.inkCleanup, fade: model.settings.inkFadeAfter, width: model.settings.inkWidth)
             } else {
                 Stage(style: model.settings.highlightStyle, look: model.settings.look)
             }

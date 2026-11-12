@@ -58,7 +58,7 @@ final class InkRenderer {
     private func makeLayers(for stroke: InkStrokeFrame) -> StrokeLayers {
         let entry = StrokeLayers()
         let style = stroke.style
-        let color = stroke.color.rgba
+        let color = stroke.rgba
         for shape in [entry.keyline, entry.glow, entry.core] { shape.contentsScale = scale }
         entry.keyline.strokeColor = Palette.keyline.with(alpha: 0.22).cgColor
         let scale = stroke.widthScale

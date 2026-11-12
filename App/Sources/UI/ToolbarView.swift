@@ -1,3 +1,4 @@
+import AppKit
 import BeaconCore
 import SwiftUI
 
@@ -62,7 +63,11 @@ struct ToolbarView: View {
                     Button {
                         model.setStyle(style)
                     } label: {
-                        if style == model.settings.highlightStyle { Label(style.displayName, systemImage: "checkmark") } else { Text(style.displayName) }
+                        Label {
+                            Text(style == model.settings.highlightStyle ? "\(style.displayName)  \u{2713}" : style.displayName)
+                        } icon: {
+                            Image(nsImage: MenuThumbnail.style(style, tint: model.settings.look.resolvedAccent.map { Color(rgba: $0) }))
+                        }
                     }
                 }
             } label: {
@@ -70,12 +75,15 @@ struct ToolbarView: View {
             }
             .menuStyle(.borderlessButton).fixedSize().tint(Color.white.opacity(0.85)).help("Highlight style")
             HStack(spacing: 1) {
-                ForEach(AccentChoice.allCases, id: \.self) { accent in
+                ForEach(AccentChoice.allCases.filter { $0 != .custom }, id: \.self) { accent in
                     Dot(
                         fill: accent == .styleDefault ? Color(rgba: Palette.accent(for: model.settings.highlightStyle)) : Color(rgba: accent.color ?? Palette.accent(for: model.settings.highlightStyle)),
                         selected: model.settings.accent == accent, auto: accent == .styleDefault,
                         label: accent == .styleDefault ? "Match the style" : accent.displayName
                     ) { model.setAccent(accent) }
+                }
+                if model.settings.accent == .custom {
+                    Dot(fill: Color(rgba: RGBA(hex: model.settings.highlightOptions.customAccent)), selected: true, auto: false, label: "Custom color") {}
                 }
             }
         }
@@ -84,8 +92,11 @@ struct ToolbarView: View {
     private var inkControls: some View {
         HStack(spacing: 6) {
             HStack(spacing: 1) {
+                if let custom = model.settings.inkCustom {
+                    Dot(fill: Color(rgba: RGBA(hex: custom)), selected: true, auto: false, label: "Custom color") {}
+                }
                 ForEach(Array(InkColor.allCases.enumerated()), id: \.element) { index, color in
-                    Dot(fill: Color(rgba: color.rgba), selected: model.settings.inkColor == color, auto: false, label: "\(color.displayName), key \(index + 1)") {
+                    Dot(fill: Color(rgba: color.rgba), selected: model.settings.inkColor == color && model.settings.inkCustom == nil, auto: false, label: "\(color.displayName), key \(index + 1)") {
                         model.setInkColor(color)
                     }
                 }
@@ -165,5 +176,26 @@ private struct Dot: View {
         .help(label)
         .accessibilityLabel(label)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// Small rendered pictures of a style, for menus: a menu item can only show an image, not a live view.
+@MainActor
+enum MenuThumbnail {
+    private static var cache: [String: NSImage] = [:]
+
+    static func style(_ style: HighlightStyle, tint: Color?) -> NSImage {
+        let components = tint.flatMap { NSColor($0).usingColorSpace(.sRGB) }.map { String(format: "%.3f-%.3f-%.3f", $0.redComponent, $0.greenComponent, $0.blueComponent) } ?? "auto"
+        let key = "\(style.rawValue)-\(components)"
+        if let hit = cache[key] { return hit }
+        let view = StyleThumbnail(style: style, color: tint, scale: 0.5)
+            .frame(width: 46, height: 30)
+            .background(Theme.stage)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        let image = renderer.nsImage ?? NSImage(size: NSSize(width: 46, height: 30))
+        cache[key] = image
+        return image
     }
 }

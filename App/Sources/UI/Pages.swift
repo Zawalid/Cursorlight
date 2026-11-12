@@ -63,7 +63,7 @@ struct LookPage: View {
     var body: some View {
         Form {
             Section {
-                StyleRow(selection: settings.highlightStyle, tint: settings.accent.color.map { Color(rgba: $0) }) { model.setStyle($0) }
+                StyleRow(selection: settings.highlightStyle, tint: settings.look.resolvedAccent.map { Color(rgba: $0) }) { model.setStyle($0) }
                 Text(Self.blurb(settings.highlightStyle))
                     .font(.system(size: 12)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -74,7 +74,7 @@ struct LookPage: View {
             Section {
                 LabeledContent {
                     HStack(spacing: 0) {
-                        ForEach(AccentChoice.allCases, id: \.self) { accent in
+                        ForEach(AccentChoice.allCases.filter { $0 != .custom }, id: \.self) { accent in
                             SwatchButton(
                                 fill: accent == .styleDefault ? AnyShapeStyle(Color(rgba: Palette.accent(for: settings.highlightStyle))) : Swatches.fill(for: accent),
                                 isSelected: settings.accent == accent,
@@ -82,11 +82,15 @@ struct LookPage: View {
                                 auto: accent == .styleDefault
                             ) { model.setAccent(accent) }
                         }
+                        CustomSwatch(hex: settings.highlightOptions.customAccent, selected: settings.accent == .custom) { hex in
+                            model.setOptions { $0.customAccent = hex }
+                            if settings.accent != .custom { model.setAccent(.custom) }
+                        }
                     }
                 } label: {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Color")
-                        Text(settings.accent == .styleDefault ? "Matches \(settings.highlightStyle.displayName)" : settings.accent.displayName)
+                        Text(settings.accent == .styleDefault ? "Matches \(settings.highlightStyle.displayName)" : (settings.accent == .custom ? settings.highlightOptions.customAccent.uppercased() : settings.accent.displayName))
                             .font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
@@ -329,12 +333,12 @@ struct InkPage: View {
     var body: some View {
         Form {
             Section("Pen") {
-                PenRow(selection: settings.inkStyle, color: settings.inkColor, width: settings.inkWidth) { model.setInkStyle($0) }
+                PenRow(selection: settings.inkStyle, rgba: settings.penColor, width: settings.inkWidth) { model.setInkStyle($0) }
                 LabeledContent {
                     HStack(spacing: 0) {
                         ForEach(Array(InkColor.allCases.enumerated()), id: \.element) { index, color in
                             VStack(spacing: 0) {
-                                SwatchButton(fill: AnyShapeStyle(Color(rgba: color.rgba)), isSelected: settings.inkColor == color, label: "\(color.displayName), key \(index + 1)") {
+                                SwatchButton(fill: AnyShapeStyle(Color(rgba: color.rgba)), isSelected: settings.inkColor == color && settings.inkCustom == nil, label: "\(color.displayName), key \(index + 1)") {
                                     model.setInkColor(color)
                                 }
                                 Text("\(index + 1)").font(.system(size: 9, weight: .medium).monospacedDigit()).foregroundStyle(.tertiary)
@@ -344,7 +348,7 @@ struct InkPage: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Color")
-                        Text(settings.inkColor.displayName).font(.system(size: 11)).foregroundStyle(.secondary)
+                        Text(settings.inkCustom?.uppercased() ?? settings.inkColor.displayName).font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
                 LabeledContent("Thickness") {
@@ -359,7 +363,7 @@ struct InkPage: View {
                     }
                 }
                 if settings.inkCleanup {
-                    ShapeTiles(shapes: settings.inkShapes, color: settings.inkColor) { model.setInkShapes($0) }
+                    ShapeTiles(shapes: settings.inkShapes, rgba: settings.penColor) { model.setInkShapes($0) }
                 }
                 Toggle(isOn: Binding(get: { settings.inkFades }, set: { model.setInkFades($0) })) {
                     VStack(alignment: .leading, spacing: 1) {
@@ -380,7 +384,7 @@ struct InkPage: View {
                 Text("Behavior")
             }
             Section {
-                DrawingKeys(selected: settings.inkColor) { model.setInkColor($0) }
+                DrawingKeys(selected: settings.inkCustom == nil ? settings.inkColor : nil) { model.setInkColor($0) }
                     .listRowInsets(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10))
             } header: {
                 Text("While drawing")
@@ -400,7 +404,7 @@ struct InkPage: View {
     }
 
     private var isDefault: Bool {
-        settings.inkStyle == .marker && settings.inkColor == .red && settings.inkWidth == 1 && settings.inkCleanup
+        settings.inkStyle == .marker && settings.inkColor == .red && settings.inkCustom == nil && settings.inkWidth == 1 && settings.inkCleanup
             && settings.inkFadeAfter == 2 && settings.inkShapes == .all && settings.inkFades
     }
 
@@ -419,7 +423,7 @@ struct InkPage: View {
 /// off is dimmed.
 struct ShapeTiles: View {
     let shapes: InkShapeSet
-    let color: InkColor
+    let rgba: RGBA
     let change: (InkShapeSet) -> Void
     @State private var hovered: Int?
 
@@ -429,7 +433,7 @@ struct ShapeTiles: View {
     ]
 
     var body: some View {
-        let tint = Color(rgba: color.rgba)
+        let tint = Color(rgba: rgba)
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 4), spacing: 10) {
             ForEach(Self.items, id: \.0.rawValue) { shape, title in
                 let on = shapes.contains(shape)
@@ -499,7 +503,7 @@ struct ShapeGlyph: Shape {
 
 /// The keys that work while drawing, as keycaps with a caption, and the eight color keys in their own colors.
 struct DrawingKeys: View {
-    let selected: InkColor
+    let selected: InkColor?
     let select: (InkColor) -> Void
 
     var body: some View {
@@ -526,7 +530,7 @@ struct DrawingKeys: View {
 /// The pen styles in one row of tiles, each drawing a stroke in the chosen color and thickness.
 struct PenRow: View {
     let selection: InkStyle
-    let color: InkColor
+    let rgba: RGBA
     let width: Double
     let select: (InkStyle) -> Void
     @State private var hovered: InkStyle?
@@ -535,10 +539,10 @@ struct PenRow: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 5), spacing: 8) {
             ForEach(InkStyle.allCases, id: \.self) { style in
                 let on = style == selection
-                let tint = Color(rgba: color.rgba)
+                let tint = Color(rgba: rgba)
                 Button { select(style) } label: {
                     VStack(spacing: 6) {
-                        InkSwatchStroke(style: style, color: color, width: width * 0.55)
+                        InkSwatchStroke(style: style, rgba: rgba, width: width * 0.55)
                             .padding(.horizontal, 5)
                             .frame(height: 50).frame(maxWidth: .infinity)
                             .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -878,7 +882,11 @@ struct SceneMenu: View {
                 Button {
                     choose(profile.id)
                 } label: {
-                    if profile.id == selection { Label(profile.name, systemImage: "checkmark") } else { Text(profile.name) }
+                    Label {
+                        Text(profile.id == selection ? "\(profile.name)  \u{2713}" : profile.name)
+                    } icon: {
+                        Image(nsImage: MenuThumbnail.style(profile.snapshot.highlightStyle, tint: Color(rgba: profile.highlightColor)))
+                    }
                 }
             }
             if allowsOff {
@@ -1172,7 +1180,7 @@ struct AboutPage: View {
 /// The eight color keys: each key is the color itself with its number on it, so the mapping needs no legend. Click one
 /// to pick it; while drawing, press its number.
 struct ColorKeys: View {
-    let selected: InkColor
+    let selected: InkColor?
     let select: (InkColor) -> Void
 
     var body: some View {
@@ -1188,7 +1196,7 @@ struct ColorKeys: View {
                 Text("to").foregroundStyle(.secondary)
                 Keycap(text: "8")
                 Text("while drawing. Now:").foregroundStyle(.secondary)
-                Text(selected.displayName).fontWeight(.semibold).foregroundStyle(Color(rgba: selected.rgba))
+                Text(selected?.displayName ?? "Custom").fontWeight(.semibold).foregroundStyle(selected.map { Color(rgba: $0.rgba) } ?? Theme.text)
             }
             .font(.system(size: 11))
             .scaleEffect(0.88)

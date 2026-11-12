@@ -21,13 +21,15 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     public var lensSoftness = 0.23
     /// Seconds without pointer movement before the highlight fades away. 0 keeps it on.
     public var fadeAfterStill = 0.0
+    /// The color used when the accent is "Custom", as `#RRGGBB`.
+    public var customAccent = "#FF6A3D"
 
     public init() {}
 
     public var fadesWhenStill: Bool { fadeAfterStill > 0 }
 
     private enum CodingKeys: String, CodingKey {
-        case auraBreathing, cometTail, keylineWidth, sonarRings, lensSoftness, fadeAfterStill
+        case auraBreathing, cometTail, keylineWidth, sonarRings, lensSoftness, fadeAfterStill, customAccent
     }
 
     public init(from decoder: Decoder) throws {
@@ -39,6 +41,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
         sonarRings = (try? c.decode(Int.self, forKey: .sonarRings)) ?? d.sonarRings
         lensSoftness = (try? c.decode(Double.self, forKey: .lensSoftness)) ?? d.lensSoftness
         fadeAfterStill = (try? c.decode(Double.self, forKey: .fadeAfterStill)) ?? d.fadeAfterStill
+        customAccent = (try? c.decode(String.self, forKey: .customAccent)) ?? d.customAccent
         self = sanitized()
     }
 
@@ -48,6 +51,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
         copy.cometTail = Self.clamp(cometTail, Self.tailRange, fallback: 1)
         copy.keylineWidth = Self.clamp(keylineWidth, Self.lineRange, fallback: 1)
         copy.lensSoftness = Self.clamp(lensSoftness, Self.softnessRange, fallback: 0.23)
+        if !RGBA.isValidHex(copy.customAccent) { copy.customAccent = HighlightOptions().customAccent }
         copy.sonarRings = min(max(sonarRings, Self.ringsRange.lowerBound), Self.ringsRange.upperBound)
         if !fadeAfterStill.isFinite || fadeAfterStill < Self.fadeRange.lowerBound {
             copy.fadeAfterStill = 0

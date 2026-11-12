@@ -3,7 +3,7 @@ import Foundation
 
 /// The user-chosen accent. `styleDefault` keeps each style's own color.
 public enum AccentChoice: String, CaseIterable, Codable, Sendable {
-    case styleDefault, coral, iris, amber, blue, teal, white, highContrast
+    case styleDefault, coral, iris, amber, blue, teal, white, highContrast, custom
 
     public var displayName: String {
         switch self {
@@ -15,13 +15,14 @@ public enum AccentChoice: String, CaseIterable, Codable, Sendable {
         case .teal: "Teal"
         case .white: "White"
         case .highContrast: "High contrast"
+        case .custom: "Custom"
         }
     }
 
-    /// nil means "use the style's own accent".
+    /// nil means "use the style's own accent"; `custom` also reads nil here, its color is in `HighlightOptions`.
     public var color: RGBA? {
         switch self {
-        case .styleDefault: nil
+        case .styleDefault, .custom: nil
         case .coral: RGBA(hex: Branding.accentHex)
         case .iris: RGBA(hex: "#8B7CFF")
         case .amber: RGBA(hex: "#E8932A")
@@ -67,9 +68,14 @@ public struct HighlightLook: Equatable, Sendable {
         value.isFinite ? min(max(value, range.lowerBound), range.upperBound) : fallback
     }
 
+    /// The chosen color, including a custom one; nil when the style keeps its own.
+    public var resolvedAccent: RGBA? {
+        accent == .custom ? RGBA(hex: options.customAccent) : accent.color
+    }
+
     /// The accent to draw a style with.
     public func accentColor(for style: HighlightStyle) -> RGBA {
-        accent.color ?? Palette.accent(for: style)
+        resolvedAccent ?? Palette.accent(for: style)
     }
 }
 
@@ -153,7 +159,7 @@ struct RenderSpec: Equatable {
     init(laserLook look: HighlightLook) {
         style = .comet
         recipe = StyleRecipe.laser.applying(look, includesStyleOptions: false)
-        accent = look.accent.color ?? Palette.laserDefault
+        accent = look.resolvedAccent ?? Palette.laserDefault
         intensity = look.intensity
     }
 }
