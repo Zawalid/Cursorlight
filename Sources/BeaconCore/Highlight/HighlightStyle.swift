@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 
 /// The five looks of the cursor highlight. Raw values are persisted.
-public enum HighlightStyle: String, CaseIterable, Sendable {
+public enum HighlightStyle: String, CaseIterable, Codable, Sendable {
     case aura, lens, comet, keyline, sonar
 
     public var displayName: String {

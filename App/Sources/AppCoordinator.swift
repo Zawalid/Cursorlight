@@ -4,26 +4,27 @@ import BeaconCore
 /// Owns the live pieces (overlays, pointer and button tracking, the highlight, cursor size).
 @MainActor
 final class AppCoordinator {
-    private static let styleKey = "highlightStyle"
-    private static let ripplesKey = "clickRipples"
-
     private let overlays = OverlayManager(screens: SystemScreens())
     private let tracker = CursorTracker()
     private let clicks = ClickMonitor()
-    private var shake = ShakeRecognizer(sensitivity: 50)
-    private let defaults: UserDefaults
+    private var shake: ShakeRecognizer
+    let settings: SettingsStore
     let highlight: HighlightController
     let cursorSize: CursorSizeController
 
     /// Called after the cursor size changes, so the menu can refresh its checkmark.
     var onSizeChange: (() -> Void)?
 
-    init(cursorSize: CursorSizeController, defaults: UserDefaults = .standard) {
+    init(cursorSize: CursorSizeController, settings: SettingsStore = SettingsStore()) {
         self.cursorSize = cursorSize
-        self.defaults = defaults
-        let style = defaults.string(forKey: Self.styleKey).flatMap(HighlightStyle.init(rawValue:)) ?? .aura
-        let ripples = defaults.object(forKey: Self.ripplesKey) as? Bool ?? true
-        highlight = HighlightController(overlays: overlays, style: style, ripplesEnabled: ripples)
+        self.settings = settings
+        let current = settings.settings
+        shake = ShakeRecognizer(sensitivity: current.shakeSensitivity)
+        highlight = HighlightController(
+            overlays: overlays,
+            style: current.highlightStyle,
+            ripplesEnabled: current.clickRipples
+        )
     }
 
     func start() {
@@ -46,6 +47,11 @@ final class AppCoordinator {
         }
     }
 
+    func setShakeSensitivity(_ value: Double) {
+        settings.update { $0.shakeSensitivity = value }
+        shake = ShakeRecognizer(sensitivity: settings.settings.shakeSensitivity)
+    }
+
     func toggleHighlight() {
         highlight.toggle()
     }
@@ -54,12 +60,12 @@ final class AppCoordinator {
     func setHighlightStyle(_ style: HighlightStyle) {
         highlight.setStyle(style)
         highlight.setOn(true)
-        defaults.set(style.rawValue, forKey: Self.styleKey)
+        settings.update { $0.highlightStyle = style }
     }
 
     func setClickRipples(_ enabled: Bool) {
         highlight.setRipplesEnabled(enabled)
-        defaults.set(enabled, forKey: Self.ripplesKey)
+        settings.update { $0.clickRipples = enabled }
     }
 
     func setCursorScale(_ scale: Float) {
