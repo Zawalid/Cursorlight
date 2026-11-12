@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon design direction</title>
+<style>
+:root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#08080a;color:#f2efe9;font:15px/1.55 var(--font);-webkit-font-smoothing:antialiased;padding:0 0 120px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+nav.top{position:sticky;top:0;z-index:20;background:rgba(8,8,10,.8);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
+nav.top .wrap{display:flex;gap:22px;align-items:center;height:48px;font-size:13px;color:#9a968e;overflow:auto;white-space:nowrap}
+nav.top b{color:#f2efe9;font-weight:600;margin-right:8px}
+nav.top a{color:inherit;text-decoration:none}nav.top a:hover{color:#fff}
+h1{font-size:64px;line-height:1.02;letter-spacing:-.04em;font-weight:650;max-width:900px}
+h1 span,h2 span{color:#7d786f}
+h2{font-size:40px;line-height:1.08;letter-spacing:-.03em;font-weight:650;margin-bottom:14px;max-width:760px}
+.sec{padding:96px 0 0}
+.eyebrow{font:600 12px var(--font);letter-spacing:.1em;text-transform:uppercase;color:#ff5a36;margin-bottom:14px}
+p.lead{font-size:19px;color:#a8a39a;max-width:680px;margin-top:20px}
+p.sub{color:#a8a39a;max-width:640px}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}h1{font-size:42px}h2{font-size:30px}}
+.card{background:#111114;border:1px solid rgba(255,255,255,.07);border-radius:22px;padding:24px}
+.card h3{font-size:17px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em}
+.card p{color:#a8a39a;font-size:14px}
+.tag{display:inline-block;font:500 11px var(--mono);color:#8d887f;background:rgba(255,255,255,.05);padding:2px 8px;border-radius:99px;margin-right:6px}
+
+/* ===== themes ===== */
+.night{--bg:#0b0b0e;--s1:#141418;--s2:#1c1c22;--line:rgba(255,255,255,.08);--tx:#f4f2ee;--dim:#a29fa7;--faint:#66636b;--acc:#ff5a36;--acc2:#ffb27a;--stage:#0e0f14;--win:#f3f1ec;--ink:#16130f}
+.daylight{--bg:#eeece6;--s1:#fbfaf7;--s2:#ffffff;--line:rgba(30,24,14,.09);--tx:#17140f;--dim:#6c675e;--faint:#a29d92;--acc:#ee4a1c;--acc2:#ff9a5c;--stage:#e3e0d8;--win:#fbfaf7;--ink:#17140f}
+.dusk{--bg:#141a2b;--s1:rgba(255,255,255,.07);--s2:rgba(255,255,255,.11);--line:rgba(255,255,255,.12);--tx:#eef1fb;--dim:#a6aecb;--faint:#6d7596;--acc:#ff6a42;--acc2:#8fd0ff;--stage:#0d1322;--win:#f3f1ec;--ink:#16130f}
+
+/* window mock */
+.mock{position:relative;width:100%;aspect-ratio:1000/690;border-radius:20px;background:var(--bg);color:var(--tx);border:1px solid var(--line);overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.55);font-size:13px;container-type:inline-size}
+.dusk.mock{background:radial-gradient(120% 100% at 20% 0%,#2a2f56 0,#141a2b 55%,#0e1220 100%)}
+.top{display:flex;align-items:center;gap:10px;padding:14px 18px;position:relative;z-index:3}
+.lights{display:flex;gap:8px;margin-right:12px}.lights i{width:12px;height:12px;border-radius:50%;background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.scenes{display:flex;gap:6px;background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:3px}
+.scenes button{border:0;background:none;color:var(--dim);font:500 12px var(--font);padding:5px 13px;border-radius:99px;cursor:pointer}
+.scenes button.on{background:var(--tx);color:var(--bg)}
+.sig{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:5px 12px 5px 8px}
+.sig i{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle,#fff 0 18%,var(--acc) 22% 50%,transparent 70%);box-shadow:0 0 12px var(--acc)}
+.stage{position:relative;margin:0 18px;height:41%;border-radius:18px;background:var(--stage);border:1px solid var(--line);overflow:hidden;cursor:none}
+.stage .win{position:absolute;left:8%;right:8%;top:11%;bottom:-10%;background:var(--win);border-radius:12px 12px 0 0;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.stage .win:before{content:"";position:absolute;inset:0 0 auto 0;height:9%;background:rgba(0,0,0,.06);border-radius:12px 12px 0 0}
+.stage .win i{position:absolute;left:5%;height:3.2%;border-radius:4px;background:rgba(0,0,0,.12)}
+.stage .win .btn{background:#4da3ff;height:6%;width:14%;border-radius:6px;opacity:.9}
+.stage .hud{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:4px;background:rgba(20,20,24,.78);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:4px;z-index:4;cursor:default}
+.stage .hud button{border:0;background:none;color:#cfcbd3;font:500 12px var(--font);padding:6px 14px;border-radius:99px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.stage .hud button.on{background:#f4f2ee;color:#16130f}
+.stage .caption{position:absolute;left:16px;top:14px;color:var(--dim);font-size:12px;z-index:4}
+.stage .caption b{color:var(--tx);font-weight:600}
+.keys{position:absolute;right:14px;bottom:12px;display:flex;gap:4px;z-index:4}
+kbd{font:600 11px var(--font);display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;border-radius:7px;color:#e9e6ee;background:#2a2a31;box-shadow:0 1px 0 #000,inset 0 1px 0 rgba(255,255,255,.12);transition:.12s}
+kbd.down{transform:translateY(1px);background:var(--acc);color:#fff;box-shadow:0 0 14px var(--acc)}
+.cursor{position:absolute;left:0;top:0;pointer-events:none;z-index:3}
+.cursor svg{position:absolute;left:-1px;top:-1px;width:16px;height:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+.fx{position:absolute;left:0;top:0;width:0;height:0}
+.fx i{position:absolute;border-radius:50%;transform:translate(-50%,-50%)}
+.tray{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;padding:14px 18px 0}
+.pane{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:14px}
+.pane h4{font-size:12px;font-weight:600;color:var(--dim);margin-bottom:10px;letter-spacing:.01em}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tile{background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:8px 6px 7px;text-align:center;cursor:pointer;color:var(--tx);font:500 11px var(--font);transition:.15s}
+.tile .th{height:46px;border-radius:8px;background:var(--stage);margin-bottom:6px;position:relative;overflow:hidden}
+.tile.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset,0 0 18px color-mix(in srgb,var(--acc) 30%,transparent)}
+.row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .l{flex:1;font-weight:500}.row .l small{display:block;color:var(--dim);font-weight:400;font-size:11px}
+.beam{position:relative;width:150px;height:18px}
+.beam:before{content:"";position:absolute;left:0;right:0;top:7px;height:4px;border-radius:2px;background:var(--line)}
+.beam b{position:absolute;left:0;top:7px;height:4px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--acc));box-shadow:0 0 12px var(--acc)}
+.beam u{position:absolute;top:1px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 45%,transparent),0 0 16px var(--acc);margin-left:-8px}
+.sw{display:flex;gap:6px}.sw i{width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 1px var(--line) inset}.sw i.on{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--tx)}
+.tog{width:34px;height:20px;border-radius:10px;background:var(--faint);position:relative;opacity:.9}.tog.on{background:var(--acc)}.tog:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}.tog.on:after{left:16px}
+.dock{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:2px;background:var(--s2);border:1px solid var(--line);backdrop-filter:blur(16px);border-radius:99px;padding:4px;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.dock button{border:0;background:none;color:var(--dim);font:500 12px var(--font);padding:7px 12px;border-radius:99px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.dock button.on{background:var(--tx);color:var(--bg)}
+.dock svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.switch{display:flex;gap:8px;margin:0 0 18px}
+.switch button{font:500 13px var(--font);color:#cfcac0;background:#15151a;border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:7px 16px;cursor:pointer}
+.switch button.on{background:#f2efe9;color:#15130f}
+
+/* palette swatches */
+.pal{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-radius:16px;overflow:hidden;margin-top:14px;border:1px solid rgba(255,255,255,.08)}
+.pal div{padding:34px 12px 12px;font:500 11px var(--mono)}
+.finish{border-radius:22px;padding:20px;border:1px solid rgba(255,255,255,.08)}
+.finish h3{font-size:18px;font-weight:650;letter-spacing:-.02em;margin-bottom:2px}
+.finish p{font-size:13px;opacity:.75}
+.scale div{display:flex;align-items:baseline;gap:18px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.scale em{font:500 11px var(--mono);color:#8d887f;font-style:normal;min-width:130px}
+.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sheet .card{padding:18px}
+.sheet .demo{min-height:96px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;border-radius:14px;background:var(--bg);padding:14px}
+.ill{border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.07);background:#0e0f14}
+.ill svg{display:block;width:100%;height:auto}
+.ill .cap{padding:14px 18px 18px}
+.ill .cap h3{font-size:15px;margin-bottom:3px}.ill .cap p{font-size:13px;color:#a8a39a}
+.pop{width:330px;border-radius:22px;background:var(--s1);border:1px solid var(--line);color:var(--tx);padding:14px;box-shadow:0 30px 80px rgba(0,0,0,.5);font-size:12.5px}
+.pop .hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pop .hd b{flex:1;font-size:14px}
+.round{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.round div{text-align:center}
+.round .dot{width:64px;height:64px;border-radius:50%;margin:0 auto 6px;background:var(--s2);border:1px solid var(--line);display:grid;place-items:center;position:relative}
+.round .on .dot{background:radial-gradient(circle,#fff 0 12%,color-mix(in srgb,var(--acc) 85%,#fff) 14% 36%,transparent 70%),var(--s2);border-color:var(--acc);box-shadow:0 0 22px color-mix(in srgb,var(--acc) 50%,transparent)}
+.round small{display:block;color:var(--dim);font-size:11px}
+.story{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.frame{border-radius:22px;border:1px solid rgba(255,255,255,.08);padding:26px;min-height:360px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.frame h4{font-size:26px;line-height:1.1;letter-spacing:-.03em;font-weight:650;margin:10px 0 8px}
+.frame h4 span{opacity:.5}
+.frame p{font-size:13.5px;opacity:.7;max-width:280px}
+.frame .step{font:600 11px var(--mono);opacity:.5}
+.frame .btnp{margin-top:auto;align-self:flex-start;background:var(--acc);color:#fff;border-radius:99px;padding:9px 18px;font-weight:600;font-size:13px}
+@media(max-width:860px){.story,.sheet{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="top"><div class="wrap"><b>Beacon design direction</b><a href="#idea">Idea</a><a href="#light">Color</a><a href="#type">Type</a><a href="#layout">Layout</a><a href="#parts">Components</a><a href="#art">Illustration</a><a href="#onboard">Onboarding</a><a href="#pop">Popover</a><a href="#motion">Motion</a><a href="#calls">Your calls</a></div></nav>
+
+<div class="wrap" style="padding-top:88px">
+  <div class="eyebrow">Beacon, design direction, draft 1</div>
+  <h1>Your cursor is the product. <span>So the window is a stage for it.</span></h1>
+  <p class="lead">Beacon's whole job is light: finding, pointing, marking. The direction below makes the app itself behave like that. A live miniature of your screen sits at the top of every page, your real pointer plays across it, and every setting changes it as you drag. Nothing is described that can be shown.</p>
+</div>
+
+<!-- IDEA -->
+<div class="wrap sec" id="idea">
+  <div class="eyebrow">01 The idea</div>
+  <h2>Not a settings window. <span>A small control room with a stage.</span></h2>
+  <div class="grid g3" style="margin-top:28px">
+    <div class="card"><h3>The Stage is the hero</h3><p>The top 40% of the window is a live miniature screen. Move your mouse over it and your cursor gets the highlight you are configuring. No fake animation loop, no static screenshots.</p></div>
+    <div class="card"><h3>Light is the only decoration</h3><p>The interface is calm and quiet so the effects are the loudest thing in it. One warm color, Ember, is allowed to glow. It marks what is on, selected or live, and nothing else.</p></div>
+    <div class="card"><h3>The keyboard is a feature</h3><p>Shortcuts are big keycaps that really press when you press the real keys. Triggers are something you try on the page, not a table you read.</p></div>
+  </div>
+  <p class="sub" style="margin-top:26px">What this is not: a sidebar of flat cards, a laptop illustration, a gradient hero, or anything that looks like another app. The pieces are borrowed from different places (see the last section) and recombined around one idea.</p>
+</div>
+
+<!-- COLOR -->
+<div class="wrap sec" id="light">
+  <div class="eyebrow">02 Color: three kinds of light</div>
+  <h2>Night, Daylight, Dusk. <span>One accent, three moods.</span></h2>
+  <p class="sub">You choose a "light" instead of a theme. Each is a full finish for the window, the stage and the popover. Ember is the same hue in all three and is used for light only: selected tiles, beams, the on state, the primary button.</p>
+  <div class="grid g3" style="margin-top:28px">
+    <div class="finish night" style="background:#0b0b0e;color:#f4f2ee"><h3>Night</h3><p>The default. Warm near-black, so a glow reads at its best.</p>
+      <div class="pal"><div style="background:#0b0b0e">#0B0B0E<br>window</div><div style="background:#141418">#141418<br>surface</div><div style="background:#f4f2ee;color:#16130f">#F4F2EE<br>text</div><div style="background:#ff5a36;color:#fff">#FF5A36<br>ember</div></div></div>
+    <div class="finish daylight" style="background:#eeece6;color:#17140f"><h3>Daylight</h3><p>Warm paper, ink text. For people who live in light mode.</p>
+      <div class="pal"><div style="background:#eeece6">#EEECE6<br>window</div><div style="background:#fbfaf7">#FBFAF7<br>surface</div><div style="background:#17140f;color:#fff">#17140F<br>text</div><div style="background:#ee4a1c;color:#fff">#EE4A1C<br>ember</div></div></div>
+    <div class="finish" style="background:radial-gradient(120% 100% at 20% 0%,#2a2f56,#141a2b 60%,#0e1220);color:#eef1fb"><h3>Dusk</h3><p>Translucent and tinted by your wallpaper. The only glassy one.</p>
+      <div class="pal"><div style="background:#141a2b">#141A2B<br>base</div><div style="background:rgba(255,255,255,.1)">white 11%<br>surface</div><div style="background:#8fd0ff;color:#0d1322">#8FD0FF<br>ice</div><div style="background:#ff6a42;color:#fff">#FF6A42<br>ember</div></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>Rules</h3><p>Text never below 4.5:1. Ember never carries text smaller than 14px (it glows, it does not label). Surfaces are solid except in Dusk. No gradient fills on chrome: gradients exist only as light.</p></div>
+    <div class="card"><h3>Effect colors</h3><p>Each highlight style keeps its own signature (iris, amber, ember, blue, teal) so previews stay recognisable, plus white and a high-contrast yellow. These are content, not chrome.</p></div>
+    <div class="card"><h3>Status colors</h3><p>Go is green, caution is amber. Only the Signal (share status) and permissions use them, and always with words, never color alone.</p></div>
+  </div>
+</div>
+
+<!-- TYPE -->
+<div class="wrap sec" id="type">
+  <div class="eyebrow">03 Type</div>
+  <h2>SF Pro only. <span>Big, tight, two tones.</span></h2>
+  <div class="card scale" style="margin-top:26px;padding:10px 26px">
+    <div><em>Display 34 / 650</em><span style="font-size:34px;letter-spacing:-.035em;font-weight:650">Find it. <span style="color:#7d786f">Point at it.</span></span></div>
+    <div><em>Title 22 / 650</em><span style="font-size:22px;letter-spacing:-.025em;font-weight:650">Shake your cursor.</span></div>
+    <div><em>Body 15 / 400</em><span style="font-size:15px;color:#c9c5bc">A soft light finds your pointer on any screen and stays until you shake again.</span></div>
+    <div><em>Label 13 / 500</em><span style="font-size:13px;font-weight:500">Highlight size</span></div>
+    <div><em>Caption 11 / 500</em><span style="font-size:11px;color:#8d887f;font-weight:500">Applies to the active scene</span></div>
+    <div style="border-bottom:0"><em>Keycap 11 / 600</em><span><kbd>Ctrl</kbd> <kbd>Opt</kbd> <kbd>H</kbd></span></div>
+  </div>
+  <p class="sub" style="margin-top:16px">Headlines are sentences with a verb, eight words or fewer, the first clause bright and the second clause dim. No exclamation marks, no "Welcome to".</p>
+</div>
+
+<!-- LAYOUT -->
+<div class="wrap sec" id="layout">
+  <div class="eyebrow">04 Layout</div>
+  <h2>Stage on top, <span>tray below, a dock to move around.</span></h2>
+  <p class="sub">No sidebar and no tab bar. The stage never goes away; the dock changes what the stage shows and what the tray offers. Scenes (Stream, Meeting, Recording) live up top because they change everything at once. Try it: the stage follows your mouse, the finish switch re-lights the whole window, the keycaps press when you hold Ctrl and Option and tap H, L or I.</p>
+  <div class="switch" style="margin-top:22px" id="finishSwitch"><button class="on" data-t="night">Night</button><button data-t="daylight">Daylight</button><button data-t="dusk">Dusk</button></div>
+
+  <div class="mock night" id="mock">
+    <div class="top">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="scenes"><button class="on">Stream</button><button>Meeting</button><button>Recording</button><button style="opacity:.6">+</button></div>
+      <div class="sig"><i></i>Sharing whole screen, viewers see effects</div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="win"><i style="top:16%;width:48%"></i><i style="top:25%;width:64%"></i><i style="top:34%;width:36%"></i><i class="btn" style="top:48%"></i></div>
+      <div class="caption"><b id="stageName">Aura</b> on a live screen. Move your mouse over it.</div>
+      <div class="hud"><button class="on">Highlight</button><button>Laser</button><button>Ink</button></div>
+      <div class="keys"><kbd id="kc">Ctrl</kbd><kbd id="ko">Opt</kbd><kbd id="kh">H</kbd></div>
+      <div class="cursor" id="cursor"><div class="fx" id="fx"></div><svg viewBox="0 0 14 20"><path d="M1 1l11 11-5 .5 3 6-2.2 1-3-6-4 3.5z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+    </div>
+    <div class="tray">
+      <div class="pane"><h4>Look</h4>
+        <div class="tiles" id="tiles"></div></div>
+      <div class="pane"><h4>Tune</h4>
+        <div class="row"><div class="l">Color</div><div class="sw"><i style="background:conic-gradient(#8b7cff,#e8932a,#ff5a36,#4da3ff,#14b8a6,#8b7cff)" class="on"></i><i style="background:#ff5a36"></i><i style="background:#4da3ff"></i><i style="background:#14b8a6"></i><i style="background:#ffd60a"></i></div></div>
+        <div class="row"><div class="l">Size</div><div class="beam"><b style="width:46%"></b><u style="left:46%"></u></div></div>
+        <div class="row"><div class="l">Click ripples<small>A ring on every click</small></div><div class="tog on"></div></div>
+      </div>
+    </div>
+    <div class="dock" id="dock">
+      <button class="on"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.4"/><circle cx="8" cy="8" r="6"/></svg>Look</button>
+      <button><svg viewBox="0 0 16 16"><path d="M2 13c3-1 4-8 7-8s2 5 5 5"/></svg>Draw</button>
+      <button><svg viewBox="0 0 16 16"><rect x="2" y="4" width="12" height="8" rx="2"/><path d="M5 8h1M8 8h3"/></svg>Keys</button>
+      <button><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg>Apps</button>
+      <button><svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="8.5" rx="1.5"/><path d="M5.5 14h5"/></svg>Screens</button>
+    </div>
+  </div>
+
+  <div class="grid g3" style="margin-top:20px">
+    <div class="card"><h3>What the dock changes</h3><p><b>Look</b>: the stage runs the highlight. <b>Draw</b>: the stage becomes a canvas, scribble a circle and it snaps. <b>Keys</b>: the stage becomes a keyboard that lights as you press. <b>Apps</b>: the stage shows the app icons and their scenes. <b>Screens</b>: the stage shows your real displays.</p></div>
+    <div class="card"><h3>Why not a sidebar</h3><p>A sidebar makes every page a list of settings. Here only five things exist, each with a place where it is shown working. About and updates live in a small footer menu, not a page.</p></div>
+    <div class="card"><h3>Sizes</h3><p>Window 980 by 700, resizable down to 860 by 600. Stage 41% of height. 18px outer margin, 14px between panes, 16px pane radius, 20px window radius. Controls 8px radius, tiles 12px.</p></div>
+  </div>
+</div>
+
+<!-- COMPONENTS -->
+<div class="wrap sec" id="parts">
+  <div class="eyebrow">05 Components</div>
+  <h2>A short kit, <span>all of it made of light.</span></h2>
+  <div class="sheet night" style="margin-top:28px;color:var(--tx)">
+    <div class="card"><div class="demo night" style="gap:8px"><div class="tile on" style="width:70px"><div class="th"><div style="position:absolute;inset:0;background:radial-gradient(circle,rgba(230,225,255,.8),rgba(139,124,255,.3) 55%,transparent 72%)"></div></div>Aura</div><div class="tile" style="width:70px"><div class="th"><div style="position:absolute;inset:0;background:radial-gradient(circle 14px at 50% 50%,transparent 0 70%,rgba(0,0,0,.6))"></div></div>Lens</div></div><h3>Style tile</h3><p>A live thumbnail, not an icon: it animates on hover and runs the real recipe when selected. Selected state is a lit edge.</p></div>
+    <div class="card"><div class="demo night"><div class="beam" style="width:190px"><b style="width:60%"></b><u style="left:60%"></u></div></div><h3>Beam slider</h3><p>The track fills with a trail of light that ends in a glowing head. It is the cursor comet as a control. Drags are springy, release settles with no overshoot.</p></div>
+    <div class="card"><div class="demo night"><kbd>Ctrl</kbd><kbd>Opt</kbd><kbd class="down">H</kbd></div><h3>Keycap</h3><p>A physical key: a flat top, a dark underside. It presses and glows when the matching real key goes down, anywhere in the app.</p></div>
+    <div class="card"><div class="demo night"><div class="scenes"><button class="on">Stream</button><button>Meeting</button><button>Recording</button></div></div><h3>Scene chips</h3><p>A pill group at the top of the window. Switching a scene re-lights the stage in one spring. Long-press to rename.</p></div>
+    <div class="card"><div class="demo night"><div class="sig" style="margin:0"><i></i>Whole screen shared</div><div class="sig" style="margin:0;color:#ffcf8a"><i style="background:radial-gradient(circle,#fff 0 18%,#f2b14a 22% 50%,transparent 70%);box-shadow:0 0 12px #f2b14a"></i>One window: no effects</div></div><h3>Signal</h3><p>The share status as a small beacon: lit and warm when viewers can see effects, amber when they cannot. Always with words. Click to say what you are sharing.</p></div>
+    <div class="card"><div class="demo night"><div class="tog on"></div><div class="tog"></div><div class="dock" style="position:static;transform:none"><button class="on">Look</button><button>Draw</button></div></div><h3>Switch and dock</h3><p>Native-feeling switch, ember when on. The dock is a floating pill that sits over the tray, like a real Dock, and shrinks to icons when the window is narrow.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Consequence cards</h3><p>For choices with side effects (how long ink stays, how bold the laser is), three cards with one line each: <i>Subtle, nothing lingers. Balanced, fades in two seconds. Dramatic, trails stay and glow.</i> Taken from LookAway.</p></div>
+    <div class="card"><h3>Real controls where they exist</h3><p>Pop-up menus, text fields, the file picker and the permission buttons stay native, so Beacon feels like it belongs on the Mac. Only the three things that are about light (slider, tile, signal) are custom.</p></div>
+  </div>
+</div>
+
+<!-- ILLUSTRATION -->
+<div class="wrap sec" id="art">
+  <div class="eyebrow">06 Illustration</div>
+  <h2>One motif, <span>a ring of light on simple shapes.</span></h2>
+  <p class="sub">No mascots and no laptops. Illustrations are tiny abstract screens (rounded rectangles with a few bars) with one ring or beam of Ember light doing something. Two tones plus the glow, thin 1.5px strokes, drawn in code so they follow the finish and can animate.</p>
+  <div class="grid g3" style="margin-top:28px">
+    <div class="ill"><svg viewBox="0 0 400 240"><rect width="400" height="240" fill="#0e0f14"/><rect x="50" y="40" width="300" height="190" rx="12" fill="#1b1c22"/><rect x="70" y="64" width="160" height="8" rx="4" fill="#2c2d36"/><rect x="70" y="84" width="220" height="8" rx="4" fill="#2c2d36"/><rect x="70" y="104" width="120" height="8" rx="4" fill="#2c2d36"/><defs><radialGradient id="g1"><stop offset="0" stop-color="#fff"/><stop offset=".18" stop-color="#ff7a52"/><stop offset=".55" stop-color="#ff5a36" stop-opacity=".25"/><stop offset="1" stop-color="#ff5a36" stop-opacity="0"/></radialGradient></defs><circle cx="250" cy="150" r="78" fill="url(#g1)"/><circle cx="250" cy="150" r="34" fill="none" stroke="#ffb27a" stroke-opacity=".5" stroke-width="1.5"/><circle cx="250" cy="150" r="54" fill="none" stroke="#ffb27a" stroke-opacity=".22" stroke-width="1.5"/><path d="M247 144l12 12-5.5.5 3.2 6.5-2.4 1.1-3.2-6.5-4.3 3.8z" fill="#fff" stroke="#111" stroke-width="1.1"/></svg><div class="cap"><h3>Find</h3><p>A pointer inside a ring of light on a dimmed screen. Used for Look and the first onboarding step.</p></div></div>
+    <div class="ill"><svg viewBox="0 0 400 240"><rect width="400" height="240" fill="#0e0f14"/><rect x="50" y="40" width="300" height="190" rx="12" fill="#1b1c22"/><rect x="70" y="64" width="110" height="8" rx="4" fill="#2c2d36"/><rect x="70" y="84" width="180" height="8" rx="4" fill="#2c2d36"/><path d="M110 170c30-70 110-82 150-30s-20 70-80 55" fill="none" stroke="#ff5a36" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 10" opacity=".45"/><ellipse cx="236" cy="148" rx="74" ry="42" fill="none" stroke="#ff5a36" stroke-width="5" stroke-opacity=".95"/><ellipse cx="236" cy="148" rx="74" ry="42" fill="none" stroke="#ff5a36" stroke-width="16" stroke-opacity=".16"/></svg><div class="cap"><h3>Mark up</h3><p>A shaky dotted stroke and the clean ellipse it becomes. Used for Draw and the second onboarding step.</p></div></div>
+    <div class="ill"><svg viewBox="0 0 400 240"><rect width="400" height="240" fill="#0e0f14"/><g fill="#1b1c22"><rect x="40" y="60" width="140" height="92" rx="8"/><rect x="220" y="60" width="140" height="92" rx="8"/></g><path d="M180 106h40" stroke="#ff5a36" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 7"/><circle cx="110" cy="106" r="22" fill="none" stroke="#ff5a36" stroke-width="2"/><circle cx="110" cy="106" r="4" fill="#fff"/><rect x="60" y="164" width="100" height="6" rx="3" fill="#2c2d36"/><rect x="240" y="164" width="100" height="6" rx="3" fill="#2c2d36"/><circle cx="290" cy="106" r="36" fill="none" stroke="#2c2d36" stroke-width="1.5" stroke-dasharray="4 5"/></svg><div class="cap"><h3>Share</h3><p>Your screen, a path of light, their screen. The ring shows on theirs only if you share the whole screen. Used for the Signal and Share-safe moments.</p></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>Keys</h3><p>The Keys page draws a plain row of keycaps in the finish color. Ctrl, Opt, Shift and Cmd are always there and light up when held; the chosen shortcut keys glow Ember.</p></div>
+    <div class="card"><h3>Permissions</h3><p>Never a lock or shield. A tiny diagram of the real System Settings switch, off then on, with the sentence that says what stays private.</p></div>
+    <div class="card"><h3>Empty states</h3><p>One small ring, one sentence, one button. "No app rules yet. Add Zoom and Beacon changes scene when it is in front."</p></div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="wrap sec" id="onboard">
+  <div class="eyebrow">07 Onboarding</div>
+  <h2>Three beats, <span>and you do each one.</span></h2>
+  <p class="sub">A single window, 640 by 460, same stage language. Every step has you perform the thing on a live stage; the Continue button wakes up only after you did it (and is always skippable). No cards, no step bars, three small dots.</p>
+  <div class="story night" style="margin-top:28px;color:var(--tx)">
+    <div class="frame" style="background:#0b0b0e"><span class="step">1 of 3</span><h4>Shake your cursor. <span>It lights up.</span></h4><p>Wiggle it side to side over the stage below. That is the whole gesture.</p>
+      <svg viewBox="0 0 300 120" style="margin:18px 0"><rect width="300" height="120" rx="12" fill="#0e0f14" stroke="rgba(255,255,255,.08)"/><rect x="24" y="18" width="252" height="110" rx="8" fill="#1b1c22"/><defs><radialGradient id="g2"><stop offset="0" stop-color="#fff"/><stop offset=".2" stop-color="#ff7a52"/><stop offset=".6" stop-color="#ff5a36" stop-opacity=".2"/><stop offset="1" stop-color="#ff5a36" stop-opacity="0"/></radialGradient></defs><circle cx="170" cy="70" r="46" fill="url(#g2)"/><path d="M168 64l10 10-4.6.4 2.7 5.5-2 .9-2.7-5.5-3.6 3.2z" fill="#fff" stroke="#111" stroke-width=".9"/><path d="M92 74q16-12 32 0t32 0" fill="none" stroke="#6c6a73" stroke-width="1.5" stroke-dasharray="2 4"/></svg>
+      <div class="btnp" style="opacity:.35">Continue</div></div>
+    <div class="frame" style="background:#0b0b0e"><span class="step">2 of 3</span><h4>Circle something. <span>Watch it snap.</span></h4><p>Hold Right Option, or use the button, and draw a rough loop. It straightens itself, then fades.</p>
+      <svg viewBox="0 0 300 120" style="margin:18px 0"><rect width="300" height="120" rx="12" fill="#0e0f14" stroke="rgba(255,255,255,.08)"/><path d="M96 70c10-34 62-40 82-12s-8 44-48 36" fill="none" stroke="#ff5a36" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="2 7" opacity=".5"/><ellipse cx="158" cy="64" rx="56" ry="30" fill="none" stroke="#ff5a36" stroke-width="3.5"/><ellipse cx="158" cy="64" rx="56" ry="30" fill="none" stroke="#ff5a36" stroke-width="12" stroke-opacity=".14"/></svg>
+      <div class="btnp" style="opacity:.35">Continue</div></div>
+    <div class="frame" style="background:#0b0b0e"><span class="step">3 of 3</span><h4>Keys do the rest. <span>No permission needed.</span></h4><p>Press them now. The keycaps light as you do. Double-tap and hold gestures are optional and ask once, later.</p>
+      <div style="display:flex;gap:6px;margin:20px 0 6px"><kbd style="height:34px;min-width:44px;font-size:13px">Ctrl</kbd><kbd style="height:34px;min-width:44px;font-size:13px">Opt</kbd><kbd class="down" style="height:34px;min-width:44px;font-size:13px">H</kbd><span style="color:#8d887f;align-self:center;font-size:12px;margin-left:6px">Highlight</span></div>
+      <div style="display:flex;gap:6px;margin:0"><kbd style="height:34px;min-width:44px;font-size:13px">Ctrl</kbd><kbd style="height:34px;min-width:44px;font-size:13px">Opt</kbd><kbd style="height:34px;min-width:44px;font-size:13px">I</kbd><span style="color:#8d887f;align-self:center;font-size:12px;margin-left:6px">Ink</span></div>
+      <div class="btnp">Start using Beacon</div></div>
+  </div>
+  <p class="sub" style="margin-top:18px">The permission is not a screen. It is one line under the last step ("Want double-tap and hold? Allow Input Monitoring. Beacon never records keystrokes.") with the real diagram of the switch. Described by what you get, not by what the OS calls it.</p>
+</div>
+
+<!-- POPOVER -->
+<div class="wrap sec" id="pop">
+  <div class="eyebrow">08 Menu bar popover</div>
+  <h2>A remote, <span>not a menu.</span></h2>
+  <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:28px;align-items:flex-start">
+    <div class="pop night">
+      <div class="hd"><span style="width:22px;height:22px;border-radius:7px;background:radial-gradient(circle,#fff 0 14%,#ff5a36 18% 50%,transparent 75%),#2a1510;display:block"></span><b>Beacon</b><span class="sig" style="margin:0;padding:3px 10px 3px 6px"><i style="width:12px;height:12px"></i>Screen</span></div>
+      <div class="scenes" style="width:100%;justify-content:space-between"><button class="on">Stream</button><button>Meeting</button><button>Recording</button></div>
+      <div class="round"><div class="on"><div class="dot"></div>Highlight<small>Ctrl Opt H</small></div><div><div class="dot"></div>Laser<small>Ctrl Opt L</small></div><div><div class="dot"></div>Ink<small>Ctrl Opt I</small></div></div>
+      <div style="display:flex;justify-content:space-between;color:var(--dim);border-top:1px solid var(--line);padding-top:11px"><span>Settings</span><span>Pause</span><span>Quit</span></div>
+    </div>
+    <div class="card" style="flex:1;min-width:260px"><h3>How it works</h3><p>Three big round buttons, each a tiny lit ring that glows when its effect is on, with the shortcut under it. Scene chips on top, the Signal in the header, a plain footer. 330 wide, system popover material, no cards inside it. It is the one place where Beacon must be understood in one second.</p><p style="margin-top:10px">Right click on the icon gives the short menu (Settings, Pause, Quit). The icon tints amber when the Signal needs attention.</p></div>
+  </div>
+</div>
+
+<!-- MOTION -->
+<div class="wrap sec" id="motion">
+  <div class="eyebrow">09 Motion</div>
+  <h2>Springs, <span>never fades and never bounces.</span></h2>
+  <div class="grid g3" style="margin-top:26px">
+    <div class="card"><h3>One spring</h3><p>Everything uses the same critically damped spring the cursor effects use (about 250 ms to settle, no overshoot). Tiles, dock, scene changes, sliders. The app moves like the effects it controls.</p></div>
+    <div class="card"><h3>Light breathes</h3><p>Glows have a slow breath, a 2.4 second cycle that stops after three, like the Aura. Nothing loops forever, so nothing nags.</p></div>
+    <div class="card"><h3>Reduced motion</h3><p>With Reduce Motion on, springs become 120 ms cross-fades, the stage shows a still frame of the effect, and glows stay steady.</p></div>
+  </div>
+</div>
+
+<!-- CALLS -->
+<div class="wrap sec" id="calls">
+  <div class="eyebrow">10 Where each piece comes from, and your calls</div>
+  <h2>A mix, <span>around one idea of our own.</span></h2>
+  <div class="grid g2" style="margin-top:26px">
+    <div class="card"><h3>Borrowed primitives (never looks)</h3><p>Alcove: the interactive demo as the first screen. Screen Movie: cursor styles shown as a grid with live size. LookAway: consequence cards and drill-in rows. Raycast and Perch: big keycaps and flat privacy copy. Bartender: the absent permission as a feature. Hoy: three-word captions. Edgeline: that a window can have one big illustrated hero and selectable finishes; not its laptop or its tabs. macapp.supply: two-tone headlines.</p></div>
+    <div class="card"><h3>Ours alone</h3><p>The Stage that runs your real effect. The dock that changes the stage. Light as the only decoration. The Signal. Keycaps that press for real. Scenes that re-light the whole window.</p></div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>1. Default light</h3><p>Night as the default, with Daylight and Dusk as options. Or follow the system appearance automatically?</p></div>
+    <div class="card"><h3>2. Name</h3><p>"Light" language (beam, Signal, Stage) works for Beacon. If you rename the app later the whole system survives, except the word itself.</p></div>
+    <div class="card"><h3>3. Scope of the first build</h3><p>Build Night first with the Stage, dock, tiles, beam slider and keycaps, then the popover and onboarding, then Daylight and Dusk.</p></div>
+  </div>
+</div>
+
+<script>
+const mock=document.getElementById('mock');
+document.querySelectorAll('#finishSwitch button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#finishSwitch button').forEach(x=>x.classList.remove('on'));b.classList.add('on');mock.className='mock '+b.dataset.t});
+const styles=[['aura','Aura'],['lens','Lens'],['comet','Comet'],['keyline','Keyline'],['sonar','Sonar']];
+const thumbs={aura:'<div style="position:absolute;inset:0;background:radial-gradient(circle,rgba(235,230,255,.85),rgba(139,124,255,.3) 55%,transparent 72%)"></div>',lens:'<div style="position:absolute;inset:0;background:radial-gradient(circle 14px at 50% 50%,transparent 0 70%,rgba(0,0,0,.6))"></div>',comet:'<div style="position:absolute;left:24%;top:56%;width:30px;height:3px;border-radius:2px;background:linear-gradient(90deg,transparent,#ff5a36);transform:rotate(-14deg)"></div><div style="position:absolute;left:58%;top:42%;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #ff5a36,0 0 9px #ff5a36"></div>',keyline:'<div style="position:absolute;left:50%;top:50%;width:26px;height:26px;transform:translate(-50%,-50%);border-radius:50%;border:2.5px solid #fff"></div>',sonar:'<div style="position:absolute;left:50%;top:50%;width:38px;height:38px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(20,184,166,.5)"></div><div style="position:absolute;left:50%;top:50%;width:8px;height:8px;transform:translate(-50%,-50%);border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(20,184,166,.7)"></div>'};
+const tiles=document.getElementById('tiles');let cur='aura';
+styles.forEach(([k,n],i)=>{const d=document.createElement('div');d.className='tile'+(i?'':' on');d.innerHTML='<div class="th">'+thumbs[k]+'</div>'+n;d.onclick=()=>{cur=k;document.querySelectorAll('#tiles .tile').forEach(x=>x.classList.remove('on'));d.classList.add('on');document.getElementById('stageName').textContent=n;build()};tiles.appendChild(d)});
+const fx=document.getElementById('fx'),cursor=document.getElementById('cursor'),stage=document.getElementById('stage');
+let shade=null,trail=[];
+function build(){fx.innerHTML='';if(shade){shade.remove();shade=null}
+ const mk=(css)=>{const i=document.createElement('i');i.style.cssText=css;fx.appendChild(i);return i};
+ if(cur==='aura'){mk('width:150px;height:150px;background:radial-gradient(circle,rgba(139,124,255,.32),rgba(139,124,255,.12) 55%,transparent 72%)');mk('width:70px;height:70px;background:radial-gradient(circle,rgba(235,230,255,.7),rgba(139,124,255,.25) 60%,transparent 75%)')}
+ if(cur==='keyline'){mk('width:60px;height:60px;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)');mk('width:5px;height:5px;background:#fff')}
+ if(cur==='sonar'){for(let k=0;k<3;k++){const e=mk('width:44px;height:44px;border:2px solid #14b8a6;opacity:0');e.style.animation='ping 2.2s '+(k*.25)+'s infinite ease-out'}mk('width:30px;height:30px;background:radial-gradient(circle,#fff 0 14%,rgba(20,184,166,.6) 18% 60%,transparent 70%)')}
+ if(cur==='comet'){mk('width:14px;height:14px;background:#fff;box-shadow:0 0 0 2px #ff5a36,0 0 16px 4px rgba(255,90,54,.7);z-index:2')}
+ if(cur==='lens'){shade=document.createElement('div');shade.style.cssText='position:absolute;inset:0;z-index:2;pointer-events:none';stage.appendChild(shade)}
+}
+const st=document.createElement('style');st.textContent='@keyframes ping{0%{transform:translate(-50%,-50%) scale(3);opacity:0}15%{opacity:.7}100%{transform:translate(-50%,-50%) scale(.6);opacity:0}}';document.head.appendChild(st);
+build();
+let mx=null,my=null,auto=true;
+stage.addEventListener('mousemove',e=>{const r=stage.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top;auto=false;clearTimeout(window.__t);window.__t=setTimeout(()=>auto=true,2500)});
+const dots=[];for(let i=0;i<14;i++){const d=document.createElement('i');d.style.cssText='position:absolute;left:0;top:0;border-radius:50%;background:#ff5a36;transform:translate(-50%,-50%);display:none;z-index:2';stage.appendChild(d);dots.push(d)}
+const hist=[];
+function frame(now){const w=stage.clientWidth,h=stage.clientHeight;let x,y;
+ if(auto||mx===null){x=w*(.5+.27*Math.sin(now/1700)+.07*Math.sin(now/530));y=h*(.5+.2*Math.sin(now/1150+1)+.05*Math.sin(now/410))}else{x=mx;y=my}
+ cursor.style.transform='translate('+x+'px,'+y+'px)';
+ if(shade)shade.style.background='radial-gradient(circle 110px at '+x+'px '+y+'px,transparent 0 72%,rgba(0,0,0,.6) 100%)';
+ hist.push({x,y,t:now});while(hist.length&&hist[0].t<now-380)hist.shift();
+ dots.forEach((d,i)=>{if(cur!=='comet'||i===0){d.style.display='none';return}const k=Math.floor(hist.length*(1-i/dots.length))-1;const q=hist[Math.max(k,0)];if(!q){d.style.display='none';return}const a=1-i/dots.length;d.style.display='block';d.style.transform='translate('+q.x+'px,'+q.y+'px) translate(-50%,-50%)';d.style.width=d.style.height=(11*a+2)+'px';d.style.opacity=(.8*a*a).toFixed(2)});
+ requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+document.querySelectorAll('#dock button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#dock button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+document.querySelectorAll('.stage .hud button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.stage .hud button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+document.querySelectorAll('.scenes button').forEach(b=>b.onclick=()=>{b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+const kc=document.getElementById('kc'),ko=document.getElementById('ko'),kh=document.getElementById('kh');
+function keys(e,down){if(e.key==='Control')kc.classList.toggle('down',down);if(e.key==='Alt')ko.classList.toggle('down',down);if(e.code==='KeyH')kh.classList.toggle('down',down)}
+addEventListener('keydown',e=>keys(e,true));addEventListener('keyup',e=>keys(e,false));
+</script>
+</body>
+</html>
