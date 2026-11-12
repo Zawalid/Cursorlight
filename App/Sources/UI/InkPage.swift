@@ -7,6 +7,7 @@ struct InkPreview: View {
     let color: InkColor
     let cleanup: Bool
     let fade: Double
+    var width: Double = 1
     @AppStorage(PreviewScene.storageKey) private var sceneRaw = PreviewScene.slides.rawValue
 
     private var scene: PreviewScene { PreviewScene(rawValue: sceneRaw) ?? .slides }
@@ -58,21 +59,22 @@ struct InkPreview: View {
             points = zip(rough, clean).map { CGPoint(x: $0.x + ($1.x - $0.x) * e, y: $0.y + ($1.y - $0.y) * e) }
         }
         let alpha = t > holdEnd ? max(0, 1 - (t - holdEnd) / (cycle - holdEnd)) : 1
-        Self.stroke(&context, points: points, style: style, color: color, alpha: alpha)
+        Self.stroke(&context, points: points, style: style, color: color, alpha: alpha, widthScale: width)
     }
 
-    static func stroke(_ context: inout GraphicsContext, points: [CGPoint], style: InkStyle, color: InkColor, alpha: Double) {
+    static func stroke(_ context: inout GraphicsContext, points: [CGPoint], style: InkStyle, color: InkColor, alpha: Double, widthScale: Double = 1) {
         guard points.count > 1 else { return }
         var path = Path()
         path.move(to: points[0])
         for p in points.dropFirst() { path.addLine(to: p) }
         let tint = Color(rgba: color.rgba)
-        let round = StrokeStyle(lineWidth: style.width, lineCap: .round, lineJoin: .round)
+        let scale = CGFloat(widthScale)
+        let round = StrokeStyle(lineWidth: style.width * scale, lineCap: .round, lineJoin: .round)
         if style != .highlighter {
-            context.stroke(path, with: .color(.black.opacity(0.22 * alpha)), style: StrokeStyle(lineWidth: style.width + 2, lineCap: .round, lineJoin: .round))
+            context.stroke(path, with: .color(.black.opacity(0.22 * alpha)), style: StrokeStyle(lineWidth: style.width * scale + 2, lineCap: .round, lineJoin: .round))
         }
         if let glow = style.glow {
-            context.stroke(path, with: .color(tint.opacity(Double(glow.alpha) * alpha)), style: StrokeStyle(lineWidth: glow.width, lineCap: .round, lineJoin: .round))
+            context.stroke(path, with: .color(tint.opacity(Double(glow.alpha) * alpha)), style: StrokeStyle(lineWidth: glow.width * scale, lineCap: .round, lineJoin: .round))
         }
         let core = style.lightCore ? Color(rgba: color.rgba.mixed(with: Palette.light, 0.75)) : tint
         context.stroke(path, with: .color(core.opacity(Double(style.alpha) * alpha)), style: round)
@@ -82,6 +84,7 @@ struct InkPreview: View {
 struct InkSwatchStroke: View {
     let style: InkStyle
     let color: InkColor
+    var width: Double = 1
 
     var body: some View {
         Canvas { context, size in
@@ -89,7 +92,7 @@ struct InkSwatchStroke: View {
                 let x = size.width * (0.12 + 0.76 * Double(i) / 30)
                 return CGPoint(x: x, y: size.height * (0.5 + 0.22 * sin(Double(i) / 4.2)))
             }
-            InkPreview.stroke(&context, points: points, style: style, color: color, alpha: 1)
+            InkPreview.stroke(&context, points: points, style: style, color: color, alpha: 1, widthScale: min(width, 1.3))
         }
     }
 }

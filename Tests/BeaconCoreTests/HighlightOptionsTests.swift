@@ -167,3 +167,23 @@ final class HideRulesTests: XCTestCase {
         XCTAssertTrue(FullScreenDetector.isFullScreen(pid: 7, windows: [WindowSnapshot(ownerPID: 7, layer: 0, bounds: second)], displays: [display, second]))
     }
 }
+
+final class PenWidthTests: XCTestCase {
+    func testStrokeCarriesItsWidthScale() {
+        var model = InkModel()
+        model.begin(at: .zero, style: .marker, color: .red, widthScale: 2)
+        model.append(CGPoint(x: 30, y: 0))
+        let frame = model.step(time: 0)
+        XCTAssertEqual(frame.strokes.first?.widthScale, 2)
+    }
+
+    func testPenWidthSurvivesSettingsAndSnapshot() throws {
+        var settings = BeaconSettings.defaults
+        settings.inkWidth = 1.8
+        let decoded = try JSONDecoder().decode(BeaconSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.inkWidth, 1.8)
+        XCTAssertEqual(decoded.snapshot.inkWidth, 1.8)
+        settings.inkWidth = 99
+        XCTAssertEqual(settings.sanitized().inkWidth, BeaconSettings.inkWidthRange.upperBound)
+    }
+}

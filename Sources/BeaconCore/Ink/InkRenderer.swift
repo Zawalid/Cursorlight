@@ -61,17 +61,18 @@ final class InkRenderer {
         let color = stroke.color.rgba
         for shape in [entry.keyline, entry.glow, entry.core] { shape.contentsScale = scale }
         entry.keyline.strokeColor = Palette.keyline.with(alpha: 0.22).cgColor
-        entry.keyline.lineWidth = style.width + 2
+        let scale = stroke.widthScale
+        entry.keyline.lineWidth = style.width * scale + 2
         entry.keyline.isHidden = style == .highlighter
         if let glow = style.glow {
             entry.glow.strokeColor = color.with(alpha: Double(glow.alpha)).cgColor
-            entry.glow.lineWidth = glow.width
+            entry.glow.lineWidth = glow.width * scale
         } else {
             entry.glow.isHidden = true
         }
         let coreColor = style.lightCore ? color.mixed(with: Palette.light, 0.75) : color
         entry.core.strokeColor = coreColor.with(alpha: Double(style.alpha)).cgColor
-        entry.core.lineWidth = style.width
+        entry.core.lineWidth = style.width * scale
         root.addSublayer(entry.container)
         layers[stroke.id] = entry
         return entry

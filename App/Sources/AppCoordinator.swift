@@ -51,6 +51,7 @@ final class AppCoordinator {
             overlays: overlays, style: current.inkStyle, color: current.inkColor, cleanupEnabled: current.inkCleanup,
             fadeAfter: current.inkFadeAfter
         )
+        ink.setWidthScale(current.inkWidth)
         // The overlay manager has one hook; both controllers follow window changes through it.
         overlays.onWindowsChanged = { [weak self] in
             self?.highlight.windowsChanged()
@@ -192,6 +193,7 @@ final class AppCoordinator {
         ink.setColor(current.inkColor)
         ink.setCleanupEnabled(current.inkCleanup)
         ink.setFadeAfter(current.inkFadeAfter)
+        ink.setWidthScale(current.inkWidth)
         settings.liveProfileID = id
         appliedProfileID = id
     }
@@ -429,6 +431,11 @@ final class AppCoordinator {
     func setInkColor(_ color: InkColor) {
         ink.setColor(color)
         settings.update { $0.inkColor = color }
+    }
+
+    func setInkWidth(_ scale: Double) {
+        settings.update { $0.inkWidth = scale }
+        ink.setWidthScale(settings.settings.inkWidth)
     }
 
     func setInkFadeAfter(_ seconds: Double) {

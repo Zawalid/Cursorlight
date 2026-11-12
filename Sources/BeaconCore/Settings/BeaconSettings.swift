@@ -22,6 +22,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var triggers: TriggerSettings
     /// Seconds a finished stroke stays before it fades.
     public var inkFadeAfter: Double
+    /// Pen thickness as a multiple of the pen style's width.
+    public var inkWidth: Double
     public var welcomeSeen: Bool
     public var profiles: [Profile]
     /// The profile the user last chose; per-app rules apply on top of it.
@@ -34,6 +36,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var hideRules: HideRules
 
     public static let inkFadeRange: ClosedRange<Double> = 0.8...8
+    public static let inkWidthRange: ClosedRange<Double> = 0.6...2.5
 
     public var look: HighlightLook {
         HighlightLook(accent: accent, size: highlightSize, intensity: highlightIntensity, lensDim: lensDim, options: highlightOptions)
@@ -53,6 +56,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkCleanup: true,
         triggers: TriggerSettings(),
         inkFadeAfter: 2,
+        inkWidth: 1,
         welcomeSeen: false,
         profiles: Profile.presets(),
         baseProfileID: Profile.streamID,
@@ -68,6 +72,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkStyle: InkStyle = .marker, inkColor: InkColor = .red, inkCleanup: Bool = true,
         triggers: TriggerSettings = TriggerSettings(),
         inkFadeAfter: Double = 2,
+        inkWidth: Double = 1,
         welcomeSeen: Bool = false,
         profiles: [Profile] = Profile.presets(),
         baseProfileID: String = Profile.streamID,
@@ -89,6 +94,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.inkCleanup = inkCleanup
         self.triggers = triggers
         self.inkFadeAfter = inkFadeAfter
+        self.inkWidth = inkWidth
         self.welcomeSeen = welcomeSeen
         self.profiles = profiles
         self.baseProfileID = baseProfileID
@@ -100,7 +106,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
-        case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, welcomeSeen
+        case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, inkWidth, welcomeSeen
         case profiles, baseProfileID, appRules, displayScope, highlightOptions, hideRules
     }
 
@@ -120,6 +126,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkCleanup = (try? c.decode(Bool.self, forKey: .inkCleanup)) ?? d.inkCleanup
         triggers = (try? c.decode(TriggerSettings.self, forKey: .triggers)) ?? d.triggers
         inkFadeAfter = (try? c.decode(Double.self, forKey: .inkFadeAfter)) ?? d.inkFadeAfter
+        inkWidth = (try? c.decode(Double.self, forKey: .inkWidth)) ?? d.inkWidth
         welcomeSeen = (try? c.decode(Bool.self, forKey: .welcomeSeen)) ?? d.welcomeSeen
         baseProfileID = (try? c.decode(String.self, forKey: .baseProfileID)) ?? d.baseProfileID
         appRules = (try? c.decode([AppRule].self, forKey: .appRules)) ?? d.appRules
@@ -134,7 +141,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
                 highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
                 highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
                 inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter,
-                options: highlightOptions
+                inkWidth: inkWidth, options: highlightOptions
             ))
         }
     }
@@ -147,6 +154,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         copy.highlightIntensity = Self.clamp(highlightIntensity, HighlightLook.intensityRange, fallback: 1)
         copy.lensDim = Self.clamp(lensDim, HighlightLook.dimRange, fallback: 0.5)
         copy.inkFadeAfter = Self.clamp(inkFadeAfter, Self.inkFadeRange, fallback: 2)
+        copy.inkWidth = Self.clamp(inkWidth, Self.inkWidthRange, fallback: 1)
         copy.highlightOptions = highlightOptions.sanitized()
         if !copy.profiles.contains(where: { $0.id == copy.baseProfileID }) {
             copy.baseProfileID = copy.profiles.first?.id ?? Profile.streamID
@@ -160,7 +168,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
             highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
             highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
             inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter,
-            options: highlightOptions
+            inkWidth: inkWidth, options: highlightOptions
         )
     }
 
@@ -175,6 +183,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkColor = s.inkColor
         inkCleanup = s.inkCleanup
         inkFadeAfter = s.inkFadeAfter
+        inkWidth = s.inkWidth
         highlightOptions = s.options
     }
 

@@ -21,6 +21,8 @@ public final class InkController {
     public private(set) var model: InkModel
     public private(set) var style: InkStyle
     public private(set) var color: InkColor
+    /// Pen thickness as a multiple of the style's width.
+    public private(set) var widthScale: CGFloat = 1
     /// True while the input windows are up and the drag draws.
     public private(set) var isActive = false
     public var onChange: (() -> Void)?
@@ -117,6 +119,10 @@ public final class InkController {
         onChange?()
     }
 
+    public func setWidthScale(_ scale: Double) {
+        widthScale = CGFloat(min(max(scale, 0.3), 4))
+    }
+
     public func setFadeAfter(_ seconds: TimeInterval) {
         model.fadeAfter = seconds
     }
@@ -138,7 +144,7 @@ public final class InkController {
     // MARK: Input
 
     func pointerDown(_ point: CGPoint) {
-        model.begin(at: point, style: style, color: color)
+        model.begin(at: point, style: style, color: color, widthScale: widthScale)
         wake()
     }
 

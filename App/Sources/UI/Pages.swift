@@ -328,40 +328,123 @@ struct InkPage: View {
     var body: some View {
         Form {
             Section("Pen") {
-                TileRow(
-                    items: InkStyle.allCases, selection: settings.inkStyle, title: { $0.displayName },
-                    select: { model.setInkStyle($0) }
-                ) { InkSwatchStroke(style: $0, color: settings.inkColor) }
-                LabeledContent("Color") {
+                PenRow(selection: settings.inkStyle, color: settings.inkColor, width: settings.inkWidth) { model.setInkStyle($0) }
+                LabeledContent {
                     HStack(spacing: 0) {
-                        ForEach(InkColor.allCases, id: \.self) { color in
-                            SwatchButton(fill: AnyShapeStyle(Color(rgba: color.rgba)), isSelected: settings.inkColor == color, label: color.displayName) {
-                                model.setInkColor(color)
+                        ForEach(Array(InkColor.allCases.enumerated()), id: \.element) { index, color in
+                            VStack(spacing: 0) {
+                                SwatchButton(fill: AnyShapeStyle(Color(rgba: color.rgba)), isSelected: settings.inkColor == color, label: "\(color.displayName), key \(index + 1)") {
+                                    model.setInkColor(color)
+                                }
+                                Text("\(index + 1)").font(.system(size: 9, weight: .medium).monospacedDigit()).foregroundStyle(.tertiary)
                             }
                         }
                     }
+                } label: {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Color")
+                        Text("\(settings.inkColor.displayName). Press 1 to 5 while drawing.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                LabeledContent("Thickness") {
+                    ValueSlider(value: Binding(get: { settings.inkWidth }, set: { model.setInkWidth($0) }), range: BeaconSettings.inkWidthRange)
                 }
             }
             Section {
-                Toggle("Clean up shapes", isOn: Binding(get: { settings.inkCleanup }, set: { model.setInkCleanup($0) }))
-                LabeledContent("Fade after") {
-                    HStack(spacing: 8) {
-                        Slider(value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade($0) }), in: BeaconSettings.inkFadeRange).frame(minWidth: 90)
-                        Text(String(format: "%.1f s", settings.inkFadeAfter)).monospacedDigit().foregroundStyle(Theme.dim).frame(width: 38, alignment: .trailing)
+                Toggle(isOn: Binding(get: { settings.inkCleanup }, set: { model.setInkCleanup($0) })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Clean up shapes")
+                        Text("Circles, boxes, lines, underlines and arrows straighten when you let go.").font(.system(size: 11)).foregroundStyle(.secondary)
                     }
+                }
+                LabeledContent("Fade after") {
+                    ValueSlider(
+                        value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade(($0 * 10).rounded() / 10) }),
+                        range: BeaconSettings.inkFadeRange, format: { String(format: "%.1f s", $0) }
+                    )
                 }
             } header: {
                 Text("Behavior")
+            }
+            Section {
+                ForEach(Self.drawingKeys, id: \.0) { meaning, keys in
+                    LabeledContent(meaning) {
+                        HStack(spacing: 3) { ForEach(keys, id: \.self) { Keycap(text: $0) } }
+                    }
+                }
+            } header: {
+                Text("While drawing")
             } footer: {
-                Text("Circles, rectangles, lines, underlines and arrows straighten themselves when you let go. Press 1 to 5 while drawing to change color.")
+                Text("Hold the draw key, or start below, then drag anywhere on screen.")
             }
             Section {
                 LabeledContent("Draw now") {
                     Button(model.isOn(.ink) ? "Stop" : "Start") { model.toggle(.ink) }
                 }
+                Button("Reset pen") { resetPen() }
+                    .foregroundStyle(isDefault ? Color.secondary : Theme.accent)
+                    .disabled(isDefault)
             }
         }
         .page()
+    }
+
+    private static let drawingKeys: [(String, [String])] = [
+        ("Undo", ["⌘", "Z"]), ("Clear everything", ["C"]), ("Change color", ["1", "–", "5"]), ("Stop drawing", ["esc"]),
+    ]
+
+    private var isDefault: Bool {
+        settings.inkStyle == .marker && settings.inkColor == .red && settings.inkWidth == 1 && settings.inkCleanup && settings.inkFadeAfter == 2
+    }
+
+    private func resetPen() {
+        model.setInkStyle(.marker)
+        model.setInkColor(.red)
+        model.setInkWidth(1)
+        model.setInkCleanup(true)
+        model.setInkFade(2)
+    }
+}
+
+/// The pen styles in one row of tiles, each drawing a stroke in the chosen color and thickness.
+struct PenRow: View {
+    let selection: InkStyle
+    let color: InkColor
+    let width: Double
+    let select: (InkStyle) -> Void
+    @State private var hovered: InkStyle?
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3), spacing: 10) {
+            ForEach(InkStyle.allCases, id: \.self) { style in
+                let on = style == selection
+                let tint = Color(rgba: color.rgba)
+                Button { select(style) } label: {
+                    VStack(spacing: 6) {
+                        InkSwatchStroke(style: style, color: color, width: width)
+                            .padding(.horizontal, 6)
+                            .frame(height: 52).frame(maxWidth: .infinity)
+                            .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(on ? tint : Color.white.opacity(hovered == style ? 0.28 : 0.1), lineWidth: on ? 2 : 1)
+                            )
+                            .shadow(color: on ? tint.opacity(0.35) : .clear, radius: 7)
+                        Text(style.displayName)
+                            .font(.system(size: 11, weight: on ? .semibold : .regular))
+                            .foregroundStyle(on ? Theme.text : Theme.dim)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .onHover { hovered = $0 ? style : (hovered == style ? nil : hovered) }
+                .animation(.easeOut(duration: 0.14), value: hovered)
+                .accessibilityLabel(style.displayName)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
