@@ -31,17 +31,16 @@ final class WindowControllers {
         if settings != nil, let host = settingsHost {
             host.rootView = root
         } else {
-            let window = Self.makeWindow(size: NSSize(width: 980, height: 700), resizable: true)
+            let window = Self.makeWindow(size: NSSize(width: 1000, height: 720), resizable: true)
             window.title = Branding.appName
             let host = FirstClickHostingView(rootView: root)
             Self.install(host, in: window)
             settingsHost = host
-            window.setContentSize(NSSize(width: 980, height: 700))
-            window.contentMinSize = NSSize(width: 900, height: 640)
+            window.setContentSize(NSSize(width: 1000, height: 720))
+            window.contentMinSize = NSSize(width: 920, height: 660)
             window.center()
-            window.setFrameAutosaveName("BeaconSettings.v3")
+            window.setFrameAutosaveName("BeaconSettings.v4")
             settings = window
-            keepTrafficLightsCentered(window)
         }
         Self.present(settings)
     }
@@ -54,7 +53,6 @@ final class WindowControllers {
         window.setContentSize(NSSize(width: 580, height: 520))
         window.center()
         welcome = window
-        keepTrafficLightsCentered(window)
         Self.present(window)
     }
 

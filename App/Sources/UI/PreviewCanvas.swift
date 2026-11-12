@@ -129,24 +129,55 @@ struct PreviewCanvas: View {
         ))
     }
 
-    /// A small desktop: a light document window beside a dark panel, so every style is seen on both.
+    /// A small desktop: wallpaper, a menu bar, a light document window, a dark panel and a dock. Everything sits inside
+    /// the frame, so the whole scene reads at any size and every style is seen on light and dark.
     private static func drawWindow(_ context: inout GraphicsContext, size: CGSize) {
-        let doc = CGRect(x: size.width * 0.07, y: size.height * 0.16, width: size.width * 0.5, height: size.height)
-        context.fill(Path(roundedRect: doc, cornerRadius: 10), with: .color(Color(white: 0.94)))
-        context.fill(Path(roundedRect: CGRect(x: doc.minX, y: doc.minY, width: doc.width, height: 22), cornerRadius: 10), with: .color(Color(white: 0.87)))
-        for (i, w) in [0.62, 0.78, 0.46, 0.7].enumerated() {
-            let bar = CGRect(x: doc.minX + 20, y: doc.minY + 46 + CGFloat(i) * 22, width: doc.width * w, height: 8)
-            context.fill(Path(roundedRect: bar, cornerRadius: 4), with: .color(Color(white: 0.78)))
+        let w = size.width, h = size.height
+        // Wallpaper
+        context.fill(
+            Path(CGRect(origin: .zero, size: size)),
+            with: .linearGradient(
+                Gradient(colors: [Color(red: 0.16, green: 0.17, blue: 0.24), Color(red: 0.07, green: 0.07, blue: 0.10)]),
+                startPoint: .zero, endPoint: CGPoint(x: w, y: h)
+            )
+        )
+        // Menu bar
+        context.fill(Path(CGRect(x: 0, y: 0, width: w, height: 16)), with: .color(Color.white.opacity(0.07)))
+        for i in 0..<3 { context.fill(Path(roundedRect: CGRect(x: 14 + CGFloat(i) * 26, y: 6, width: 18, height: 4), cornerRadius: 2), with: .color(Color.white.opacity(0.3))) }
+        context.fill(Path(roundedRect: CGRect(x: w - 52, y: 6, width: 38, height: 4), cornerRadius: 2), with: .color(Color.white.opacity(0.3)))
+
+        let top: CGFloat = min(max(h * 0.2, 58), 76), bottom: CGFloat = h - 46
+        // Light document window
+        let doc = CGRect(x: w * 0.07, y: top, width: w * 0.5, height: max(bottom - top, 60))
+        context.fill(Path(roundedRect: doc, cornerRadius: 10), with: .color(Color(white: 0.95)))
+        context.fill(Path(roundedRect: CGRect(x: doc.minX, y: doc.minY, width: doc.width, height: 20), cornerRadius: 10), with: .color(Color(white: 0.89)))
+        for i in 0..<3 {
+            context.fill(Path(ellipseIn: CGRect(x: doc.minX + 10 + CGFloat(i) * 12, y: doc.minY + 7, width: 6, height: 6)), with: .color(Color(white: 0.72)))
         }
-        let button = CGRect(x: doc.minX + 20, y: doc.minY + 150, width: doc.width * 0.26, height: 22)
+        let rows = max(Int((doc.height - 90) / 22), 2)
+        for i in 0..<rows {
+            let widths = [0.62, 0.8, 0.46, 0.7, 0.55]
+            let bar = CGRect(x: doc.minX + 20, y: doc.minY + 38 + CGFloat(i) * 22, width: doc.width * widths[i % widths.count], height: 8)
+            context.fill(Path(roundedRect: bar, cornerRadius: 4), with: .color(Color(white: 0.80)))
+        }
+        let button = CGRect(x: doc.minX + 20, y: doc.maxY - 38, width: doc.width * 0.24, height: 22)
         context.fill(Path(roundedRect: button, cornerRadius: 7), with: .color(Color(red: 0.30, green: 0.64, blue: 1)))
 
-        let panel = CGRect(x: size.width * 0.62, y: size.height * 0.1, width: size.width * 0.31, height: size.height)
-        context.fill(Path(roundedRect: panel, cornerRadius: 10), with: .color(Color(white: 0.14)))
-        context.fill(Path(roundedRect: CGRect(x: panel.minX, y: panel.minY, width: panel.width, height: 22), cornerRadius: 10), with: .color(Color(white: 0.19)))
-        for i in 0..<5 {
-            let row = CGRect(x: panel.minX + 16, y: panel.minY + 42 + CGFloat(i) * 26, width: panel.width * (i % 2 == 0 ? 0.7 : 0.5), height: 9)
+        // Dark panel
+        let panel = CGRect(x: w * 0.62, y: top + 16, width: w * 0.31, height: max(bottom - top - 16, 50))
+        context.fill(Path(roundedRect: panel, cornerRadius: 10), with: .color(Color(white: 0.13)))
+        context.fill(Path(roundedRect: CGRect(x: panel.minX, y: panel.minY, width: panel.width, height: 20), cornerRadius: 10), with: .color(Color(white: 0.18)))
+        let panelRows = max(Int((panel.height - 40) / 24), 2)
+        for i in 0..<panelRows {
+            let row = CGRect(x: panel.minX + 16, y: panel.minY + 38 + CGFloat(i) * 24, width: panel.width * (i % 2 == 0 ? 0.7 : 0.5), height: 9)
             context.fill(Path(roundedRect: row, cornerRadius: 4.5), with: .color(Color(white: 0.27)))
+        }
+
+        // Dock
+        let dock = CGRect(x: w * 0.5 - w * 0.17, y: h - 34, width: w * 0.34, height: 24)
+        context.fill(Path(roundedRect: dock, cornerRadius: 12), with: .color(Color.white.opacity(0.12)))
+        for i in 0..<6 {
+            context.fill(Path(roundedRect: CGRect(x: dock.minX + 12 + CGFloat(i) * (dock.width - 24) / 6, y: dock.minY + 5, width: 14, height: 14), cornerRadius: 4), with: .color(Color.white.opacity(0.28)))
         }
     }
 

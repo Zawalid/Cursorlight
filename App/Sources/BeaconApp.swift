@@ -70,7 +70,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if environment.opensSettingsAtLaunch {
                 windows.showSettings(environment.launchPage.flatMap(SettingsPage.init(rawValue:)) ?? .highlight)
             } else if !coordinator.settings.settings.welcomeSeen && !environment.isAgentMode {
+                // Shown once. Counting it as seen when it opens means an unfinished guide never pops up again on its own.
                 windows.showWelcome()
+                coordinator.markWelcomeSeen()
             }
         } else {
             statusItemController.install(model: nil)

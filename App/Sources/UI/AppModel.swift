@@ -57,6 +57,7 @@ final class AppModel: ObservableObject {
     func chooseProfile(_ id: String) { coordinator.chooseProfile(id); bump() }
     func addProfile() { coordinator.addProfile(); bump() }
     func deleteProfile(_ id: String) { coordinator.deleteProfile(id); bump() }
+    func renameProfile(_ id: String, to name: String) { coordinator.renameProfile(id, to: name); bump() }
     func setDisplayScope(_ scope: DisplayScope) { coordinator.setDisplayScope(scope); bump() }
 
     /// Sets the profile for an app, or nil to switch Beacon off while it is frontmost.

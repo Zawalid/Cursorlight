@@ -1,84 +1,72 @@
 import BeaconCore
 import SwiftUI
 
-/// The first page: the Stage, then the style tiles and the controls that tune the chosen style.
+/// The first page. Top to bottom: the Stage, the five styles as a row of tiles with a line about the chosen one, then two
+/// cards of native controls.
 struct LookPage: View {
     @EnvironmentObject private var model: AppModel
     private var settings: BeaconSettings { model.settings }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 18) {
             Stage(style: settings.highlightStyle, look: settings.look)
-                .frame(minHeight: 240, maxHeight: .infinity)
-            HStack(alignment: .top, spacing: 16) {
-                stylePane
-                tunePane
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-    }
+                .frame(minHeight: 200, maxHeight: .infinity)
 
-    private var stylePane: some View {
-        Pane(title: "Style") {
-            HStack(spacing: 8) {
-                ForEach(HighlightStyle.allCases, id: \.self) { style in
-                    StyleTile(style: style, isSelected: settings.highlightStyle == style) { model.setStyle(style) }
+            VStack(spacing: 10) {
+                HStack(spacing: 12) {
+                    ForEach(HighlightStyle.allCases, id: \.self) { style in
+                        StyleTile(style: style, isSelected: settings.highlightStyle == style) { model.setStyle(style) }
+                    }
                 }
+                Text(Self.blurb(settings.highlightStyle))
+                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
             }
-            Text(Self.blurb(settings.highlightStyle))
-                .font(.system(size: 12)).foregroundStyle(Theme.dim)
-                .fixedSize(horizontal: false, vertical: true).padding(.top, 4)
-            if settings.highlightStyle == .lens {
-                Divider().overlay(Theme.line).padding(.vertical, 4)
-                labeled("Screen dim") {
-                    Slider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), in: HighlightLook.dimRange)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
 
-    private var tunePane: some View {
-        Pane(title: "Tune") {
-            labeled("Color") {
-                HStack(spacing: 2) {
-                    ForEach(AccentChoice.allCases, id: \.self) { accent in
-                        SwatchButton(fill: HighlightPage.fill(for: accent), isSelected: settings.accent == accent, label: accent.displayName) {
-                            model.setAccent(accent)
+            HStack(alignment: .top, spacing: 18) {
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionLabel(text: "Appearance")
+                    SettingsGroup {
+                        SettingRow(title: "Color") {
+                            HStack(spacing: 0) {
+                                ForEach(AccentChoice.allCases, id: \.self) { accent in
+                                    SwatchButton(fill: HighlightPage.fill(for: accent), isSelected: settings.accent == accent, label: accent.displayName) {
+                                        model.setAccent(accent)
+                                    }
+                                }
+                            }
+                        }
+                        SettingRow(title: "Size") {
+                            BeaconSlider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), range: HighlightLook.sizeRange, width: 200)
+                        }
+                        if settings.highlightStyle == .lens {
+                            SettingRow(title: "Screen dim", showsDivider: false) {
+                                BeaconSlider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), range: HighlightLook.dimRange, width: 200)
+                            }
+                        } else {
+                            SettingRow(title: "Intensity", showsDivider: false) {
+                                BeaconSlider(value: Binding(get: { settings.highlightIntensity }, set: { model.setIntensity($0) }), range: HighlightLook.intensityRange, width: 200)
+                                    .disabled(settings.accent == .highContrast)
+                            }
+                        }
+                    }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionLabel(text: "Behavior")
+                    SettingsGroup {
+                        SettingRow(title: "Click ripples", subtitle: "A ring on every click") {
+                            BeaconToggle(isOn: Binding(get: { settings.clickRipples }, set: { model.setRipples($0) }))
+                        }
+                        SettingRow(title: "Pointer size", subtitle: "Makes the real pointer bigger", showsDivider: false) {
+                            BeaconSegmented(
+                                options: [(1.0, "1x"), (1.5, "1.5x"), (2.0, "2x"), (3.0, "3x")],
+                                selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })
+                            )
                         }
                     }
                 }
             }
-            labeled("Size") {
-                Slider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), in: HighlightLook.sizeRange).frame(width: 200)
-            }
-            labeled("Intensity") {
-                Slider(value: Binding(get: { settings.highlightIntensity }, set: { model.setIntensity($0) }), in: HighlightLook.intensityRange)
-                    .frame(width: 200)
-                    .disabled(settings.accent == .highContrast)
-            }
-            labeled("Click ripples") {
-                Toggle("", isOn: Binding(get: { settings.clickRipples }, set: { model.setRipples($0) }))
-                    .toggleStyle(.switch).labelsHidden()
-            }
-            labeled("Pointer size") {
-                Picker("", selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })) {
-                    Text("1x").tag(1.0); Text("1.5x").tag(1.5); Text("2x").tag(2.0); Text("3x").tag(3.0)
-                }
-                .pickerStyle(.segmented).labelsHidden().frame(width: 170)
-            }
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(width: 360, alignment: .topLeading)
-        .frame(maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private func labeled<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        HStack {
-            Text(title).font(.system(size: 13)).foregroundStyle(Theme.text)
-            Spacer(minLength: 12)
-            content().tint(Theme.accent)
-        }
-        .frame(minHeight: 26)
     }
 
     private static func blurb(_ style: HighlightStyle) -> String {
@@ -96,25 +84,7 @@ struct LookPage: View {
     }
 }
 
-struct Pane<Content: View>: View {
-    let title: String
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.dim)
-            content
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.white.opacity(0.7), lineWidth: 1))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.line, lineWidth: 0.5).padding(-0.5))
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
-    }
-}
-
+/// One of the five styles: a live thumbnail and its name. Flat, with an Ember ring when selected.
 struct StyleTile: View {
     let style: HighlightStyle
     let isSelected: Bool
@@ -123,20 +93,17 @@ struct StyleTile: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 7) {
+            VStack(spacing: 8) {
                 StyleThumbnail(style: style)
-                    .frame(height: 52).frame(maxWidth: .infinity)
-                    .background(Theme.stage, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .frame(height: 60).frame(maxWidth: .infinity)
+                    .background(Theme.stage, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 Text(style.displayName).font(.system(size: 12, weight: .medium)).foregroundStyle(isSelected ? Theme.text : Theme.dim)
             }
-            .padding(7)
-            .background(hovering ? Theme.cardHover : Theme.raised, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(isSelected ? Theme.accent : Theme.line, lineWidth: isSelected ? 1.5 : 1)
-            )
-            .shadow(color: isSelected ? Theme.accent.opacity(0.22) : .clear, radius: 10)
+            .padding(8)
+            .background(isSelected ? Theme.raised : (hovering ? Theme.cardHover : Theme.card), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(isSelected ? Theme.accent : Theme.line, lineWidth: isSelected ? 2 : 1))
+            .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }

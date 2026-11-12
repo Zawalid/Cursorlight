@@ -163,6 +163,14 @@ final class AppCoordinator {
         chooseProfile(id)
     }
 
+    func renameProfile(_ id: String, to name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        settings.update { s in
+            if let index = s.profiles.firstIndex(where: { $0.id == id }) { s.profiles[index].name = String(trimmed.prefix(24)) }
+        }
+    }
+
     func deleteProfile(_ id: String) {
         guard settings.settings.profiles.count > 1 else { return }
         let wasLive = settings.liveProfileID == id
