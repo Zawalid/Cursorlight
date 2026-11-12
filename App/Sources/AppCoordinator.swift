@@ -25,6 +25,8 @@ final class AppCoordinator {
     var onSizeChange: (() -> Void)?
     /// Called after pause state or trigger settings change, so the menu can refresh.
     var onTriggersChange: (() -> Void)?
+    /// Set by the app delegate; shows or hides the timer chip.
+    var onToggleTimer: (() -> Void)?
     /// Called when the share status changes.
     var onShareChange: (() -> Void)?
     private(set) var isPaused = false
@@ -336,6 +338,8 @@ final class AppCoordinator {
             setToolbar { $0.enabled.toggle() }
         case .spotlight:
             spotlight.cycle()
+        case .timer:
+            onToggleTimer?()
         case .whiteboard:
             if ink.isActive, ink.board != .none { ink.deactivate() } else { ink.activateBoard(.white) }
         }

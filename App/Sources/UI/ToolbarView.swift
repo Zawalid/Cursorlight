@@ -23,6 +23,7 @@ struct ToolbarView: View {
                 ToolButton(symbol: "cursorarrow.rays", label: "Laser", on: model.isOn(.laser)) { model.toggle(.laser) }.barTip("laser", $hovered)
                 ToolButton(symbol: "pencil.tip", label: "Draw", on: model.isOn(.ink)) { model.toggle(.ink) }.barTip("ink", $hovered)
                 ToolButton(symbol: "rectangle.dashed", label: "Spotlight", on: model.spotlightState != .idle) { model.cycleSpotlight() }.barTip("spotlight", $hovered)
+                ToolButton(symbol: "timer", label: "Timer", on: false) { model.toggleTimer() }.barTip("timer", $hovered)
                 ToolButton(symbol: model.isPaused ? "play.fill" : "pause.fill", label: model.isPaused ? "Resume" : "Pause", on: model.isPaused) {
                     model.setPaused(!model.isPaused)
                 }
@@ -293,6 +294,7 @@ private enum BarTips {
         case "spotlight": return BarTip(title: "Spotlight", detail: "Drag a region; everything else dims. Click again to keep it, again to turn it off.", keys: keys(.spotlight))
         case "spotShape": return BarTip(title: "Spotlight shape", detail: "Rectangle, rounded or ellipse.")
         case "spotEdit": return BarTip(title: "Adjust the region", detail: "Move it, or drag a handle to resize.")
+        case "timer": return BarTip(title: "Timer", detail: "A countdown or stopwatch chip. Click to show or hide it.", keys: keys(.timer))
         case "pause": return BarTip(title: model.isPaused ? "Resume" : "Pause", detail: model.isPaused ? "Turns the effects back on." : "Turns every effect off until you resume.", keys: keys(.pause))
         case "style": return BarTip(title: "Highlight style", detail: "Aura, Lens, Comet, Keyline or Sonar.")
         case "color": return BarTip(title: "Highlight color", detail: "Changes the color of the highlight and laser.")

@@ -101,7 +101,7 @@ public struct HotKey: Codable, Equatable, Sendable {
 
 /// What a global shortcut does.
 public enum HotKeyAction: String, CaseIterable, Codable, Sendable {
-    case highlight, laser, ink, pause, nextScene, clearInk, toggleToolbar, spotlight, whiteboard
+    case highlight, laser, ink, pause, nextScene, clearInk, toggleToolbar, spotlight, whiteboard, timer
 
     public var displayName: String {
         switch self {
@@ -114,6 +114,7 @@ public enum HotKeyAction: String, CaseIterable, Codable, Sendable {
         case .toggleToolbar: "Show or hide the bar"
         case .spotlight: "Spotlight a region"
         case .whiteboard: "Whiteboard"
+        case .timer: "Show or hide the timer"
         }
     }
 }
@@ -144,6 +145,7 @@ public struct TriggerSettings: Codable, Equatable, Sendable {
             HotKeyAction.toggleToolbar.rawValue: HotKey(keyCode: 11, modifiers: mods),
             HotKeyAction.spotlight.rawValue: HotKey(keyCode: 1, modifiers: mods),
             HotKeyAction.whiteboard.rawValue: HotKey(keyCode: 13, modifiers: mods),
+            HotKeyAction.timer.rawValue: HotKey(keyCode: 17, modifiers: mods),
         ]
     }()
 
@@ -197,6 +199,7 @@ public enum TriggerCommand: Equatable, Sendable {
     case toggleToolbar
     case spotlight
     case whiteboard
+    case timer
 }
 
 /// Which effects are running right now; the router uses it to keep drawing from setting off the shake.
@@ -250,6 +253,7 @@ public struct TriggerRouter: Equatable, Sendable {
             case .toggleToolbar: return [.toggleToolbar]
             case .spotlight: return [.spotlight]
             case .whiteboard: return [.whiteboard]
+            case .timer: return [.timer]
             }
         }
     }

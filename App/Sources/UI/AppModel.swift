@@ -13,6 +13,7 @@ final class AppModel: ObservableObject {
     /// Set by the app delegate; opens the settings window on a page.
     var openSettings: (SettingsPage) -> Void = { _ in }
     var openWelcome: () -> Void = {}
+    var toggleTimer: () -> Void = {}
     var quit: () -> Void = { NSApp.terminate(nil) }
 
     init(coordinator: AppCoordinator, updater: AppUpdater) {

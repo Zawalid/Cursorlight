@@ -27,8 +27,16 @@ public struct ToolbarSettings: Codable, Equatable, Sendable {
     /// Where the bar was left, as its bottom-left corner in screen coordinates. nil: bottom center of the main display.
     public var originX: Double?
     public var originY: Double?
+    /// Where the timer chip was left.
+    public var timerOriginX: Double?
+    public var timerOriginY: Double?
 
     public init() {}
+
+    public var timerOrigin: CGPoint? {
+        guard let timerOriginX, let timerOriginY, timerOriginX.isFinite, timerOriginY.isFinite else { return nil }
+        return CGPoint(x: timerOriginX, y: timerOriginY)
+    }
 
     public var origin: CGPoint? {
         guard let originX, let originY, originX.isFinite, originY.isFinite else { return nil }
@@ -44,7 +52,7 @@ public struct ToolbarSettings: Codable, Equatable, Sendable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case enabled, visibility, hiddenFromViewers, collapsed, originX, originY }
+    private enum CodingKeys: String, CodingKey { case enabled, visibility, hiddenFromViewers, collapsed, originX, originY, timerOriginX, timerOriginY }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -55,5 +63,7 @@ public struct ToolbarSettings: Codable, Equatable, Sendable {
         collapsed = (try? c.decode(Bool.self, forKey: .collapsed)) ?? d.collapsed
         originX = try? c.decode(Double.self, forKey: .originX)
         originY = try? c.decode(Double.self, forKey: .originY)
+        timerOriginX = try? c.decode(Double.self, forKey: .timerOriginX)
+        timerOriginY = try? c.decode(Double.self, forKey: .timerOriginY)
     }
 }

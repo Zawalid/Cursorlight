@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var model: AppModel?
     private var windows: WindowControllers?
     private var toolbar: ToolbarController?
+    private var timer: TimerController?
     var debugInkActive: Bool { coordinator?.ink.isActive ?? false }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -68,6 +69,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.model = model
             self.windows = windows
             self.toolbar = ToolbarController(model: model)
+            let timer = TimerController(model: model)
+            self.timer = timer
+            model.toggleTimer = { [weak timer] in timer?.toggle() }
+            coordinator.onToggleTimer = { [weak timer] in timer?.toggle() }
             statusItemController.install(model: model)
             if environment.opensSettingsAtLaunch {
                 windows.showSettings(environment.launchPage.flatMap(SettingsPage.init(rawValue:)) ?? .highlight)
