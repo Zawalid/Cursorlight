@@ -106,3 +106,34 @@ final class WhiteboardShortcutTests: XCTestCase {
         XCTAssertEqual(InkBoard.black.next, .none)
     }
 }
+
+final class CurvedArrowAndBubbleTests: XCTestCase {
+    func testCurvedArrowBendsAwayFromTheStraightLine() {
+        let a = CGPoint(x: 0, y: 0), b = CGPoint(x: 200, y: 0)
+        let mid = InkCurve.point(from: a, to: b, at: 0.5)
+        XCTAssertEqual(mid.x, 100, accuracy: 0.001)
+        XCTAssertGreaterThan(abs(mid.y), 20, "it bulges to one side")
+        XCTAssertEqual(InkCurve.point(from: a, to: b, at: 0), a)
+        XCTAssertEqual(InkCurve.point(from: a, to: b, at: 1).x, 200, accuracy: 0.001)
+    }
+
+    func testCurvedArrowIsDraggedAndErasedAlongItsCurve() {
+        var m = InkModel()
+        m.begin(at: CGPoint(x: 0, y: 0), style: .marker, color: .red, kind: .curvedArrow)
+        m.append(CGPoint(x: 200, y: 0))
+        m.end(at: 1)
+        XCTAssertEqual(m.strokeCount, 1)
+        XCTAssertFalse(m.erase(at: CGPoint(x: 100, y: 0), radius: 10), "the straight chord is not on the curve")
+        let onCurve = InkCurve.point(from: CGPoint(x: 0, y: 0), to: CGPoint(x: 200, y: 0), at: 0.5)
+        XCTAssertTrue(m.erase(at: onCurve, radius: 10))
+    }
+
+    func testToolsAndStampsIncludeTheNewOnes() {
+        XCTAssertEqual(InkTool.curvedArrow.key, "v")
+        XCTAssertEqual(Set(InkTool.allCases.map(\.key)).count, InkTool.allCases.count)
+        XCTAssertTrue(StampKind.allCases.contains(.bubble))
+        var m = InkModel()
+        m.placeStamp(.bubble, at: .zero, color: .red, customColor: nil, time: 0)
+        XCTAssertEqual(m.strokeCount, 1)
+    }
+}

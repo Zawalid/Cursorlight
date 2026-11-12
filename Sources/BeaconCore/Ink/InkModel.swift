@@ -205,6 +205,9 @@ extension InkModel.Stroke {
     /// Whether an eraser circle at `point` touches this mark.
     func isHit(by point: CGPoint, radius: CGFloat) -> Bool {
         switch kind {
+        case .curvedArrow:
+            guard points.count == 2 else { return false }
+            return InkCurve.samples(from: points[0], to: points[1]).contains { hypot($0.x - point.x, $0.y - point.y) <= radius }
         case .freehand, .arrow, .doubleArrow, .bracket:
             guard points.count > 1 else { return points.first.map { hypot($0.x - point.x, $0.y - point.y) <= radius } ?? false }
             for i in 1..<points.count where Self.distance(from: point, toSegment: points[i - 1], points[i]) <= radius { return true }
@@ -228,5 +231,23 @@ extension InkModel.Stroke {
         guard lengthSquared > 0 else { return hypot(p.x - a.x, p.y - a.y) }
         let t = min(max(((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSquared, 0), 1)
         return hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
+    }
+}
+
+/// The bend of a curved arrow: a quadratic curve that bulges to one side by a quarter of its length.
+enum InkCurve {
+    static func control(from a: CGPoint, to b: CGPoint) -> CGPoint {
+        let dx = b.x - a.x, dy = b.y - a.y
+        return CGPoint(x: (a.x + b.x) / 2 - dy * 0.28, y: (a.y + b.y) / 2 + dx * 0.28)
+    }
+
+    static func point(from a: CGPoint, to b: CGPoint, at t: CGFloat) -> CGPoint {
+        let c = control(from: a, to: b)
+        let u = 1 - t
+        return CGPoint(x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y)
+    }
+
+    static func samples(from a: CGPoint, to b: CGPoint, count: Int = 16) -> [CGPoint] {
+        (0...count).map { point(from: a, to: b, at: CGFloat($0) / CGFloat(count)) }
     }
 }

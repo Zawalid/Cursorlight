@@ -40,6 +40,8 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     /// What a click looks like, and whether it also makes a small sound.
     public var clickEffect: ClickEffect = .ripple
     public var clickSound = false
+    /// Hold the button down and the ring grows into a focus ring that stays until you let go.
+    public var holdRing = true
     /// Follow the system "Reduce motion" setting: no breathing, a short tail, one sonar ring.
     public var respectReduceMotion = true
     /// A quick ring where the pointer lands when it jumps to another display.
@@ -67,7 +69,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case auraBreathing, cometTail, keylineWidth, sonarRings, lensSoftness, fadeAfterStill, customAccent
         case spotlightShape, spotlightDim, spotlightSoftness, spotlightCorner
-        case clickEffect, clickSound, respectReduceMotion, locatorPulse, hideWhileTyping
+        case clickEffect, clickSound, holdRing, respectReduceMotion, locatorPulse, hideWhileTyping
     }
 
     public init(from decoder: Decoder) throws {
@@ -83,6 +85,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
         spotlightShape = (try? c.decode(SpotlightShape.self, forKey: .spotlightShape)) ?? d.spotlightShape
         clickEffect = (try? c.decode(ClickEffect.self, forKey: .clickEffect)) ?? d.clickEffect
         clickSound = (try? c.decode(Bool.self, forKey: .clickSound)) ?? d.clickSound
+        holdRing = (try? c.decode(Bool.self, forKey: .holdRing)) ?? d.holdRing
         respectReduceMotion = (try? c.decode(Bool.self, forKey: .respectReduceMotion)) ?? d.respectReduceMotion
         locatorPulse = (try? c.decode(Bool.self, forKey: .locatorPulse)) ?? d.locatorPulse
         hideWhileTyping = (try? c.decode(Bool.self, forKey: .hideWhileTyping)) ?? d.hideWhileTyping

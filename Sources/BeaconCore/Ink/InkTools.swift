@@ -3,7 +3,7 @@ import Foundation
 
 /// What a drag on the screen does while drawing.
 public enum InkTool: String, CaseIterable, Codable, Sendable {
-    case pen, eraser, box, redact, arrow, doubleArrow, bracket, stamp, text
+    case pen, eraser, box, redact, arrow, curvedArrow, doubleArrow, bracket, stamp, text
 
     public var displayName: String {
         switch self {
@@ -12,6 +12,7 @@ public enum InkTool: String, CaseIterable, Codable, Sendable {
         case .box: "Box"
         case .redact: "Cover"
         case .arrow: "Arrow"
+        case .curvedArrow: "Curved arrow"
         case .doubleArrow: "Double arrow"
         case .bracket: "Bracket"
         case .stamp: "Stamp"
@@ -27,6 +28,7 @@ public enum InkTool: String, CaseIterable, Codable, Sendable {
         case .box: "b"
         case .redact: "r"
         case .arrow: "a"
+        case .curvedArrow: "v"
         case .doubleArrow: "d"
         case .bracket: "k"
         case .stamp: "n"
@@ -40,6 +42,7 @@ public enum InkTool: String, CaseIterable, Codable, Sendable {
         case .box: .filledBox
         case .redact: .redact
         case .arrow: .arrow
+        case .curvedArrow: .curvedArrow
         case .doubleArrow: .doubleArrow
         case .bracket: .bracket
         case .pen, .eraser, .stamp, .text: nil
@@ -49,7 +52,7 @@ public enum InkTool: String, CaseIterable, Codable, Sendable {
 
 /// The symbols a stamp can place. The number stamp counts up by itself.
 public enum StampKind: String, CaseIterable, Codable, Sendable {
-    case number, check, cross, star, heart, question, exclamation
+    case number, check, cross, star, heart, question, exclamation, bubble
 
     public var displayName: String {
         switch self {
@@ -60,6 +63,7 @@ public enum StampKind: String, CaseIterable, Codable, Sendable {
         case .heart: "Heart"
         case .question: "Question"
         case .exclamation: "Exclamation"
+        case .bubble: "Speech bubble"
         }
     }
 }
@@ -70,6 +74,7 @@ public enum InkMarkKind: Equatable, Sendable {
     case filledBox
     case redact
     case arrow
+    case curvedArrow
     case doubleArrow
     case bracket
     case stamp(StampKind, Int)
@@ -78,7 +83,7 @@ public enum InkMarkKind: Equatable, Sendable {
     /// Marks dragged out from two corners.
     var isDragShape: Bool {
         switch self {
-        case .filledBox, .redact, .arrow, .doubleArrow, .bracket: true
+        case .filledBox, .redact, .arrow, .curvedArrow, .doubleArrow, .bracket: true
         case .freehand, .stamp, .text: false
         }
     }

@@ -57,6 +57,9 @@ public struct HighlightModel: Equatable, Sendable {
 
     /// A gap longer than this between steps (the clock was paused) restarts stepping instead of integrating it.
     static let restartGap: TimeInterval = 0.25
+    /// How long the button must be held before the focus ring starts to open, and how long it takes.
+    static let holdDelay: TimeInterval = 0.35
+    static let holdGrow: TimeInterval = 0.25
     /// Breathing starts this long after the follower comes to rest.
     static let breathDelay: TimeInterval = 0.25
 
@@ -311,7 +314,19 @@ public struct HighlightModel: Equatable, Sendable {
             ring.dashed = ripple.dashed
             return ring
         }
-        frame.press = press.map { curve.press(elapsed: time - $0.start, center: pointer, button: $0.button) }
+        frame.press = press.map { held in
+            var ring = curve.press(elapsed: time - held.start, center: pointer, button: held.button)
+            // Held long enough, the press ring opens into a larger, steadier focus ring.
+            let hold = time - held.start - Self.holdDelay
+            if look.options.holdRing, hold > 0 {
+                let k = CGFloat(Easing.outCubic(min(hold / Self.holdGrow, 1)))
+                ring.radius += (recipe.ripple.endRadius * 1.15 - ring.radius) * k
+                ring.lineWidth += 1.5 * k
+                ring.alpha = min(1, ring.alpha + 0.3 * k)
+                ring.fillAlpha += 0.1 * k
+            }
+            return ring
+        }
         guard toggle.isVisible else { return frame }
 
         let rawLevel = CGFloat(toggle.level(at: time))

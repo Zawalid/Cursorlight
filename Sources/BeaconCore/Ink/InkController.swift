@@ -202,7 +202,7 @@ public final class InkController {
             model.placeStamp(stamp, at: point, color: color, customColor: customColor, time: clock())
         case .text:
             beginText(at: point)
-        case .box, .redact, .arrow, .doubleArrow, .bracket:
+        case .box, .redact, .arrow, .curvedArrow, .doubleArrow, .bracket:
             if let kind = tool.dragKind {
                 model.begin(at: point, style: style, color: color, widthScale: widthScale, customColor: customColor, kind: kind)
             }

@@ -122,6 +122,12 @@ struct LookPage: View {
                 }
                 if settings.clickRipples {
                     ClickEffectRow(selection: options.clickEffect, tint: settings.look.resolvedAccent.map { Color(rgba: $0) }) { v in model.setOptions { $0.clickEffect = v } }
+                    Toggle(isOn: Binding(get: { options.holdRing }, set: { v in model.setOptions { $0.holdRing = v } })) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Hold ring")
+                            Text("Hold the button and the ring grows, to hold attention on what you press.").font(.system(size: 11)).foregroundStyle(.secondary)
+                        }
+                    }
                     Toggle(isOn: Binding(get: { options.clickSound }, set: { v in model.setOptions { $0.clickSound = v } })) {
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Click sound")
@@ -1440,6 +1446,7 @@ extension InkTool {
         case .box: "rectangle.fill"
         case .redact: "eye.slash.fill"
         case .arrow: "arrow.up.right"
+        case .curvedArrow: "arrow.turn.up.right"
         case .doubleArrow: "arrow.left.and.right"
         case .bracket: "ruler"
         case .stamp: "1.circle.fill"
@@ -1454,6 +1461,7 @@ extension InkTool {
         case .box: "Drag a see-through filled box."
         case .redact: "Drag an opaque cover over something. It stays until you clear."
         case .arrow: "Drag from the tail to the tip."
+        case .curvedArrow: "A curved arrow, for pointing around something."
         case .doubleArrow: "An arrow with a head at both ends."
         case .bracket: "A line with end ticks, to mark a span."
         case .stamp: "Click to place a numbered marker, check, cross or star."
@@ -1472,6 +1480,7 @@ extension StampKind {
         case .heart: "heart.fill"
         case .question: "questionmark.circle.fill"
         case .exclamation: "exclamationmark.circle.fill"
+        case .bubble: "bubble.left.fill"
         }
     }
 }

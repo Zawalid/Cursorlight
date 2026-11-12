@@ -107,7 +107,7 @@ final class InkRenderer {
             entry.glow.isHidden = true
             entry.core.fillColor = NSColor(white: 0.04, alpha: 1).cgColor
             entry.core.strokeColor = nil
-        case .freehand, .arrow, .doubleArrow, .bracket:
+        case .freehand, .arrow, .curvedArrow, .doubleArrow, .bracket:
             entry.keyline.strokeColor = Palette.keyline.with(alpha: 0.22).cgColor
             entry.keyline.lineWidth = style.width * scale + 2
             entry.keyline.isHidden = !style.hasKeyline
@@ -136,7 +136,7 @@ final class InkRenderer {
             entry.keyline.path = path
             entry.glow.path = path
             entry.core.path = path
-        case .arrow, .doubleArrow, .bracket:
+        case .arrow, .curvedArrow, .doubleArrow, .bracket:
             let path = Self.markPath(stroke.kind, local, lineWidth: width)
             entry.keyline.path = path
             entry.glow.path = path
@@ -160,8 +160,14 @@ final class InkRenderer {
         let length = hypot(b.x - a.x, b.y - a.y)
         guard length > 1 else { return path }
         path.move(to: a)
-        path.addLine(to: b)
-        let heading = atan2(b.y - a.y, b.x - a.x)
+        var heading = atan2(b.y - a.y, b.x - a.x)
+        if kind == .curvedArrow {
+            let c = InkCurve.control(from: a, to: b)
+            path.addQuadCurve(to: b, control: c)
+            heading = atan2(b.y - c.y, b.x - c.x)
+        } else {
+            path.addLine(to: b)
+        }
         func head(at tip: CGPoint, pointing angle: CGFloat) {
             let size = min(max(14, lineWidth * 3.6), length * 0.45)
             for side in [-1.0, 1.0] {
@@ -171,7 +177,7 @@ final class InkRenderer {
             }
         }
         switch kind {
-        case .arrow:
+        case .arrow, .curvedArrow:
             head(at: b, pointing: heading)
         case .doubleArrow:
             head(at: b, pointing: heading)
@@ -256,6 +262,26 @@ final class InkRenderer {
             p.move(to: CGPoint(x: -8, y: -8)); p.addLine(to: CGPoint(x: 8, y: 8))
             p.move(to: CGPoint(x: -8, y: 8)); p.addLine(to: CGPoint(x: 8, y: -8))
             stroke(p)
+        case .bubble:
+            let body = CGMutablePath()
+            body.addRoundedRect(in: CGRect(x: -22, y: -10, width: 44, height: 30), cornerWidth: 10, cornerHeight: 10)
+            body.move(to: CGPoint(x: -12, y: -9)); body.addLine(to: CGPoint(x: -18, y: -20)); body.addLine(to: CGPoint(x: -3, y: -9))
+            let shape = CAShapeLayer()
+            shape.path = body
+            shape.fillColor = color.cgColor
+            shape.strokeColor = NSColor.black.withAlphaComponent(0.25).cgColor
+            shape.lineWidth = 1
+            shape.shadowColor = NSColor.black.cgColor
+            shape.shadowOpacity = 0.35
+            shape.shadowRadius = 3
+            shape.shadowOffset = CGSize(width: 0, height: -1)
+            content.addSublayer(shape)
+            for x in [-10.0, 0.0, 10.0] {
+                let dot = CAShapeLayer()
+                dot.path = CGPath(ellipseIn: CGRect(x: x - 2.5, y: 5, width: 5, height: 5), transform: nil)
+                dot.fillColor = ink.cgColor
+                content.addSublayer(dot)
+            }
         case .star:
             let p = CGMutablePath()
             for i in 0..<10 {

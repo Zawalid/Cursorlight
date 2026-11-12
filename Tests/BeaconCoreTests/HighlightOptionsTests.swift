@@ -389,3 +389,35 @@ final class ClickEffectTests: XCTestCase {
         XCTAssertTrue(decoded.highlightOptions.respectReduceMotion)
     }
 }
+
+final class HoldRingTests: XCTestCase {
+    private func held(_ ring: Bool, for seconds: Double) -> RingState? {
+        var o = HighlightOptions(); o.holdRing = ring
+        var m = HighlightModel(style: .aura, pointer: .zero, look: HighlightLook(options: o))
+        m.mouseDown(.left, at: 0)
+        return m.step(pointer: .zero, time: seconds).press
+    }
+
+    func testAShortPressStaysSmall() {
+        XCTAssertNotNil(held(true, for: 0.2))
+        XCTAssertEqual(held(true, for: 0.3)?.radius ?? 0, held(false, for: 0.3)?.radius ?? -1, accuracy: 0.001, "before the delay the ring is the ordinary press ring")
+    }
+
+    func testHoldingGrowsTheRingAndReleasingEndsIt() {
+        let small = held(true, for: 0.3)
+        let big = held(true, for: 1.0)
+        XCTAssertGreaterThan(big?.radius ?? 0, (small?.radius ?? 0) + 10)
+        XCTAssertGreaterThan(big?.lineWidth ?? 0, small?.lineWidth ?? 99)
+        var m = HighlightModel(style: .aura, pointer: .zero)
+        m.mouseDown(.left, at: 0)
+        _ = m.step(pointer: .zero, time: 1)
+        m.mouseUp(.left, at: .zero, time: 1.05)
+        XCTAssertNil(m.step(pointer: .zero, time: 1.1).press)
+    }
+
+    func testTurningTheOptionOffKeepsTheOrdinaryPressRing() {
+        let off = held(false, for: 1.0)
+        let on = held(true, for: 1.0)
+        XCTAssertLessThan(off?.radius ?? 99, on?.radius ?? 0)
+    }
+}
