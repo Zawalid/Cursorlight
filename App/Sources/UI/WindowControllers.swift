@@ -39,8 +39,9 @@ final class WindowControllers {
             window.setContentSize(NSSize(width: 980, height: 700))
             window.contentMinSize = NSSize(width: 900, height: 640)
             window.center()
-            window.setFrameAutosaveName("BeaconSettings")
+            window.setFrameAutosaveName("BeaconSettings.v3")
             settings = window
+            keepTrafficLightsCentered(window)
         }
         Self.present(settings)
     }
@@ -53,6 +54,7 @@ final class WindowControllers {
         window.setContentSize(NSSize(width: 580, height: 520))
         window.center()
         welcome = window
+        keepTrafficLightsCentered(window)
         Self.present(window)
     }
 
@@ -107,10 +109,35 @@ final class WindowControllers {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.appearance = NSAppearance(named: .aqua)
-        // An empty unified toolbar makes the title bar tall, which centers the traffic lights in a row of their own.
-        window.toolbar = NSToolbar(identifier: "beacon.window")
-        window.toolbarStyle = .unified
-        window.titlebarSeparatorStyle = .none
         return window
+    }
+
+    /// Makes the title bar `height` tall and centers the traffic lights in it, so they share a row with the top bar. There
+    /// is deliberately no toolbar: a toolbar view sits above the content and swallows clicks on anything under it.
+    static func centerTrafficLights(of window: NSWindow, height: CGFloat = 52) {
+        guard let close = window.standardWindowButton(.closeButton),
+              let bar = close.superview?.superview else { return }
+        var frame = bar.frame
+        frame.size.height = height
+        frame.origin.y = window.frame.height - height
+        bar.frame = frame
+        var x: CGFloat = 20
+        for kind in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            guard let button = window.standardWindowButton(kind) else { continue }
+            button.setFrameOrigin(NSPoint(x: x, y: (height - button.frame.height) / 2))
+            x += button.frame.width + 8
+        }
+    }
+
+    /// Keeps the traffic lights centered whenever AppKit lays the title bar out again.
+    func keepTrafficLightsCentered(_ window: NSWindow) {
+        for name in [NSWindow.didResizeNotification, NSWindow.didBecomeKeyNotification, NSWindow.didEndLiveResizeNotification,
+                     NSWindow.didExitFullScreenNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak window] _ in
+                MainActor.assumeIsolated { if let window { Self.centerTrafficLights(of: window) } }
+            }
+        }
+        Self.centerTrafficLights(of: window)
+        DispatchQueue.main.async { MainActor.assumeIsolated { Self.centerTrafficLights(of: window) } }
     }
 }

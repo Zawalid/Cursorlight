@@ -68,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.windows = windows
             statusItemController.install(model: model)
             if environment.opensSettingsAtLaunch {
-                windows.showSettings(.highlight)
+                windows.showSettings(environment.launchPage.flatMap(SettingsPage.init(rawValue:)) ?? .highlight)
             } else if !coordinator.settings.settings.welcomeSeen && !environment.isAgentMode {
                 windows.showWelcome()
             }

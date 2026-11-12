@@ -174,14 +174,15 @@ struct SignalPill: View {
     }
 }
 
-/// A floating glass pill that moves between the five sections.
+/// A floating glass pill that moves between the five sections. Each item fills its whole slot: no dead gaps, and a hover state.
 struct Dock: View {
     @Binding var page: SettingsPage
     @Namespace private var thumb
+    @State private var hovered: SettingsPage?
     private let items: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays]
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             ForEach(items) { item in
                 let on = page == item
                 Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) { page = item } } label: {
@@ -189,17 +190,21 @@ struct Dock: View {
                         Image(systemName: item.symbol).font(.system(size: 12, weight: .medium))
                         Text(item.title).font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundStyle(on ? Theme.text : Theme.dim)
-                    .padding(.horizontal, 14).frame(height: 32)
+                    .foregroundStyle(on || hovered == item ? Theme.text : Theme.dim)
+                    .padding(.horizontal, 16).frame(height: 34)
                     .background {
                         if on {
                             Capsule().fill(Color.white.opacity(0.95))
                                 .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
                                 .matchedGeometryEffect(id: "dock", in: thumb)
+                        } else if hovered == item {
+                            Capsule().fill(Color.black.opacity(0.07))
                         }
                     }
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .onHover { hovered = $0 ? item : (hovered == item ? nil : hovered) }
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
