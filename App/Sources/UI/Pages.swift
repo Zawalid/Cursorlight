@@ -763,31 +763,171 @@ struct ProfilesPage: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
+        let rules = model.settings.appRules
+        let candidates = model.runningAppCandidates()
+        let calls = candidates.filter { ShareSafe.conferencingApp(for: $0.bundleID) != nil }
         Form {
             Section {
-                ForEach(model.settings.appRules) { rule in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(rule.appName).font(.system(size: 13, weight: .medium))
-                        HStack {
-                            Picker("", selection: Binding(get: { rule.profileID ?? "" }, set: { model.setRule(rule, profileID: $0.isEmpty ? nil : $0) })) {
-                                ForEach(model.profiles) { Text($0.name).tag($0.id) }
-                                Divider()
-                                Text("Beacon off").tag("")
-                            }
-                            .labelsHidden()
-                            Button { model.removeRule(rule) } label: { Image(systemName: "minus.circle") }
-                                .buttonStyle(.borderless).help("Remove this rule")
-                        }
+                HStack(spacing: 10) {
+                    Image(systemName: "globe").font(.system(size: 15)).foregroundStyle(.secondary).frame(width: 30)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Everywhere else")
+                        Text("Apps without a rule use this scene.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    SceneMenu(selection: model.settings.baseProfileID, allowsOff: false) { id in
+                        if let id { model.chooseProfile(id) }
                     }
                 }
-                Button("Add App…") { model.addRuleFromPanel() }
+            } header: { Text("Default") }
+
+            Section {
+                if rules.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("No app rules yet").font(.system(size: 13, weight: .semibold))
+                        Text("Give Zoom the Meeting scene, or turn Beacon off in a video player. Beacon switches as soon as the app is in front.")
+                            .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 4)
+                }
+                ForEach(rules) { rule in
+                    RuleRow(rule: rule)
+                }
+                AddAppMenu(candidates: candidates)
             } header: {
-                Text("App Rules")
+                Text("App rules")
             } footer: {
-                Text("When one of these apps is in front, Beacon switches scene or turns off. A scene you pick by hand wins until you switch to another app.")
+                Text("A scene you pick by hand wins until you switch to another app.")
+            }
+
+            if !calls.filter({ call in !rules.contains { $0.bundleID == call.bundleID } }).isEmpty {
+                Section {
+                    ForEach(calls.filter { call in !rules.contains { $0.bundleID == call.bundleID } }, id: \.bundleID) { app in
+                        HStack(spacing: 10) {
+                            AppGlyph(bundleID: app.bundleID, size: 30)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(app.name)
+                                Text("Open now").font(.system(size: 11)).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button("Use Meeting scene") { model.addRule(bundleID: app.bundleID, name: app.name, preferring: "meeting") }
+                                .controlSize(.small)
+                        }
+                    }
+                } header: { Text("Suggested") }
             }
         }
         .page()
+    }
+}
+
+/// The real icon of an app, read from this Mac, or a plain tile when it cannot be found.
+struct AppGlyph: View {
+    let bundleID: String
+    var size: CGFloat = 30
+
+    var body: some View {
+        if let image = AppIconCache.shared.icon(for: [bundleID]) {
+            Image(nsImage: image).resizable().interpolation(.high).frame(width: size, height: size)
+        } else {
+            Image(systemName: "app.dashed").font(.system(size: size * 0.5)).foregroundStyle(.secondary)
+                .frame(width: size, height: size)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: size * 0.24, style: .continuous))
+        }
+    }
+}
+
+/// One rule: the app, what Beacon does there, and a menu to change it. The remove button shows on hover.
+struct RuleRow: View {
+    @EnvironmentObject private var model: AppModel
+    let rule: AppRule
+    @State private var hovered = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            AppGlyph(bundleID: rule.bundleID)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(rule.appName).font(.system(size: 13, weight: .medium)).lineLimit(1)
+                Text(rule.profileID == nil ? "Beacon stays off here" : "Switches the scene")
+                    .font(.system(size: 11)).foregroundStyle(rule.profileID == nil ? Theme.warn : .secondary)
+            }
+            Spacer(minLength: 6)
+            SceneMenu(selection: rule.profileID, allowsOff: true) { model.setRule(rule, profileID: $0) }
+            Button { model.removeRule(rule) } label: {
+                Image(systemName: "xmark.circle.fill").font(.system(size: 14)).foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain).help("Remove this rule")
+            .opacity(hovered ? 1 : 0.35)
+        }
+        .onHover { hovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovered)
+    }
+}
+
+/// A compact menu that shows a scene as a small thumbnail and its name, with an option to turn Beacon off.
+struct SceneMenu: View {
+    @EnvironmentObject private var model: AppModel
+    let selection: String?
+    let allowsOff: Bool
+    let choose: (String?) -> Void
+
+    var body: some View {
+        let current = model.profiles.first { $0.id == selection }
+        Menu {
+            ForEach(model.profiles) { profile in
+                Button {
+                    choose(profile.id)
+                } label: {
+                    if profile.id == selection { Label(profile.name, systemImage: "checkmark") } else { Text(profile.name) }
+                }
+            }
+            if allowsOff {
+                Divider()
+                Button {
+                    choose(nil)
+                } label: {
+                    if selection == nil { Label("Beacon off", systemImage: "checkmark") } else { Text("Beacon off") }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                if let current {
+                    StyleThumbnail(style: current.snapshot.highlightStyle, color: Color(rgba: current.highlightColor), scale: 0.3)
+                        .frame(width: 22, height: 16)
+                        .background(Theme.stage, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    Text(current.name).font(.system(size: 12, weight: .medium))
+                } else {
+                    Image(systemName: "nosign").font(.system(size: 11)).foregroundStyle(Theme.warn)
+                    Text("Off").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.warn)
+                }
+            }
+        }
+        .menuStyle(.borderlessButton).fixedSize()
+    }
+}
+
+/// Add an app: ones that are open now, then any app from the Applications folder.
+struct AddAppMenu: View {
+    @EnvironmentObject private var model: AppModel
+    let candidates: [RunningApp]
+
+    var body: some View {
+        let ruled = Set(model.settings.appRules.map(\.bundleID))
+        let open = candidates.filter { !ruled.contains($0.bundleID) }
+        Menu {
+            if !open.isEmpty {
+                Section("Open now") {
+                    ForEach(open.prefix(14), id: \.bundleID) { app in
+                        Button(app.name) { model.addRule(bundleID: app.bundleID, name: app.name, preferring: nil) }
+                    }
+                }
+            }
+            Button("Choose from Applications…") { model.addRuleFromPanel() }
+        } label: {
+            Label("Add app", systemImage: "plus")
+        }
+        .menuStyle(.borderlessButton).foregroundStyle(Theme.accent)
     }
 }
 

@@ -75,6 +75,25 @@ final class AppModel: ObservableObject {
     func removeRule(_ rule: AppRule) { coordinator.removeAppRule(bundleID: rule.bundleID); bump() }
 
     /// Asks the user for an app and adds a rule for it, starting with the current base profile.
+    /// Regular apps that are open right now, except Beacon, sorted by name.
+    func runningAppCandidates() -> [RunningApp] {
+        var seen = Set<String>()
+        return NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.bundleIdentifier != Bundle.main.bundleIdentifier }
+            .compactMap { app -> RunningApp? in
+                guard let id = app.bundleIdentifier, let name = app.localizedName, seen.insert(id).inserted else { return nil }
+                return RunningApp(bundleID: id, name: name)
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    /// Adds a rule for an app. `preferring` is a scene id to use if it exists; otherwise the default scene.
+    func addRule(bundleID: String, name: String, preferring: String?) {
+        let scene = preferring.flatMap { id in settings.profiles.contains { $0.id == id } ? id : nil } ?? settings.baseProfileID
+        coordinator.setAppRule(AppRule(bundleID: bundleID, appName: name, profileID: scene))
+        bump()
+    }
+
     func addRuleFromPanel() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
@@ -173,4 +192,9 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .about: "info.circle"
         }
     }
+}
+
+struct RunningApp: Equatable {
+    let bundleID: String
+    let name: String
 }
