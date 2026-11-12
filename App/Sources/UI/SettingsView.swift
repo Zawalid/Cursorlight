@@ -1,120 +1,201 @@
 import BeaconCore
 import SwiftUI
 
+/// The window is a canvas and an inspector. The canvas is a live miniature of a screen, full-bleed, with your real mouse
+/// playing across it; a strip of scenes sits under it. The inspector on the right holds the controls for one area at a
+/// time. The title bar is empty on purpose, so the canvas runs to the top edge.
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     @State var page: SettingsPage
     /// False only for offscreen snapshots, where scroll views do not render.
     var scrolls = true
-    private let sections: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays]
 
     var body: some View {
-        NavigationSplitView {
-            List(selection: Binding<SettingsPage?>(get: { page }, set: { if let value = $0 { page = value } })) {
-                Section {
-                    ForEach(sections) { item in Label(item.title, systemImage: item.symbol).tag(item) }
-                }
-                Section {
-                    Label(SettingsPage.about.title, systemImage: SettingsPage.about.symbol).tag(SettingsPage.about)
-                }
-            }
-            .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 190, ideal: 212, max: 240)
-            .safeAreaInset(edge: .bottom, spacing: 0) { StatusBlock() }
-        } detail: {
-            detail
-                .navigationTitle(page.title)
+        VStack(spacing: 0) {
+            Canvas_()
+            SceneStrip()
         }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) { SceneMenu() }
+        .background(Theme.stage)
+        .ignoresSafeArea(.container, edges: .top)
+        .inspector(isPresented: .constant(true)) {
+            Inspector(page: $page)
+                .inspectorColumnWidth(min: 310, ideal: 340, max: 420)
         }
-        .frame(minWidth: 900, minHeight: 600)
+        .frame(minWidth: 980, minHeight: 640)
+        .environment(\.inspectorPage, page)
     }
 
+    /// The canvas: the live stage, with the share status top right and the highlight switch bottom left.
     @ViewBuilder
-    private var detail: some View {
-        switch page {
-        case .highlight: LookPage()
-        case .ink: InkPage()
-        case .triggers: TriggersPage()
-        case .profiles: ProfilesPage()
-        case .displays: DisplaysPage()
-        case .about: AboutPage()
+    private func Canvas_() -> some View {
+        ZStack {
+            if page == .ink {
+                InkPreview(style: model.settings.inkStyle, color: model.settings.inkColor, cleanup: model.settings.inkCleanup, fade: model.settings.inkFadeAfter)
+            } else {
+                Stage(style: model.settings.highlightStyle, look: model.settings.look)
+            }
         }
+        .overlay(alignment: .topTrailing) { ShareChip().padding(.top, 14).padding(.trailing, 16) }
+        .overlay(alignment: .bottomLeading) { OnChip().padding(16) }
     }
 }
 
-/// The current scene as a standard toolbar menu: pick a scene, make a new one from the current look, rename or delete.
-struct SceneMenu: View {
-    @EnvironmentObject private var model: AppModel
-    @State private var renaming = false
-    @State private var draft = ""
+private struct InspectorPageKey: EnvironmentKey { static let defaultValue: SettingsPage = .highlight }
+extension EnvironmentValues {
+    var inspectorPage: SettingsPage {
+        get { self[InspectorPageKey.self] }
+        set { self[InspectorPageKey.self] = newValue }
+    }
+}
 
-    private var current: Profile? { model.profiles.first { $0.id == model.appliedProfileID } }
+/// The right column: icon tabs on top, one area's controls below.
+struct Inspector: View {
+    @Binding var page: SettingsPage
+    private let tabs: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays, .about]
 
     var body: some View {
-        Menu {
-            Picker("Scene", selection: Binding(get: { model.appliedProfileID }, set: { model.chooseProfile($0) })) {
-                ForEach(model.profiles) { Text($0.name).tag($0.id) }
+        VStack(spacing: 0) {
+            Picker("Area", selection: $page) {
+                ForEach(tabs) { item in
+                    Label(item.title, systemImage: item.symbol).labelStyle(.iconOnly).tag(item).help(item.title)
+                }
             }
-            .pickerStyle(.inline)
-            Divider()
-            Button("New Scene from This Look") { model.addProfile() }
-            Button("Rename Scene…") { draft = current?.name ?? ""; renaming = true }
-            if model.profiles.count > 1, let id = current?.id {
-                Button("Delete Scene", role: .destructive) { model.deleteProfile(id) }
+            .pickerStyle(.segmented).labelsHidden()
+            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 4)
+            Text(page.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.dim)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.top, 6)
+            Group {
+                switch page {
+                case .highlight: LookPage()
+                case .ink: InkPage()
+                case .triggers: TriggersPage()
+                case .profiles: ProfilesPage()
+                case .displays: DisplaysPage()
+                case .about: AboutPage()
+                }
             }
-        } label: {
-            Label(current?.name ?? "Scene", systemImage: "square.stack.3d.up")
-        }
-        .help("Scene")
-        .alert("Rename Scene", isPresented: $renaming) {
-            TextField("Name", text: $draft)
-            Button("Rename") { if let id = current?.id { model.renameProfile(id, to: draft) } }
-            Button("Cancel", role: .cancel) {}
         }
     }
 }
 
-/// Whether the highlight is on, and what viewers can see. At the bottom of the sidebar on every page.
-struct StatusBlock: View {
+/// A dark glass chip that floats on the canvas.
+struct CanvasChip<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Color.white.opacity(0.92))
+            .padding(.horizontal, 12).frame(height: 28)
+            .background(Color.black.opacity(0.5), in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1))
+    }
+}
+
+/// What viewers can see. Click to say what you are sharing.
+struct ShareChip: View {
     @EnvironmentObject private var model: AppModel
     @State private var open = false
 
     var body: some View {
-        let on = model.isOn(.highlight)
         let info = ShareStatusInfo(model.shareStatus)
-        VStack(alignment: .leading, spacing: 8) {
-            Divider()
-            Toggle(isOn: Binding(get: { on }, set: { _ in model.toggle(.highlight) })) {
-                Text("Highlight").font(.system(size: 13))
-            }
-            .toggleStyle(.switch)
-            Button { open.toggle() } label: {
-                HStack(spacing: 6) {
-                    Circle().fill(info.tint).frame(width: 7, height: 7)
-                    Text(info.pill).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
-                    Spacer(minLength: 0)
+        Button { open.toggle() } label: {
+            CanvasChip {
+                HStack(spacing: 7) {
+                    Circle().fill(info.chipTint).frame(width: 7, height: 7)
+                    Text(info.pill)
                 }
+            }
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $open, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(info.title).font(.system(size: 13, weight: .semibold))
+                Text(info.body).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Divider()
+                Picker("I am sharing", selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0); open = false })) {
+                    Text("Nothing").tag(DeclaredShare?.some(.notSharing))
+                    Text("Screen").tag(DeclaredShare?.some(.wholeScreen))
+                    Text("A window").tag(DeclaredShare?.some(.singleWindow))
+                }
+                .pickerStyle(.segmented)
+            }
+            .padding(14).frame(width: 280)
+        }
+    }
+}
+
+/// Whether the highlight is on. Click to turn it on or off.
+struct OnChip: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        let on = model.isOn(.highlight)
+        Button { model.toggle(.highlight) } label: {
+            CanvasChip {
+                HStack(spacing: 7) {
+                    Circle().fill(on ? Theme.accent : Color.white.opacity(0.4)).frame(width: 7, height: 7)
+                        .shadow(color: on ? Theme.accent : .clear, radius: 4)
+                    Text(on ? "Highlight is on" : "Highlight is off")
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .help("Shake the pointer, or press Control Option H")
+    }
+}
+
+/// The scenes as a strip of thumbnails under the canvas, like slides: each shows its own style. Click to switch.
+struct SceneStrip: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var renaming: Profile?
+    @State private var draft = ""
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ForEach(model.profiles) { profile in
+                let on = model.appliedProfileID == profile.id
+                Button { model.chooseProfile(profile.id) } label: {
+                    VStack(spacing: 6) {
+                        StyleThumbnail(style: profile.snapshot.highlightStyle)
+                            .frame(width: 104, height: 58)
+                            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Theme.accent : Color.white.opacity(0.12), lineWidth: on ? 2.5 : 1))
+                        Text(profile.name).font(.system(size: 11, weight: on ? .semibold : .regular))
+                            .foregroundStyle(on ? Color.white : Color.white.opacity(0.6)).lineLimit(1)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+                .contextMenu {
+                    Button("Rename…") { draft = profile.name; renaming = profile }
+                    if model.profiles.count > 1 { Button("Delete", role: .destructive) { model.deleteProfile(profile.id) } }
+                }
+            }
+            Button { model.addProfile() } label: {
+                VStack(spacing: 6) {
+                    Image(systemName: "plus").font(.system(size: 14, weight: .medium))
+                        .frame(width: 104, height: 58)
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    Text("New scene").font(.system(size: 11))
+                }
+                .foregroundStyle(Color.white.opacity(0.55))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .popover(isPresented: $open, arrowEdge: .trailing) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(info.title).font(.system(size: 13, weight: .semibold))
-                    Text(info.body).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    Divider()
-                    Picker("I am sharing", selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0); open = false })) {
-                        Text("Nothing").tag(DeclaredShare?.some(.notSharing))
-                        Text("Screen").tag(DeclaredShare?.some(.wholeScreen))
-                        Text("A window").tag(DeclaredShare?.some(.singleWindow))
-                    }
-                    .pickerStyle(.segmented)
-                }
-                .padding(14).frame(width: 280)
-            }
+            .help("Save the current look as a new scene")
+            Spacer()
         }
-        .padding(.horizontal, 14).padding(.bottom, 12)
+        .padding(.horizontal, 20).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.black.opacity(0.35))
+        .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1) }
+        .alert("Rename Scene", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+            TextField("Name", text: $draft)
+            Button("Rename") { if let id = renaming?.id { model.renameProfile(id, to: draft) }; renaming = nil }
+            Button("Cancel", role: .cancel) { renaming = nil }
+        }
     }
 }
 

@@ -31,19 +31,18 @@ final class WindowControllers {
         if settings != nil, let controller = settingsController {
             controller.rootView = root
         } else {
-            let window = Self.makeWindow(size: NSSize(width: 1000, height: 700), resizable: true)
+            let window = Self.makeWindow(size: NSSize(width: 1180, height: 740), resizable: true)
             window.title = Branding.appName
-            window.titlebarAppearsTransparent = false
-            window.titleVisibility = .visible
+            window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
+            window.backgroundColor = NSColor(red: 0.055, green: 0.055, blue: 0.063, alpha: 1)
             let controller = NSHostingController(rootView: root)
-            // Lets the SwiftUI view's toolbar become the window's real toolbar.
-            controller.sceneBridgingOptions = [.toolbars, .title]
             window.contentViewController = controller
             settingsController = controller
-            window.setContentSize(NSSize(width: 1000, height: 700))
-            window.contentMinSize = NSSize(width: 900, height: 600)
+            window.setContentSize(NSSize(width: 1180, height: 740))
+            window.contentMinSize = NSSize(width: 980, height: 640)
             window.center()
-            window.setFrameAutosaveName("BeaconSettings.v6")
+            window.setFrameAutosaveName("BeaconSettings.v7")
             settings = window
         }
         Self.present(settings)

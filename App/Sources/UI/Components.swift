@@ -171,7 +171,7 @@ struct SwatchButton: View {
 
     var body: some View {
         Button(action: action) {
-            Circle().fill(fill).frame(width: 20, height: 20)
+            Circle().fill(fill).frame(width: 17, height: 17)
                 .overlay(Circle().stroke(Theme.fillMid, lineWidth: 1))
                 .padding(3)
                 .overlay(Circle().stroke(isSelected ? Theme.text : .clear, lineWidth: 1.5))

@@ -16,13 +16,11 @@ struct InkPreview: View {
                 draw(&context, size: size, t: t, cycle: cycle)
             }
         }
-        .frame(height: 170)
-        .background(LinearGradient(colors: [Color(red: 0.14, green: 0.15, blue: 0.20), Color(red: 0.09, green: 0.09, blue: 0.12)], startPoint: .topLeading, endPoint: .bottomTrailing))
-        .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.line))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.stage)
         .overlay(alignment: .bottomLeading) {
             Text(cleanup ? "A rough loop morphs into a clean ellipse" : "Cleanup off: strokes stay as drawn")
-                .font(.system(size: 11)).foregroundStyle(Theme.dim).padding(12)
+                .font(.system(size: 11)).foregroundStyle(Color.white.opacity(0.55)).padding(16)
         }
     }
 

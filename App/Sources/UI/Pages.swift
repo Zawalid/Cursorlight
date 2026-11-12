@@ -12,7 +12,7 @@ enum Swatches {
     }
 }
 
-/// A row of selectable thumbnails inside a form section, with a line about the chosen one underneath.
+/// A grid of selectable thumbnails, sized for the inspector column.
 struct TileRow<Item: Hashable, Thumb: View>: View {
     let items: [Item]
     let selection: Item
@@ -21,17 +21,17 @@ struct TileRow<Item: Hashable, Thumb: View>: View {
     @ViewBuilder let thumbnail: (Item) -> Thumb
 
     var body: some View {
-        HStack(spacing: 12) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 78), spacing: 10)], spacing: 12) {
             ForEach(items, id: \.self) { item in
                 let on = item == selection
                 Button { select(item) } label: {
-                    VStack(spacing: 7) {
+                    VStack(spacing: 6) {
                         thumbnail(item)
-                            .frame(height: 62).frame(maxWidth: .infinity)
-                            .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Theme.accent : Color.clear, lineWidth: 2.5))
-                        Text(title(item)).font(.system(size: 12, weight: on ? .semibold : .regular)).foregroundStyle(on ? Theme.text : Theme.dim)
+                            .frame(height: 50).frame(maxWidth: .infinity)
+                            .background(Theme.stage, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Theme.accent : Color.clear, lineWidth: 2.5))
+                        Text(title(item)).font(.system(size: 11, weight: on ? .semibold : .regular)).foregroundStyle(on ? Theme.text : Theme.dim)
                     }
                     .contentShape(Rectangle())
                 }
@@ -61,16 +61,6 @@ struct LookPage: View {
     private var settings: BeaconSettings { model.settings }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Stage(style: settings.highlightStyle, look: settings.look)
-                .frame(height: 250)
-                .padding(.horizontal, 22).padding(.top, 8)
-            form
-        }
-        .background(Theme.window)
-    }
-
-    private var form: some View {
         Form {
             Section {
                 TileRow(
@@ -93,16 +83,16 @@ struct LookPage: View {
                     }
                 }
                 LabeledContent("Size") {
-                    Slider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), in: HighlightLook.sizeRange).frame(width: 200)
+                    Slider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), in: HighlightLook.sizeRange).frame(minWidth: 110)
                 }
                 if settings.highlightStyle == .lens {
                     LabeledContent("Screen dim") {
-                        Slider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), in: HighlightLook.dimRange).frame(width: 200)
+                        Slider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), in: HighlightLook.dimRange).frame(minWidth: 110)
                     }
                 } else {
                     LabeledContent("Intensity") {
                         Slider(value: Binding(get: { settings.highlightIntensity }, set: { model.setIntensity($0) }), in: HighlightLook.intensityRange)
-                            .frame(width: 200).disabled(settings.accent == .highContrast)
+                            .frame(minWidth: 110).disabled(settings.accent == .highContrast)
                     }
                 }
             }
@@ -111,7 +101,6 @@ struct LookPage: View {
                 Picker("Pointer size", selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })) {
                     Text("1x").tag(1.0); Text("1.5x").tag(1.5); Text("2x").tag(2.0); Text("3x").tag(3.0)
                 }
-                .pickerStyle(.segmented).fixedSize()
             }
         }
         .page()
@@ -139,15 +128,6 @@ struct InkPage: View {
     private var settings: BeaconSettings { model.settings }
 
     var body: some View {
-        VStack(spacing: 0) {
-            InkPreview(style: settings.inkStyle, color: settings.inkColor, cleanup: settings.inkCleanup, fade: settings.inkFadeAfter)
-                .padding(.horizontal, 22).padding(.top, 8)
-            form
-        }
-        .background(Theme.window)
-    }
-
-    private var form: some View {
         Form {
             Section("Pen") {
                 TileRow(
@@ -167,9 +147,9 @@ struct InkPage: View {
             Section {
                 Toggle("Clean up shapes", isOn: Binding(get: { settings.inkCleanup }, set: { model.setInkCleanup($0) }))
                 LabeledContent("Fade after") {
-                    HStack(spacing: 10) {
-                        Slider(value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade($0) }), in: BeaconSettings.inkFadeRange).frame(width: 180)
-                        Text(String(format: "%.1f s", settings.inkFadeAfter)).monospacedDigit().foregroundStyle(Theme.dim).frame(width: 44, alignment: .trailing)
+                    HStack(spacing: 8) {
+                        Slider(value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade($0) }), in: BeaconSettings.inkFadeRange).frame(minWidth: 90)
+                        Text(String(format: "%.1f s", settings.inkFadeAfter)).monospacedDigit().foregroundStyle(Theme.dim).frame(width: 38, alignment: .trailing)
                     }
                 }
             } header: {
@@ -181,8 +161,6 @@ struct InkPage: View {
                 LabeledContent("Draw now") {
                     Button(model.isOn(.ink) ? "Stop" : "Start") { model.toggle(.ink) }
                 }
-            } footer: {
-                Text("Or use the Ink trigger on the Keys page.")
             }
         }
         .page()
@@ -195,83 +173,60 @@ struct TriggersPage: View {
     @EnvironmentObject private var model: AppModel
     private var triggers: TriggerSettings { model.settings.triggers }
 
-    private static let effects: [EffectKind] = EffectKind.allCases
-    private static let keys: [ModifierKey] = ModifierKey.allCases
-
     var body: some View {
         Form {
             Section {
-                row("Shake the pointer", enabled: Binding(get: { triggers.shakeEnabled }, set: { v in model.updateTriggers { $0.shakeEnabled = v } })) {
-                    effectPicker(Binding(get: { triggers.shakeAction }, set: { v in model.updateTriggers { $0.shakeAction = v } }))
+                Toggle("Shake the pointer", isOn: Binding(get: { triggers.shakeEnabled }, set: { v in model.updateTriggers { $0.shakeEnabled = v } }))
+                effectPicker("Does", Binding(get: { triggers.shakeAction }, set: { v in model.updateTriggers { $0.shakeAction = v } }))
+                    .disabled(!triggers.shakeEnabled)
+                LabeledContent("Sensitivity") {
+                    Slider(value: Binding(get: { model.settings.shakeSensitivity }, set: { model.setShakeSensitivity($0) }), in: 0...100).frame(minWidth: 110)
                 }
-                row("Double-tap a key", enabled: Binding(get: { triggers.doubleTapEnabled }, set: { v in model.updateTriggers { $0.doubleTapEnabled = v } })) {
-                    keyPicker(Binding(get: { triggers.doubleTapKey }, set: { v in model.updateTriggers { $0.doubleTapKey = v } }))
-                    effectPicker(Binding(get: { triggers.doubleTapAction }, set: { v in model.updateTriggers { $0.doubleTapAction = v } }))
-                }
-                row("Hold a key", enabled: Binding(get: { triggers.holdEnabled }, set: { v in model.updateTriggers { $0.holdEnabled = v } })) {
-                    keyPicker(Binding(get: { triggers.holdKey }, set: { v in model.updateTriggers { $0.holdKey = v } }))
-                    effectPicker(Binding(get: { triggers.holdAction }, set: { v in model.updateTriggers { $0.holdAction = v } }))
-                }
-                LabeledContent("Shake sensitivity") {
-                    Slider(value: Binding(get: { model.settings.shakeSensitivity }, set: { model.setShakeSensitivity($0) }), in: 0...100).frame(width: 180)
-                }
-            } header: {
-                Text("Gestures")
-            } footer: {
+                .disabled(!triggers.shakeEnabled)
+            } header: { Text("Shake") }
+            Section {
+                Toggle("Double-tap a key", isOn: Binding(get: { triggers.doubleTapEnabled }, set: { v in model.updateTriggers { $0.doubleTapEnabled = v } }))
+                keyPicker("Key", Binding(get: { triggers.doubleTapKey }, set: { v in model.updateTriggers { $0.doubleTapKey = v } })).disabled(!triggers.doubleTapEnabled)
+                effectPicker("Does", Binding(get: { triggers.doubleTapAction }, set: { v in model.updateTriggers { $0.doubleTapAction = v } })).disabled(!triggers.doubleTapEnabled)
+            } header: { Text("Double-tap") }
+            Section {
+                Toggle("Hold a key", isOn: Binding(get: { triggers.holdEnabled }, set: { v in model.updateTriggers { $0.holdEnabled = v } }))
+                keyPicker("Key", Binding(get: { triggers.holdKey }, set: { v in model.updateTriggers { $0.holdKey = v } })).disabled(!triggers.holdEnabled)
+                effectPicker("Does", Binding(get: { triggers.holdAction }, set: { v in model.updateTriggers { $0.holdAction = v } })).disabled(!triggers.holdEnabled)
+            } header: { Text("Hold") } footer: {
                 Text(model.needsInputMonitoring
-                     ? "Double-tap and hold need Input Monitoring to see the key while another app is in front. Shake and shortcuts work without it."
+                     ? "Double-tap and hold need Input Monitoring to see the key while another app is in front."
                      : "Double-tap and hold work in every app.")
             }
             if model.needsInputMonitoring {
                 Section {
-                    LabeledContent {
-                        Button("Allow Input Monitoring") { model.requestInputMonitoring() }
-                    } label: {
-                        Label("One permission is missing", systemImage: "exclamationmark.triangle").foregroundStyle(Theme.warn)
-                    }
+                    Button("Allow Input Monitoring…") { model.requestInputMonitoring() }
                 }
             }
             Section {
                 Toggle("Keyboard shortcuts", isOn: Binding(get: { triggers.hotkeysEnabled }, set: { v in model.updateTriggers { $0.hotkeysEnabled = v } }))
                 ForEach(HotKeyAction.allCases, id: \.self) { action in
                     LabeledContent(action.displayName) {
-                        HStack(spacing: 4) {
-                            if model.failedHotkeys.contains(action) && triggers.hotkeysEnabled {
-                                Text("Taken by another app").font(.system(size: 12)).foregroundStyle(Theme.warn).padding(.trailing, 6)
-                            }
+                        HStack(spacing: 3) {
                             ForEach(Self.caps(for: triggers.hotkey(for: action)), id: \.self) { Keycap(text: $0) }
                         }
                     }
+                    .opacity(triggers.hotkeysEnabled ? 1 : 0.5)
                 }
-            } header: {
-                Text("Keyboard")
-            } footer: {
-                Text("Shortcuts work in every app and need no permission.")
+            } header: { Text("Shortcuts") } footer: {
+                Text(model.failedHotkeys.isEmpty ? "Shortcuts work in every app and need no permission." : "Taken by another app: \(model.failedHotkeys.map(\.displayName).joined(separator: ", ")).")
             }
         }
         .page()
         .onAppear { model.refreshInputMonitoring() }
     }
 
-    private func row<Content: View>(_ title: String, enabled: Binding<Bool>, @ViewBuilder _ content: () -> Content) -> some View {
-        LabeledContent {
-            HStack(spacing: 8) {
-                content().disabled(!enabled.wrappedValue)
-                Toggle("", isOn: enabled).toggleStyle(.switch).labelsHidden()
-            }
-        } label: {
-            Text(title)
-        }
+    private func effectPicker(_ title: String, _ selection: Binding<EffectKind>) -> some View {
+        Picker(title, selection: selection) { ForEach(EffectKind.allCases, id: \.self) { Text($0.displayName).tag($0) } }
     }
 
-    private func effectPicker(_ selection: Binding<EffectKind>) -> some View {
-        Picker("", selection: selection) { ForEach(Self.effects, id: \.self) { Text($0.displayName).tag($0) } }
-            .pickerStyle(.menu).labelsHidden().fixedSize()
-    }
-
-    private func keyPicker(_ selection: Binding<ModifierKey>) -> some View {
-        Picker("", selection: selection) { ForEach(Self.keys, id: \.self) { Text($0.displayName).tag($0) } }
-            .pickerStyle(.menu).labelsHidden().fixedSize()
+    private func keyPicker(_ title: String, _ selection: Binding<ModifierKey>) -> some View {
+        Picker(title, selection: selection) { ForEach(ModifierKey.allCases, id: \.self) { Text($0.displayName).tag($0) } }
     }
 
     static func caps(for key: HotKey?) -> [String] {
@@ -295,38 +250,16 @@ struct ProfilesPage: View {
     var body: some View {
         Form {
             Section {
-                ForEach(model.profiles) { profile in
-                    Button { model.chooseProfile(profile.id) } label: {
-                        HStack {
-                            Text(profile.name)
-                            Spacer()
-                            Text(profile.summary).foregroundStyle(Theme.dim)
-                            Image(systemName: "checkmark").foregroundStyle(Theme.accent)
-                                .opacity(model.appliedProfileID == profile.id ? 1 : 0)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .contextMenu {
-                        if model.profiles.count > 1 { Button("Delete \(profile.name)", role: .destructive) { model.deleteProfile(profile.id) } }
-                    }
-                }
-                Button("Save Current Look as New Scene") { model.addProfile() }
-            } header: {
-                Text("Scenes")
-            } footer: {
-                Text("A scene is a saved set of look and drawing choices. Changes you make on the other pages are saved to the active scene.")
-            }
-            Section {
                 ForEach(model.settings.appRules) { rule in
-                    LabeledContent(rule.appName) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(rule.appName).font(.system(size: 13, weight: .medium))
                         HStack {
                             Picker("", selection: Binding(get: { rule.profileID ?? "" }, set: { model.setRule(rule, profileID: $0.isEmpty ? nil : $0) })) {
                                 ForEach(model.profiles) { Text($0.name).tag($0.id) }
                                 Divider()
-                                Text("Off").tag("")
+                                Text("Beacon off").tag("")
                             }
-                            .labelsHidden().fixedSize()
+                            .labelsHidden()
                             Button { model.removeRule(rule) } label: { Image(systemName: "minus.circle") }
                                 .buttonStyle(.borderless).help("Remove this rule")
                         }
@@ -352,7 +285,7 @@ struct DisplaysPage: View {
     var body: some View {
         Form {
             Section {
-                HStack(alignment: .bottom, spacing: 18) {
+                HStack(alignment: .bottom, spacing: 14) {
                     Spacer()
                     ForEach(Array(screens.enumerated()), id: \.offset) { index, screen in
                         let aspect = screen.frame.height / max(screen.frame.width, 1)
@@ -361,7 +294,7 @@ struct DisplaysPage: View {
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
                                 .fill(Theme.stage)
                                 .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(shown ? Theme.accent : Theme.line, lineWidth: 2))
-                                .frame(width: 180, height: 180 * aspect)
+                                .frame(width: 110, height: 110 * aspect)
                             Text(index == 0 ? "\(screen.localizedName) (main)" : screen.localizedName)
                                 .font(.system(size: 11)).foregroundStyle(Theme.dim)
                         }

@@ -30,11 +30,19 @@ struct PreviewCanvas: View {
         .accessibilityLabel("\(style.displayName) preview")
     }
 
-    static func position(at t: Double, in size: CGSize) -> CGPoint {
+    static func position(at t: Double, in rect: CGRect) -> CGPoint {
         CGPoint(
-            x: size.width * (0.5 + 0.27 * sin(t / 1.7) + 0.07 * sin(t / 0.53)),
-            y: size.height * (0.46 + 0.19 * sin(t / 1.15 + 1) + 0.05 * sin(t / 0.41))
+            x: rect.minX + rect.width * (0.5 + 0.27 * sin(t / 1.7) + 0.07 * sin(t / 0.53)),
+            y: rect.minY + rect.height * (0.46 + 0.19 * sin(t / 1.15 + 1) + 0.05 * sin(t / 0.41))
         )
+    }
+
+    /// The miniature screen inside the canvas: 16 by 10, centered, with room around it.
+    static func screenRect(in size: CGSize) -> CGRect {
+        let avail = CGRect(x: 56, y: 60, width: max(size.width - 112, 160), height: max(size.height - 132, 100))
+        let width = min(avail.width, avail.height * 1.6)
+        let height = width / 1.6
+        return CGRect(x: avail.midX - width / 2, y: avail.midY - height / 2, width: width, height: height)
     }
 
     /// Recent pointer positions, so a trail can look back in time while the mouse drives the preview.
@@ -55,8 +63,9 @@ struct PreviewCanvas: View {
         _ context: inout GraphicsContext, size: CGSize, time: Double, style: HighlightStyle, look: HighlightLook,
         pointer: CGPoint? = nil, history: PointerHistory? = nil
     ) {
-        drawWindow(&context, size: size)
-        let p = pointer ?? position(at: time, in: size)
+        let screen = screenRect(in: size)
+        drawWindow(&context, rect: screen)
+        let p = pointer ?? position(at: time, in: screen)
         history?.record(p, at: time)
         let recipe = style.recipe.applying(look)
         let accent = Color(rgba: look.accentColor(for: style))
@@ -84,7 +93,7 @@ struct PreviewCanvas: View {
         case .comet:
             let steps = 18
             for k in stride(from: steps, through: 1, by: -1) {
-                let q = history?.position(at: time - Double(k) * 0.022) ?? position(at: time - Double(k) * 0.022, in: size)
+                let q = history?.position(at: time - Double(k) * 0.022) ?? position(at: time - Double(k) * 0.022, in: screen)
                 let a = 1 - Double(k) / Double(steps)
                 let d = recipe.comet.headDiameter * (0.25 + 0.75 * a)
                 context.fill(Path(ellipseIn: CGRect(x: q.x - d / 2, y: q.y - d / 2, width: d, height: d)), with: .color(accent.opacity(0.75 * a * a)))
@@ -129,56 +138,61 @@ struct PreviewCanvas: View {
         ))
     }
 
-    /// A small desktop: wallpaper, a menu bar, a light document window, a dark panel and a dock. Everything sits inside
-    /// the frame, so the whole scene reads at any size and every style is seen on light and dark.
-    private static func drawWindow(_ context: inout GraphicsContext, size: CGSize) {
-        let w = size.width, h = size.height
-        // Wallpaper
-        context.fill(
-            Path(CGRect(origin: .zero, size: size)),
-            with: .linearGradient(
-                Gradient(colors: [Color(red: 0.15, green: 0.145, blue: 0.16), Color(red: 0.065, green: 0.063, blue: 0.072)]),
-                startPoint: .zero, endPoint: CGPoint(x: w, y: h)
+    /// A small desktop inside `rect`: wallpaper, a menu bar, a light document window, a dark panel and a dock. Everything
+    /// sits inside the frame, so the scene reads at any size and every style is seen on light and dark.
+    private static func drawWindow(_ context: inout GraphicsContext, rect: CGRect) {
+        let ox = rect.minX, oy = rect.minY, w = rect.width, h = rect.height
+        let k = w / 880
+        context.drawLayer { layer in
+            layer.clip(to: Path(roundedRect: rect, cornerRadius: 12))
+            layer.fill(
+                Path(rect),
+                with: .linearGradient(
+                    Gradient(colors: [Color(red: 0.17, green: 0.165, blue: 0.18), Color(red: 0.075, green: 0.072, blue: 0.082)]),
+                    startPoint: CGPoint(x: ox, y: oy), endPoint: CGPoint(x: ox + w, y: oy + h)
+                )
             )
-        )
-        // Menu bar
-        context.fill(Path(CGRect(x: 0, y: 0, width: w, height: 16)), with: .color(Color.white.opacity(0.07)))
-        for i in 0..<3 { context.fill(Path(roundedRect: CGRect(x: 14 + CGFloat(i) * 26, y: 6, width: 18, height: 4), cornerRadius: 2), with: .color(Color.white.opacity(0.3))) }
-        context.fill(Path(roundedRect: CGRect(x: w - 52, y: 6, width: 38, height: 4), cornerRadius: 2), with: .color(Color.white.opacity(0.3)))
+            // Menu bar
+            layer.fill(Path(CGRect(x: ox, y: oy, width: w, height: 16 * k)), with: .color(Color.white.opacity(0.08)))
+            for i in 0..<3 {
+                layer.fill(Path(roundedRect: CGRect(x: ox + (14 + CGFloat(i) * 26) * k, y: oy + 6 * k, width: 18 * k, height: 4 * k), cornerRadius: 2), with: .color(Color.white.opacity(0.3)))
+            }
+            layer.fill(Path(roundedRect: CGRect(x: ox + w - 52 * k, y: oy + 6 * k, width: 38 * k, height: 4 * k), cornerRadius: 2), with: .color(Color.white.opacity(0.3)))
 
-        let top: CGFloat = min(max(h * 0.2, 58), 76), bottom: CGFloat = h - 46
-        // Light document window
-        let doc = CGRect(x: w * 0.07, y: top, width: w * 0.5, height: max(bottom - top, 60))
-        context.fill(Path(roundedRect: doc, cornerRadius: 10), with: .color(Color(white: 0.95)))
-        context.fill(Path(roundedRect: CGRect(x: doc.minX, y: doc.minY, width: doc.width, height: 20), cornerRadius: 10), with: .color(Color(white: 0.89)))
-        for i in 0..<3 {
-            context.fill(Path(ellipseIn: CGRect(x: doc.minX + 10 + CGFloat(i) * 12, y: doc.minY + 7, width: 6, height: 6)), with: .color(Color(white: 0.72)))
-        }
-        let rows = max(Int((doc.height - 90) / 22), 2)
-        for i in 0..<rows {
+            let top = oy + 34 * k, bottom = oy + h - 46 * k
+            // Light document window
+            let doc = CGRect(x: ox + w * 0.07, y: top, width: w * 0.5, height: bottom - top)
+            layer.fill(Path(roundedRect: doc, cornerRadius: 9 * k), with: .color(Color(white: 0.95)))
+            layer.fill(Path(roundedRect: CGRect(x: doc.minX, y: doc.minY, width: doc.width, height: 22 * k), cornerRadius: 9 * k), with: .color(Color(white: 0.89)))
+            for i in 0..<3 {
+                layer.fill(Path(ellipseIn: CGRect(x: doc.minX + (10 + CGFloat(i) * 13) * k, y: doc.minY + 8 * k, width: 6 * k, height: 6 * k)), with: .color(Color(white: 0.72)))
+            }
+            let rows = max(Int((doc.height - 100 * k) / (24 * k)), 2)
             let widths = [0.62, 0.8, 0.46, 0.7, 0.55]
-            let bar = CGRect(x: doc.minX + 20, y: doc.minY + 38 + CGFloat(i) * 22, width: doc.width * widths[i % widths.count], height: 8)
-            context.fill(Path(roundedRect: bar, cornerRadius: 4), with: .color(Color(white: 0.80)))
-        }
-        let button = CGRect(x: doc.minX + 20, y: doc.maxY - 38, width: doc.width * 0.24, height: 22)
-        context.fill(Path(roundedRect: button, cornerRadius: 7), with: .color(Color(red: 0.30, green: 0.64, blue: 1)))
+            for i in 0..<rows {
+                let bar = CGRect(x: doc.minX + 22 * k, y: doc.minY + 42 * k + CGFloat(i) * 24 * k, width: doc.width * widths[i % widths.count], height: 9 * k)
+                layer.fill(Path(roundedRect: bar, cornerRadius: 4.5 * k), with: .color(Color(white: 0.8)))
+            }
+            layer.fill(Path(roundedRect: CGRect(x: doc.minX + 22 * k, y: doc.maxY - 42 * k, width: doc.width * 0.24, height: 24 * k), cornerRadius: 7 * k), with: .color(Color(red: 0.30, green: 0.64, blue: 1)))
 
-        // Dark panel
-        let panel = CGRect(x: w * 0.62, y: top + 16, width: w * 0.31, height: max(bottom - top - 16, 50))
-        context.fill(Path(roundedRect: panel, cornerRadius: 10), with: .color(Color(white: 0.13)))
-        context.fill(Path(roundedRect: CGRect(x: panel.minX, y: panel.minY, width: panel.width, height: 20), cornerRadius: 10), with: .color(Color(white: 0.18)))
-        let panelRows = max(Int((panel.height - 40) / 24), 2)
-        for i in 0..<panelRows {
-            let row = CGRect(x: panel.minX + 16, y: panel.minY + 38 + CGFloat(i) * 24, width: panel.width * (i % 2 == 0 ? 0.7 : 0.5), height: 9)
-            context.fill(Path(roundedRect: row, cornerRadius: 4.5), with: .color(Color(white: 0.27)))
-        }
+            // Dark panel
+            let panel = CGRect(x: ox + w * 0.62, y: top + 18 * k, width: w * 0.31, height: bottom - top - 18 * k)
+            layer.fill(Path(roundedRect: panel, cornerRadius: 9 * k), with: .color(Color(white: 0.13)))
+            layer.fill(Path(roundedRect: CGRect(x: panel.minX, y: panel.minY, width: panel.width, height: 22 * k), cornerRadius: 9 * k), with: .color(Color(white: 0.18)))
+            let panelRows = max(Int((panel.height - 44 * k) / (26 * k)), 2)
+            for i in 0..<panelRows {
+                let row = CGRect(x: panel.minX + 16 * k, y: panel.minY + 42 * k + CGFloat(i) * 26 * k, width: panel.width * (i % 2 == 0 ? 0.7 : 0.5), height: 10 * k)
+                layer.fill(Path(roundedRect: row, cornerRadius: 5 * k), with: .color(Color(white: 0.27)))
+            }
 
-        // Dock
-        let dock = CGRect(x: w * 0.5 - w * 0.17, y: h - 34, width: w * 0.34, height: 24)
-        context.fill(Path(roundedRect: dock, cornerRadius: 12), with: .color(Color.white.opacity(0.12)))
-        for i in 0..<6 {
-            context.fill(Path(roundedRect: CGRect(x: dock.minX + 12 + CGFloat(i) * (dock.width - 24) / 6, y: dock.minY + 5, width: 14, height: 14), cornerRadius: 4), with: .color(Color.white.opacity(0.28)))
+            // Dock
+            let dock = CGRect(x: ox + w * 0.5 - w * 0.17, y: oy + h - 36 * k, width: w * 0.34, height: 26 * k)
+            layer.fill(Path(roundedRect: dock, cornerRadius: 13 * k), with: .color(Color.white.opacity(0.12)))
+            for i in 0..<6 {
+                layer.fill(Path(roundedRect: CGRect(x: dock.minX + 12 * k + CGFloat(i) * (dock.width - 24 * k) / 6, y: dock.minY + 5 * k, width: 16 * k, height: 16 * k), cornerRadius: 4.5 * k), with: .color(Color.white.opacity(0.28)))
+            }
         }
+        context.stroke(Path(roundedRect: rect, cornerRadius: 12), with: .color(Color.white.opacity(0.12)), lineWidth: 1)
     }
 
     private static func drawArrow(_ context: inout GraphicsContext, at p: CGPoint) {

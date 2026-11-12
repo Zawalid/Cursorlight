@@ -20,11 +20,9 @@ struct Stage: View {
             }
         }
         .background(Theme.stage)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Theme.line, lineWidth: 1))
         .overlay(alignment: .bottomTrailing) {
             HStack(spacing: 4) { Keycap(text: "⌃", dark: true); Keycap(text: "⌥", dark: true); Keycap(text: "H", dark: true) }
-                .padding(14)
+                .padding(16)
         }
         .onContinuousHover { phase in
             switch phase {
