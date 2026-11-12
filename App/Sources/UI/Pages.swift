@@ -173,7 +173,7 @@ struct LookPage: View {
                     .foregroundStyle(isDefault ? Color.secondary : Theme.accent)
                     .disabled(isDefault)
             } footer: {
-                Text("Puts color, size, intensity, dim and ripples back to their defaults. The style stays.")
+                Text("Puts color, size, intensity, ripples and the style options back to their defaults. The style itself stays.")
             }
         }
         .page()
