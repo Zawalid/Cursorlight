@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon M5 mockups</title>
+<style>
+:root{
+  --bg:#0d0d10; --win:#17171b; --side:#121215; --card:#1e1e23; --card2:#25252b; --line:rgba(255,255,255,.08);
+  --text:#f2f2f4; --dim:#9a9aa5; --faint:#62626c; --accent:#ff5a36; --accent2:#ff8a5c; --ok:#34c759;
+  --r:14px; --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08080a;color:var(--text);font:13px/1.45 var(--font);padding:40px 24px 80px;-webkit-font-smoothing:antialiased}
+h1{font-size:22px;font-weight:650;letter-spacing:-.01em}
+.lead{color:var(--dim);max-width:760px;margin:8px 0 36px}
+.label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:44px 0 14px}
+.stage{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+
+/* window chrome */
+.win{width:900px;max-width:100%;height:620px;background:var(--win);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+.side{width:210px;background:var(--side);border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:2px;flex:none}
+.lights{display:flex;gap:8px;padding:2px 8px 18px}
+.lights i{width:12px;height:12px;border-radius:50%;background:#3a3a42;display:block}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 16px;font-weight:650;font-size:14px}
+.mark{width:26px;height:26px;border-radius:8px;background:radial-gradient(circle at 50% 50%,#fff 0 12%,var(--accent) 13% 40%,rgba(255,90,54,.0) 70%),#2a1510;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--dim);cursor:pointer;border:0;background:none;font:inherit;text-align:left;width:100%}
+.nav:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav.on{background:rgba(255,255,255,.08);color:var(--text)}
+.nav svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.spacer{flex:1}
+.status{margin:8px;padding:10px;border-radius:10px;background:rgba(52,199,89,.08);border:1px solid rgba(52,199,89,.2);font-size:12px;color:#8fe0a6;display:flex;gap:8px;align-items:center}
+.status b{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.main{flex:1;overflow:auto;padding:28px 32px 36px}
+.page{display:none}.page.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.title{font-size:20px;font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--dim);margin:2px 0 20px}
+
+/* hero preview */
+.hero{position:relative;height:210px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(135deg,#232733,#16181f 55%,#1e1a24)}
+.hero .fake{position:absolute;inset:22px 26px auto 26px;height:140px;border-radius:10px;background:#f4f4f6;opacity:.96}
+.hero .fake:before{content:"";position:absolute;left:0;right:0;top:0;height:22px;background:#e4e4e8;border-radius:10px 10px 0 0}
+.hero .fake i{position:absolute;left:18px;height:8px;border-radius:4px;background:#c9c9d0}
+.hero .fake i:nth-child(1){top:40px;width:55%}.hero .fake i:nth-child(2){top:58px;width:72%}.hero .fake i:nth-child(3){top:76px;width:40%}
+.hero .fake i:nth-child(4){top:104px;width:24%;background:#4da3ff;height:18px;border-radius:6px}
+.hero .cap{position:absolute;left:14px;bottom:10px;font-size:11px;color:var(--dim)}
+.hero .cap b{color:var(--text);font-weight:600}
+.stagepath{position:absolute;inset:0}
+.ptr{will-change:transform}
+.trailwrap{position:absolute;inset:0;z-index:4}
+.trailwrap span{position:absolute;left:0;top:0;border-radius:50%;background:#ff5a36;transform:translate(-50%,-50%)}
+.ptr{position:absolute;left:0;top:0;width:0;height:0}
+.arrow{position:absolute;left:-2px;top:-2px;width:14px;height:20px;z-index:5;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.fx{position:absolute;left:0;top:0;pointer-events:none}
+.fx>*{position:absolute;border-radius:50%;transform:translate(-50%,-50%);left:0;top:0}
+/* styles */
+.aura .fx>.a1{width:130px;height:130px;background:radial-gradient(circle,rgba(139,124,255,.3),rgba(139,124,255,.12) 55%,transparent 72%);animation:breathe 2.4s ease-in-out infinite}
+.aura .fx>.a2{width:64px;height:64px;background:radial-gradient(circle,rgba(230,225,255,.55),rgba(139,124,255,.25) 60%,transparent 75%);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+@keyframes breathe{50%{transform:translate(-50%,-50%) scale(1.06)}}
+.lens .shade{position:absolute;inset:0;background:radial-gradient(circle 96px at var(--x,0) var(--y,0),transparent 0 74%,rgba(0,0,0,.52) 100%);display:block}
+.keyline .fx>.k1{width:56px;height:56px;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.2)}
+.keyline .fx>.k2{width:5px;height:5px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.sonar .fx>.s1,.sonar .fx>.s2,.sonar .fx>.s3{width:40px;height:40px;border:2px solid #14b8a6;opacity:0;animation:ping 2.2s ease-out infinite}
+.sonar .fx>.s2{animation-delay:.25s}.sonar .fx>.s3{animation-delay:.5s}
+.sonar .fx>.s4{width:34px;height:34px;background:radial-gradient(circle,#fff 0 14%,rgba(20,184,166,.55) 16% 60%,transparent 70%)}
+@keyframes ping{0%{transform:translate(-50%,-50%) scale(3.4);opacity:0}15%{opacity:.7}100%{transform:translate(-50%,-50%) scale(.6);opacity:0}}
+.comet .fx>.head{width:14px;height:14px;background:#fff;box-shadow:0 0 0 2px #ff5a36,0 0 14px 4px rgba(255,90,54,.7);z-index:3}
+.cometwrap{position:absolute;left:0;top:0}
+.trail{position:absolute;left:0;top:0;width:0;height:0}
+.trail span{position:absolute;left:0;top:0;border-radius:50%;transform:translate(-50%,-50%);background:#ff5a36}
+
+/* controls */
+.row{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .t{flex:1}.row .t b{display:block;font-weight:600;font-size:13px}.row .t span{color:var(--dim);font-size:12px}
+.group{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 18px;margin-top:18px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}
+.cards.three{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;text-align:center;transition:.15s;font:inherit;color:var(--text)}
+.card:hover{background:var(--card2)}
+.card.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,0 0 24px rgba(255,90,54,.16)}
+.card .thumb{height:54px;border-radius:8px;margin-bottom:8px;position:relative;overflow:hidden;background:linear-gradient(135deg,#2b2f3d,#1b1d26)}
+.card b{font-size:12px;font-weight:600}
+.swatches{display:flex;gap:8px}
+.sw{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.14) inset;padding:0}
+.sw.on{border-color:#fff}
+.seg{display:inline-flex;background:#101013;border:1px solid var(--line);border-radius:9px;padding:2px}
+.seg button{background:none;border:0;color:var(--dim);font:inherit;padding:5px 12px;border-radius:7px;cursor:pointer}
+.seg button.on{background:#34343c;color:var(--text)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:190px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent) var(--p,50%),#34343c var(--p,50%));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.tog{width:38px;height:22px;border-radius:11px;background:#3a3a42;position:relative;cursor:pointer;border:0;flex:none;transition:.18s}
+.tog:after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.18s}
+.tog.on{background:var(--accent)}.tog.on:after{left:18px}
+.sel{background:#101013;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--text);font:inherit;min-width:130px;display:flex;justify-content:space-between;gap:10px}
+.sel:after{content:"v";color:var(--faint);font-size:10px;margin-top:2px}
+kbd{font:600 11px var(--font);background:#2c2c33;border:1px solid rgba(255,255,255,.1);border-bottom-width:2px;border-radius:6px;padding:2px 7px;margin-left:3px;color:#e6e6ea}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:8px 14px;font:600 13px var(--font);cursor:pointer}
+.btn.ghost{background:#2c2c33;color:var(--text)}
+.note{display:flex;gap:12px;align-items:center;background:rgba(255,170,60,.08);border:1px solid rgba(255,170,60,.22);border-radius:12px;padding:12px 14px;margin-top:18px;color:#f2c98a}
+.note .t{flex:1}
+.pill{font-size:11px;border-radius:99px;padding:2px 9px;background:#2c2c33;color:var(--dim)}
+.pill.ok{background:rgba(52,199,89,.14);color:#8fe0a6}
+
+/* ink thumbs */
+.strokes{width:100%;height:100%}
+/* displays */
+.displays{display:flex;gap:18px;align-items:flex-end;justify-content:center;padding:26px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:8px}
+.mon{border:2px solid #4a4a55;border-radius:6px;background:linear-gradient(135deg,#2b3040,#1a1c25);display:flex;align-items:center;justify-content:center;color:var(--dim);position:relative}
+.mon.sel1{border-color:var(--accent);box-shadow:0 0 22px rgba(255,90,54,.25)}
+.mon small{position:absolute;bottom:-20px;color:var(--faint);font-size:11px}
+
+/* popover */
+.pop{width:330px;background:rgba(30,30,35,.92);backdrop-filter:blur(30px);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.pop h4{font-size:12px;color:var(--dim);font-weight:600;margin:12px 2px 8px;letter-spacing:.02em}
+.pop .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pop .top b{flex:1;font-size:14px}
+.profiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.prof{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 6px;text-align:center;cursor:pointer;color:var(--text);font:inherit}
+.prof.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.prof small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+.quick{display:flex;gap:8px}
+.quick button{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 4px;color:var(--text);font:inherit;cursor:pointer}
+.quick button.on{background:rgba(255,90,54,.16);border-color:rgba(255,90,54,.5)}
+.popfoot{display:flex;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--dim)}
+.share{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;background:rgba(52,199,89,.09);border:1px solid rgba(52,199,89,.22);color:#9fe5b4;margin-top:12px}
+
+/* first run */
+.fr{width:560px;background:var(--win);border:1px solid var(--line);border-radius:18px;padding:34px 36px;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+.fr .steps{display:flex;gap:6px;margin-bottom:26px}
+.fr .steps i{height:3px;flex:1;border-radius:2px;background:#33333b}.fr .steps i.on{background:var(--accent)}
+.fr h2{font-size:24px;letter-spacing:-.015em;font-weight:650}
+.fr p{color:var(--dim);margin:8px 0 22px;font-size:14px}
+.shakebox{height:170px;border-radius:14px;border:1px dashed rgba(255,255,255,.16);background:linear-gradient(135deg,#202430,#16181f);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--faint)}
+.shakebox .pt{position:absolute;left:50%;top:50%;animation:shake 1.4s ease-in-out infinite}
+@keyframes shake{0%,100%{transform:translate(-60px,0)}10%{transform:translate(50px,10px)}20%{transform:translate(-50px,-6px)}30%{transform:translate(50px,6px)}40%{transform:translate(-40px,0)}50%,90%{transform:translate(0,0)}}
+.shakebox .glow{position:absolute;width:110px;height:110px;border-radius:50%;left:-55px;top:-55px;background:radial-gradient(circle,rgba(139,124,255,.5),rgba(139,124,255,.15) 55%,transparent 72%)}
+.frfoot{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+.perm{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.perm .t{flex:1}.perm b{display:block}.perm span{color:var(--dim);font-size:12px}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.07);color:var(--dim)}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:4px}
+.principles div{background:#121216;border:1px solid var(--line);border-radius:12px;padding:14px}
+.principles b{display:block;margin-bottom:4px}
+.principles span{color:var(--dim);font-size:12px}
+.sw1{background:#8b7cff}.sw2{background:#e8932a}.sw3{background:#ff5a36}.sw4{background:#4da3ff}.sw5{background:#14b8a6}.sw6{background:#f5f5f7}.sw7{background:#ffd60a}
+</style>
+</head>
+<body>
+<h1>Beacon, M5 mockups</h1>
+<p class="lead">Placeholder name and accent. This is the proposed look and layout of the settings window, the menu bar popover and the first-run guide. Nothing here is built yet. Click around: the sidebar, the style cards, the toggles and the swatches all respond, and every preview is animated.</p>
+
+<div class="principles">
+  <div><b>Preview is the hero</b><span>Every page leads with a live preview. Settings change it as you drag.</span></div>
+  <div><b>Quiet dark chrome</b><span>Near-black glass, one coral accent used only for selection and the primary button.</span></div>
+  <div><b>Plain words</b><span>No jargon until it matters. Permissions explained at the moment they unlock something.</span></div>
+  <div><b>Springs, not fades</b><span>Cards and toggles ease with the same critically damped motion as the cursor effects.</span></div>
+</div>
+
+<div class="label">Settings window</div>
+<div class="stage">
+<div class="win" id="win">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><span class="mark"></span>Beacon</div>
+    <button class="nav on" data-p="highlight"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><circle cx="8" cy="8" r="6"/></svg>Highlight</button>
+    <button class="nav" data-p="ink"><svg viewBox="0 0 16 16"><path d="M2 13c3-1 4-8 7-8s2 5 5 5"/></svg>Ink and laser</button>
+    <button class="nav" data-p="triggers"><svg viewBox="0 0 16 16"><rect x="2" y="4" width="12" height="8" rx="2"/><path d="M5 8h1M8 8h3"/></svg>Triggers</button>
+    <button class="nav" data-p="profiles"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg>Profiles and apps</button>
+    <button class="nav" data-p="displays"><svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="8.5" rx="1.5"/><path d="M5.5 14h5"/></svg>Displays</button>
+    <div class="spacer"></div>
+    <button class="nav" data-p="about"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.2v4M8 5v.1"/></svg>About</button>
+    <div class="status"><b></b>Full-screen share: effects visible</div>
+  </aside>
+  <section class="main">
+
+    <!-- HIGHLIGHT -->
+    <div class="page on" id="p-highlight">
+      <div class="title">Highlight</div>
+      <div class="sub">Shake the pointer to turn it on. It stays until you shake again.</div>
+      <div class="hero" id="hero"><div class="fake"><i></i><i></i><i></i><i></i></div><div class="cap"><b id="heroName">Aura</b> live preview</div>
+        <div class="stagepath" id="path"><div class="ptr aura" id="ptr">
+          <div class="fx" id="fx"></div>
+          <svg class="arrow" viewBox="0 0 14 20"><path d="M1 1l11 11-5 .5 3 6-2.2 1-3-6-4 3.5z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        </div></div>
+      </div>
+      <div class="cards" id="styleCards"></div>
+      <div class="group">
+        <div class="row"><div class="t"><b>Color</b><span id="colorName">Style default</span></div>
+          <div class="swatches" id="swatches"></div></div>
+        <div class="row"><div class="t"><b>Size</b></div><input type="range" min="0" max="100" value="45" id="r1"></div>
+        <div class="row"><div class="t"><b>Intensity</b></div><input type="range" min="0" max="100" value="100" id="r2"></div>
+        <div class="row" id="dimRow"><div class="t"><b>Screen dim</b><span>Lens only</span></div><input type="range" min="0" max="100" value="50" id="r3"></div>
+        <div class="row"><div class="t"><b>Click ripples</b><span>A ring on every click</span></div><button class="tog on"></button></div>
+        <div class="row"><div class="t"><b>System cursor size</b><span>Makes the real pointer bigger, in every app</span></div>
+          <div class="seg"><button class="on">1x</button><button>1.5x</button><button>2x</button><button>3x</button></div></div>
+      </div>
+    </div>
+
+    <!-- INK -->
+    <div class="page" id="p-ink">
+      <div class="title">Ink and laser</div>
+      <div class="sub">Draw on the screen. Strokes fade on their own. Circles, arrows and underlines straighten themselves.</div>
+      <div class="hero" style="height:180px;background:linear-gradient(135deg,#232733,#16181f)">
+        <svg viewBox="0 0 640 180" style="position:absolute;inset:0;width:100%;height:100%">
+          <path d="M70 120c40-60 130-70 160-20s-30 70-90 55" fill="none" stroke="#ff3b30" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 0"/>
+          <ellipse cx="400" cy="92" rx="64" ry="42" fill="none" stroke="#ff3b30" stroke-width="5" stroke-dasharray="6 9" opacity=".35"/>
+          <ellipse cx="400" cy="92" rx="64" ry="42" fill="none" stroke="#ff3b30" stroke-width="5">
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.15;.8;1" dur="4s" repeatCount="indefinite"/></ellipse>
+          <path d="M520 140h90" stroke="#ffd60a" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <div class="cap"><b>Before and after</b> the clean-up: the rough loop morphs into the ellipse</div>
+      </div>
+      <div class="cards three" id="inkCards"></div>
+      <div class="group">
+        <div class="row"><div class="t"><b>Pen color</b><span>Press 1 to 5 while drawing</span></div>
+          <div class="swatches"><button class="sw on" style="background:#ff3b30"></button><button class="sw" style="background:#ffd60a"></button><button class="sw" style="background:#4da3ff"></button><button class="sw" style="background:#34c759"></button><button class="sw" style="background:#f5f5f7"></button></div></div>
+        <div class="row"><div class="t"><b>Clean up shapes</b><span>Ellipse, rectangle, line, underline, arrow</span></div><button class="tog on"></button></div>
+        <div class="row"><div class="t"><b>Fade after</b><span>How long a stroke stays</span></div><input type="range" min="0" max="100" value="40"></div>
+        <div class="row"><div class="t"><b>Laser color</b><span>The trail follows the pointer while the key is down</span></div>
+          <div class="swatches"><button class="sw on" style="background:#ff3b30"></button><button class="sw" style="background:#14b8a6"></button><button class="sw" style="background:#ffd60a"></button></div></div>
+      </div>
+    </div>
+
+    <!-- TRIGGERS -->
+    <div class="page" id="p-triggers">
+      <div class="title">Triggers</div>
+      <div class="sub">How you summon each effect. Every trigger can be turned off or pointed at another effect.</div>
+      <div class="group">
+        <div class="row"><div class="t"><b>Shake the pointer</b><span>Wiggle it side to side</span></div><div class="sel">Highlight</div><button class="tog on"></button></div>
+        <div class="row"><div class="t"><b>Double-tap <kbd>Left Option</kbd></b><span>Two quick taps, nothing else pressed</span></div><div class="sel">Laser</div><button class="tog on"></button></div>
+        <div class="row"><div class="t"><b>Hold <kbd>Right Option</kbd></b><span>Draw while it is down, let go to stop</span></div><div class="sel">Ink</div><button class="tog on"></button></div>
+      </div>
+      <div class="note"><div class="t"><b>Double-tap and hold need one permission</b><br><span style="color:#d4b27a">Input Monitoring lets Beacon see Option while another app is in front. Shake and shortcuts work without it.</span></div><button class="btn">Allow</button></div>
+      <div class="group">
+        <div class="row"><div class="t"><b>Keyboard shortcuts</b><span>Work everywhere, no permission</span></div><button class="tog on"></button></div>
+        <div class="row"><div class="t">Toggle highlight</div><span><kbd>Ctrl</kbd><kbd>Opt</kbd><kbd>H</kbd></span></div>
+        <div class="row"><div class="t">Toggle laser</div><span><kbd>Ctrl</kbd><kbd>Opt</kbd><kbd>L</kbd></span></div>
+        <div class="row"><div class="t">Toggle ink</div><span><kbd>Ctrl</kbd><kbd>Opt</kbd><kbd>I</kbd></span></div>
+        <div class="row"><div class="t">Pause or resume</div><span><kbd>Ctrl</kbd><kbd>Opt</kbd><kbd>P</kbd></span></div>
+        <div class="row"><div class="t"><b>Shake sensitivity</b></div><input type="range" min="0" max="100" value="50"></div>
+      </div>
+    </div>
+
+    <!-- PROFILES -->
+    <div class="page" id="p-profiles">
+      <div class="title">Profiles and apps</div>
+      <div class="sub">A profile is a saved set of choices. Switch from the menu bar, or let an app pick one for you.</div>
+      <div class="cards three" id="profCards"></div>
+      <div class="group">
+        <div class="row"><div class="t"><b>Zoom</b><span>us.zoom.xos</span></div><div class="sel">Meeting</div></div>
+        <div class="row"><div class="t"><b>OBS</b><span>com.obsproject.obs-studio</span></div><div class="sel">Stream</div></div>
+        <div class="row"><div class="t"><b>Keynote</b><span>com.apple.iWork.Keynote</span></div><div class="sel">Off</div></div>
+        <div class="row"><div class="t" style="color:var(--accent)">+ Add an app</div></div>
+      </div>
+    </div>
+
+    <!-- DISPLAYS -->
+    <div class="page" id="p-displays">
+      <div class="title">Displays</div>
+      <div class="sub">Where effects appear. By default they follow the pointer from screen to screen.</div>
+      <div class="displays">
+        <div class="mon sel1" style="width:200px;height:120px">Main<small>Built-in</small></div>
+        <div class="mon" style="width:240px;height:135px">Studio Display<small>Following pointer</small></div>
+      </div>
+      <div class="group">
+        <div class="row"><div class="t"><b>Show effects on</b></div><div class="seg"><button class="on">All displays</button><button>Main display only</button></div></div>
+        <div class="row"><div class="t"><b>Sharing a single window?</b><span>Viewers will not see effects. Beacon works when you share the whole screen.</span></div><span class="pill">Reminder on</span></div>
+      </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div class="page" id="p-about">
+      <div class="title">About</div>
+      <div class="sub">Beacon 1.0 (placeholder name)</div>
+      <div class="group">
+        <div class="row"><div class="t"><b>Updates</b><span>Checks the update server only. No accounts, no analytics.</span></div><button class="btn ghost">Check now</button></div>
+        <div class="row"><div class="t"><b>Launch at login</b></div><button class="tog on"></button></div>
+        <div class="row"><div class="t"><b>Show the welcome guide again</b></div><button class="btn ghost">Open</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="label">Menu bar popover</div>
+<div class="stage">
+  <div class="pop">
+    <div class="top"><span class="mark"></span><b>Beacon</b><span class="pill ok">On</span></div>
+    <h4>PROFILE</h4>
+    <div class="profiles" id="popProf">
+      <button class="prof on"><b>Stream</b><small>Aura, big</small></button>
+      <button class="prof"><b>Meeting</b><small>Keyline</small></button>
+      <button class="prof"><b>Recording</b><small>Sonar</small></button>
+    </div>
+    <h4>NOW</h4>
+    <div class="quick" id="quick"><button class="on">Highlight</button><button>Laser</button><button>Ink</button></div>
+    <div class="share"><span class="mark" style="width:18px;height:18px"></span><div><b>Sharing the full screen</b><br><span style="font-size:12px;color:#7fc796">Viewers can see your effects.</span></div></div>
+    <div class="popfoot"><span>Settings...</span><span>Pause <kbd>Ctrl</kbd><kbd>Opt</kbd><kbd>P</kbd></span><span>Quit</span></div>
+  </div>
+  <div class="pop" style="width:330px">
+    <div class="top"><span class="mark"></span><b>Beacon</b><span class="pill">Paused</span></div>
+    <h4>PROFILE</h4>
+    <div class="profiles"><button class="prof" style="opacity:.5"><b>Stream</b><small>Aura, big</small></button><button class="prof on" style="opacity:.5"><b>Meeting</b><small>Keyline</small></button><button class="prof" style="opacity:.5"><b>Recording</b><small>Sonar</small></button></div>
+    <div class="share" style="background:rgba(255,170,60,.09);border-color:rgba(255,170,60,.25);color:#f2c98a"><span class="mark" style="width:18px;height:18px"></span><div><b>Sharing one window</b><br><span style="font-size:12px;color:#d4b27a">Viewers will not see effects. Share the whole screen.</span></div></div>
+    <div class="popfoot"><span>Settings...</span><span>Resume</span><span>Quit</span></div>
+  </div>
+</div>
+
+<div class="label">First run</div>
+<div class="stage">
+  <div class="fr">
+    <div class="steps"><i class="on"></i><i></i><i></i></div>
+    <h2>Shake your pointer</h2>
+    <p>Move it side to side, quickly. A soft light finds your cursor on any screen, and it stays until you shake again.</p>
+    <div class="shakebox"><div class="pt"><div class="glow"></div><svg width="14" height="20" viewBox="0 0 14 20" style="position:relative"><path d="M1 1l11 11-5 .5 3 6-2.2 1-3-6-4 3.5z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></svg></div></div>
+    <div class="frfoot"><span style="color:var(--faint)">1 of 3</span><button class="btn">Continue</button></div>
+  </div>
+  <div class="fr">
+    <div class="steps"><i class="on"></i><i class="on"></i><i></i></div>
+    <h2>Two optional extras</h2>
+    <p>Everything above works without asking for anything. These unlock more, and you can skip them.</p>
+    <div class="perm"><div class="t"><b>Double-tap and hold Option</b><span>Needs Input Monitoring so Beacon can see Option while another app is in front.</span></div><span class="tag">Optional</span><button class="btn ghost">Allow</button></div>
+    <div class="perm"><div class="t"><b>Share the whole screen</b><span>Viewers only see effects when you share a full display, not a single window.</span></div><span class="tag">Good to know</span></div>
+    <div class="frfoot"><span style="color:var(--faint)">2 of 3</span><span><button class="btn ghost" style="margin-right:8px">Skip</button><button class="btn">Continue</button></span></div>
+  </div>
+</div>
+
+<script>
+const styles=[
+ {k:'aura',n:'Aura',fx:'<i class="a1"></i><i class="a2"></i>'},
+ {k:'lens',n:'Lens',fx:''},
+ {k:'comet',n:'Comet',fx:''},
+ {k:'keyline',n:'Keyline',fx:'<i class="k1"></i><i class="k2"></i>'},
+ {k:'sonar',n:'Sonar',fx:'<i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i>'}];
+const thumbFx={
+ aura:'<div style="position:absolute;left:50%;top:50%;width:46px;height:46px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(230,225,255,.7),rgba(139,124,255,.3) 55%,transparent 72%)"></div>',
+ lens:'<div style="position:absolute;inset:0;background:radial-gradient(circle 20px at 50% 50%,transparent 0 70%,rgba(0,0,0,.6) 100%)"></div>',
+ comet:'<div style="position:absolute;left:30%;top:56%;width:34px;height:3px;border-radius:2px;background:linear-gradient(90deg,transparent,#ff5a36);transform:rotate(-14deg)"></div><div style="position:absolute;left:58%;top:42%;width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #ff5a36,0 0 9px #ff5a36"></div>',
+ keyline:'<div style="position:absolute;left:50%;top:50%;width:30px;height:30px;transform:translate(-50%,-50%);border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4)"></div>',
+ sonar:'<div style="position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(20,184,166,.5)"></div><div style="position:absolute;left:50%;top:50%;width:26px;height:26px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(20,184,166,.8)"></div><div style="position:absolute;left:50%;top:50%;width:9px;height:9px;transform:translate(-50%,-50%);border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(20,184,166,.7)"></div>'};
+const cards=document.getElementById('styleCards');
+styles.forEach((s,i)=>{const b=document.createElement('button');b.className='card'+(i?'':' on');b.innerHTML='<div class="thumb">'+thumbFx[s.k]+'</div><b>'+s.n+'</b>';b.onclick=()=>pick(s,b);cards.appendChild(b)});
+const ptr=document.getElementById('ptr'),fx=document.getElementById('fx'),hero=document.getElementById('hero'),path=document.getElementById('path');
+let shade=null,trailOn=false;
+const trailwrap=document.createElement('div');trailwrap.className='trailwrap';hero.insertBefore(trailwrap,path);
+const dots=[];for(let i=0;i<16;i++){const d=document.createElement('span');trailwrap.appendChild(d);dots.push(d)}
+function pick(s,btn){
+  cards.querySelectorAll('.card').forEach(c=>c.classList.remove('on'));btn.classList.add('on');
+  ptr.className='ptr '+s.k;fx.innerHTML=s.fx;document.getElementById('heroName').textContent=s.n;
+  document.getElementById('dimRow').style.opacity=s.k==='lens'?1:.35;
+  if(shade){shade.remove();shade=null}
+  if(s.k==='lens'){shade=document.createElement('div');shade.style.cssText='position:absolute;inset:0;z-index:1;background:radial-gradient(circle 96px at var(--x,0) var(--y,0),transparent 0 74%,rgba(0,0,0,.52) 100%)';hero.insertBefore(shade,path)}
+  trailOn=s.k==='comet';
+  if(trailOn)fx.innerHTML='<i class="head"></i>';
+  trailwrap.style.display=trailOn?'block':'none';
+}
+const hist=[];
+function frame(now){
+  const w=hero.clientWidth,h=hero.clientHeight;
+  const x=w*0.5+w*0.28*Math.sin(now/1700)+w*0.08*Math.sin(now/530), y=h*0.45+h*0.2*Math.sin(now/1150+1)+h*0.06*Math.sin(now/410);
+  ptr.style.transform='translate('+x+'px,'+y+'px)';
+  hist.push({x,y,t:now});while(hist.length&&hist[0].t<now-420)hist.shift();
+  if(shade){shade.style.setProperty('--x',x+'px');shade.style.setProperty('--y',y+'px')}
+  if(trailOn){dots.forEach((d,i)=>{const k=Math.floor(hist.length*(1-i/dots.length))-1;const q=hist[Math.max(k,0)];if(!q||i===0){d.style.display='none';return}const a=1-i/dots.length;d.style.display='block';d.style.transform='translate('+q.x+'px,'+q.y+'px) translate(-50%,-50%)';d.style.width=d.style.height=(13*a+2)+'px';d.style.opacity=(0.8*a*a).toFixed(2)})}
+  requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+document.getElementById('dimRow').style.opacity=.35;
+pick(styles[0],cards.firstChild);
+
+const sw=document.getElementById('swatches');const cols=[['','Style default','#555'],['sw1','Iris'],['sw2','Amber'],['sw3','Coral'],['sw4','Blue'],['sw5','Teal'],['sw6','White'],['sw7','High contrast']];
+cols.forEach((c,i)=>{const b=document.createElement('button');b.className='sw '+c[0]+(i?'':' on');if(!c[0])b.style.background='conic-gradient(#8b7cff,#e8932a,#ff5a36,#4da3ff,#14b8a6,#8b7cff)';b.title=c[1];b.onclick=()=>{sw.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('colorName').textContent=c[1]};sw.appendChild(b)});
+
+function strokeThumb(kind){const c={marker:['#ff3b30',5,1,0],highlighter:['#ffd60a',16,.4,0],neon:['#4da3ff',4,1,1]}[kind];
+ const glow=c[3]?'<path d="M10 40c14-24 30-24 44 0s30 24 46-6" fill="none" stroke="'+c[0]+'" stroke-opacity=".45" stroke-width="13" stroke-linecap="round"/>':'';
+ const col=c[3]?'#dff0ff':c[0];
+ return '<svg class="strokes" viewBox="0 0 110 60">'+glow+'<path d="M10 40c14-24 30-24 44 0s30 24 46-6" fill="none" stroke="'+col+'" stroke-opacity="'+c[2]+'" stroke-width="'+c[1]+'" stroke-linecap="round"/></svg>'}
+const ink=document.getElementById('inkCards');['marker','highlighter','neon'].forEach((k,i)=>{const b=document.createElement('button');b.className='card'+(i?'':' on');b.innerHTML='<div class="thumb" style="height:64px">'+strokeThumb(k)+'</div><b>'+k[0].toUpperCase()+k.slice(1)+'</b>';b.onclick=()=>{ink.querySelectorAll('.card').forEach(x=>x.classList.remove('on'));b.classList.add('on')};ink.appendChild(b)});
+
+const prof=document.getElementById('profCards');[['Stream','Aura, large, shortcuts on','#8b7cff'],['Meeting','Keyline, medium, laser on double-tap','#4da3ff'],['Recording','Sonar, small, ripples on','#14b8a6']].forEach((p,i)=>{const b=document.createElement('button');b.className='card'+(i?'':' on');b.style.textAlign='left';b.style.padding='16px';b.innerHTML='<span style="display:block;width:26px;height:26px;border-radius:8px;background:'+p[2]+';opacity:.85;margin-bottom:12px"></span><b style="font-size:14px">'+p[0]+'</b><div style="color:var(--dim);font-size:12px;margin-top:3px;font-weight:400">'+p[1]+'</div>';b.onclick=()=>{prof.querySelectorAll('.card').forEach(x=>x.classList.remove('on'));b.classList.add('on')};prof.appendChild(b)});
+
+document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>{document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));n.classList.add('on');document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById('p-'+n.dataset.p).classList.add('on')});
+document.querySelectorAll('.tog').forEach(t=>t.onclick=()=>t.classList.toggle('on'));
+document.querySelectorAll('.seg').forEach(s=>s.querySelectorAll('button').forEach(b=>b.onclick=()=>{s.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}));
+document.querySelectorAll('input[type=range]').forEach(r=>{const u=()=>r.style.setProperty('--p',r.value+'%');r.oninput=u;u()});
+document.querySelectorAll('#popProf .prof').forEach(b=>b.onclick=()=>{document.querySelectorAll('#popProf .prof').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+document.querySelectorAll('#quick button').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
+</script>
+</body>
+</html>
