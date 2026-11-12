@@ -24,8 +24,9 @@ struct SceneStrip: View {
                             card(for: profile).id(profile.id)
                                 .transition(.scale(scale: 0.92).combined(with: .opacity))
                         }
+                        addCard.id("new-scene")
                     }
-                    .padding(.leading, 20).padding(.trailing, 8)
+                    .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                     .animation(spring, value: model.profiles.map(\.id))
                 }
@@ -34,8 +35,6 @@ struct SceneStrip: View {
                     withAnimation(spring) { proxy.scrollTo(id, anchor: .center) }
                 }
             }
-            addCard
-                .padding(.vertical, 12).padding(.trailing, 20).padding(.leading, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.black.opacity(0.35))
@@ -134,7 +133,7 @@ struct SceneStrip: View {
                         RoundedRectangle(cornerRadius: SceneCard.radius, style: .continuous)
                             .stroke(Color.white.opacity(endTargeted ? 0.4 : 0.18), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     )
-                Text("New scene").font(.system(size: 11))
+                Text("New scene").font(.system(size: 11)).padding(.vertical, 1)
             }
             .foregroundStyle(Color.white.opacity(endTargeted ? 0.9 : 0.55))
             .contentShape(Rectangle())
