@@ -150,3 +150,42 @@ final class TriggerRouterTests: XCTestCase {
         XCTAssertEqual(decoded.hotkey(for: .ink)?.displayString, "⌃⌥I")
     }
 }
+
+final class HotKeyRecordingTests: XCTestCase {
+    private let ctrl: UInt = 1 << 18, opt: UInt = 1 << 19, shift: UInt = 1 << 17, cmd: UInt = 1 << 20
+
+    func testBuildsFromAKeyPress() {
+        let key = HotKey.from(keyCode: 4, cocoaModifiers: ctrl | opt)
+        XCTAssertEqual(key, HotKey(keyCode: 4, modifiers: HotKey.control | HotKey.option))
+        XCTAssertEqual(key?.displayString, "⌃⌥H")
+    }
+
+    func testRejectsPlainTypingAndShiftOnly() {
+        XCTAssertNil(HotKey.from(keyCode: 4, cocoaModifiers: 0))
+        XCTAssertNil(HotKey.from(keyCode: 4, cocoaModifiers: shift))
+    }
+
+    func testFunctionKeysNeedNoModifier() {
+        XCTAssertEqual(HotKey.from(keyCode: 122, cocoaModifiers: 0)?.displayString, "F1")
+    }
+
+    func testRejectsUnknownKeys() {
+        XCTAssertNil(HotKey.from(keyCode: 200, cocoaModifiers: cmd))
+    }
+
+    func testConflictDetection() {
+        let t = TriggerSettings()
+        let hKey = HotKey(keyCode: 4, modifiers: HotKey.control | HotKey.option)
+        XCTAssertEqual(t.conflict(for: hKey, excluding: .laser), .highlight)
+        XCTAssertNil(t.conflict(for: hKey, excluding: .highlight))
+    }
+
+    func testNewActionsHaveDefaultsAndRoute() {
+        let t = TriggerSettings()
+        XCTAssertEqual(t.hotkey(for: .nextScene)?.displayString, "⌃⌥N")
+        XCTAssertEqual(t.hotkey(for: .clearInk)?.displayString, "⌃⌥X")
+        let r = TriggerRouter(settings: t)
+        XCTAssertEqual(r.route(.hotkey(.nextScene), active: .init()), [.nextScene])
+        XCTAssertEqual(r.route(.hotkey(.clearInk), active: .init()), [.clearInk])
+    }
+}

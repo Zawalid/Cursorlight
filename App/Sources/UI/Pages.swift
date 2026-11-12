@@ -539,50 +539,81 @@ struct TriggersPage: View {
 
     var body: some View {
         Form {
+            if model.needsInputMonitoring {
+                Section {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "exclamationmark.shield.fill").font(.system(size: 16)).foregroundStyle(Theme.warn)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Double-tap and hold need Input Monitoring").font(.system(size: 13, weight: .semibold))
+                            Text("Without it, Beacon sees those keys only while its own window is in front.")
+                                .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                            Button("Allow Input Monitoring…") { model.requestInputMonitoring() }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
             Section {
-                Toggle("Shake the pointer", isOn: Binding(get: { triggers.shakeEnabled }, set: { v in model.updateTriggers { $0.shakeEnabled = v } }))
+                Toggle(isOn: Binding(get: { triggers.shakeEnabled }, set: { v in model.updateTriggers { $0.shakeEnabled = v } })) {
+                    caption("Shake the pointer", "Wiggle the mouse to summon an effect.")
+                }
                 effectPicker("Does", Binding(get: { triggers.shakeAction }, set: { v in model.updateTriggers { $0.shakeAction = v } }))
                     .disabled(!triggers.shakeEnabled)
                 LabeledContent("Sensitivity") {
-                    Slider(value: Binding(get: { model.settings.shakeSensitivity }, set: { model.setShakeSensitivity($0) }), in: 0...100).frame(minWidth: 110)
+                    ValueSlider(
+                        value: Binding(get: { model.settings.shakeSensitivity / 100 }, set: { model.setShakeSensitivity($0 * 100) }),
+                        range: 0...1, format: { $0 < 0.34 ? "Hard" : ($0 > 0.66 ? "Easy" : "Medium") }
+                    )
                 }
                 .disabled(!triggers.shakeEnabled)
             } header: { Text("Shake") }
             Section {
-                Toggle("Double-tap a key", isOn: Binding(get: { triggers.doubleTapEnabled }, set: { v in model.updateTriggers { $0.doubleTapEnabled = v } }))
+                Toggle(isOn: Binding(get: { triggers.doubleTapEnabled }, set: { v in model.updateTriggers { $0.doubleTapEnabled = v } })) {
+                    caption("Double-tap a key", "Tap a modifier key twice, quickly.")
+                }
                 keyPicker("Key", Binding(get: { triggers.doubleTapKey }, set: { v in model.updateTriggers { $0.doubleTapKey = v } })).disabled(!triggers.doubleTapEnabled)
                 effectPicker("Does", Binding(get: { triggers.doubleTapAction }, set: { v in model.updateTriggers { $0.doubleTapAction = v } })).disabled(!triggers.doubleTapEnabled)
             } header: { Text("Double-tap") }
             Section {
-                Toggle("Hold a key", isOn: Binding(get: { triggers.holdEnabled }, set: { v in model.updateTriggers { $0.holdEnabled = v } }))
+                Toggle(isOn: Binding(get: { triggers.holdEnabled }, set: { v in model.updateTriggers { $0.holdEnabled = v } })) {
+                    caption("Hold a key", "Hold to use the effect, release to stop.")
+                }
                 keyPicker("Key", Binding(get: { triggers.holdKey }, set: { v in model.updateTriggers { $0.holdKey = v } })).disabled(!triggers.holdEnabled)
                 effectPicker("Does", Binding(get: { triggers.holdAction }, set: { v in model.updateTriggers { $0.holdAction = v } })).disabled(!triggers.holdEnabled)
             } header: { Text("Hold") } footer: {
-                Text(model.needsInputMonitoring
-                     ? "Double-tap and hold need Input Monitoring to see the key while another app is in front."
-                     : "Double-tap and hold work in every app.")
-            }
-            if model.needsInputMonitoring {
-                Section {
-                    Button("Allow Input Monitoring…") { model.requestInputMonitoring() }
+                if triggers.doubleTapEnabled, triggers.holdEnabled, triggers.doubleTapKey == triggers.holdKey {
+                    Text("Double-tap and hold use the same key, so they will get in each other's way.").foregroundStyle(Theme.warn)
                 }
             }
             Section {
-                Toggle("Keyboard shortcuts", isOn: Binding(get: { triggers.hotkeysEnabled }, set: { v in model.updateTriggers { $0.hotkeysEnabled = v } }))
+                Toggle(isOn: Binding(get: { triggers.hotkeysEnabled }, set: { v in model.updateTriggers { $0.hotkeysEnabled = v } })) {
+                    caption("Keyboard shortcuts", "Work in every app and need no permission.")
+                }
                 ForEach(HotKeyAction.allCases, id: \.self) { action in
-                    LabeledContent(action.displayName) {
-                        HStack(spacing: 3) {
-                            ForEach(Self.caps(for: triggers.hotkey(for: action)), id: \.self) { Keycap(text: $0) }
-                        }
-                    }
-                    .opacity(triggers.hotkeysEnabled ? 1 : 0.5)
+                    ShortcutRecorder(action: action).opacity(triggers.hotkeysEnabled ? 1 : 0.5).disabled(!triggers.hotkeysEnabled)
                 }
             } header: { Text("Shortcuts") } footer: {
-                Text(model.failedHotkeys.isEmpty ? "Shortcuts work in every app and need no permission." : "Taken by another app: \(model.failedHotkeys.map(\.displayName).joined(separator: ", ")).")
+                if model.failedHotkeys.isEmpty {
+                    Text("Click a shortcut, then press the new keys. Esc cancels, Delete clears it.")
+                } else {
+                    Text("Taken by another app: \(model.failedHotkeys.map(\.displayName).joined(separator: ", ")).")
+                }
+            }
+            Section {
+                Button("Restore defaults") { model.updateTriggers { $0 = TriggerSettings() } }
+                    .foregroundStyle(triggers == TriggerSettings() ? Color.secondary : Theme.accent)
+                    .disabled(triggers == TriggerSettings())
             }
         }
         .page()
         .onAppear { model.refreshInputMonitoring() }
+    }
+
+    private func caption(_ title: String, _ detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title)
+            Text(detail).font(.system(size: 11)).foregroundStyle(.secondary)
+        }
     }
 
     private func effectPicker(_ title: String, _ selection: Binding<EffectKind>) -> some View {
@@ -603,6 +634,91 @@ struct TriggersPage: View {
         }
         if !rest.isEmpty { caps.append(String(rest)) }
         return caps
+    }
+}
+
+/// One shortcut row. Click the keys, press the new combination; Esc cancels and Delete clears. A combination another
+/// action already uses is refused, with the reason shown under the row.
+struct ShortcutRecorder: View {
+    @EnvironmentObject private var model: AppModel
+    let action: HotKeyAction
+    @State private var recording = false
+    @State private var message: String?
+    @State private var monitor: Any?
+
+    var body: some View {
+        let key = model.settings.triggers.hotkey(for: action)
+        VStack(alignment: .leading, spacing: 4) {
+            LabeledContent(action.displayName) {
+                Button(action: toggle) {
+                    Group {
+                        if recording {
+                            Text("Press keys…").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.accent)
+                                .padding(.horizontal, 10).frame(height: 26)
+                                .background(Theme.accent.opacity(0.14), in: Capsule())
+                                .overlay(Capsule().stroke(Theme.accent.opacity(0.6), lineWidth: 1))
+                        } else if key == nil {
+                            Text("Not set").font(.system(size: 12)).foregroundStyle(.secondary)
+                                .padding(.horizontal, 10).frame(height: 26)
+                                .overlay(Capsule().stroke(Color.white.opacity(0.15), style: StrokeStyle(lineWidth: 1, dash: [3, 3])))
+                        } else {
+                            HStack(spacing: 3) { ForEach(TriggersPage.caps(for: key), id: \.self) { Keycap(text: $0) } }
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(recording ? "Press the new shortcut. Esc cancels." : "Click to change")
+            }
+            if let message {
+                Text(message).font(.system(size: 11)).foregroundStyle(Theme.warn)
+            }
+        }
+        .onDisappear { stop() }
+    }
+
+    private func toggle() {
+        recording ? stop() : start()
+    }
+
+    private func start() {
+        message = nil
+        recording = true
+        model.suspendHotkeys(true)
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let code = event.keyCode
+            let flags = event.modifierFlags.rawValue
+            MainActor.assumeIsolated { handle(code: code, flags: flags) }
+            return nil
+        }
+    }
+
+    private func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        if recording { model.suspendHotkeys(false) }
+        recording = false
+    }
+
+    private func handle(code: UInt16, flags: UInt) {
+        let plain = flags & ((1 << 17) | (1 << 18) | (1 << 19) | (1 << 20)) == 0
+        if code == 53, plain { stop(); return }
+        if code == 51, plain {
+            model.updateTriggers { $0.hotkeys.removeValue(forKey: action.rawValue) }
+            stop()
+            return
+        }
+        guard let key = HotKey.from(keyCode: code, cocoaModifiers: flags) else {
+            message = "Use Control, Option or Command with a key, or a function key."
+            return
+        }
+        if let other = model.settings.triggers.conflict(for: key, excluding: action) {
+            message = "\(key.displayString) already runs \(other.displayName.lowercased())."
+            return
+        }
+        model.updateTriggers { $0.hotkeys[action.rawValue] = key }
+        message = nil
+        stop()
     }
 }
 

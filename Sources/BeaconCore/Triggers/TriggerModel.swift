@@ -74,13 +74,34 @@ public struct HotKey: Codable, Equatable, Sendable {
     private static let keyNames: [UInt32: String] = [
         0: "A", 11: "B", 8: "C", 2: "D", 14: "E", 3: "F", 5: "G", 4: "H", 34: "I", 38: "J", 40: "K", 37: "L", 46: "M",
         45: "N", 31: "O", 35: "P", 12: "Q", 15: "R", 1: "S", 17: "T", 32: "U", 9: "V", 13: "W", 7: "X", 16: "Y", 6: "Z",
-        49: "Space",
+        49: "Space", 36: "Return", 48: "Tab", 51: "Delete", 53: "Esc", 123: "Left", 124: "Right", 125: "Down", 126: "Up",
+        18: "1", 19: "2", 20: "3", 21: "4", 23: "5", 22: "6", 26: "7", 28: "8", 25: "9", 29: "0",
+        27: "-", 24: "=", 33: "[", 30: "]", 41: ";", 39: "'", 43: ",", 47: ".", 44: "/", 42: "\\", 50: "`",
+        122: "F1", 120: "F2", 99: "F3", 118: "F4", 96: "F5", 97: "F6", 98: "F7", 100: "F8", 101: "F9", 109: "F10",
+        103: "F11", 111: "F12",
     ]
+
+    private static let functionKeys: Set<UInt32> = [122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111]
+
+    /// Builds a shortcut from a key press: the key code and `NSEvent.ModifierFlags` raw bits. nil when the combination
+    /// would hijack normal typing: it needs Control, Option or Command, unless it is a function key.
+    public static func from(keyCode: UInt16, cocoaModifiers: UInt) -> HotKey? {
+        var mods: UInt32 = 0
+        if cocoaModifiers & (1 << 18) != 0 { mods |= control }
+        if cocoaModifiers & (1 << 19) != 0 { mods |= option }
+        if cocoaModifiers & (1 << 17) != 0 { mods |= shift }
+        if cocoaModifiers & (1 << 20) != 0 { mods |= command }
+        let key = UInt32(keyCode)
+        guard keyNames[key] != nil else { return nil }
+        let strong = mods & (control | option | command) != 0
+        guard strong || functionKeys.contains(key) else { return nil }
+        return HotKey(keyCode: key, modifiers: mods)
+    }
 }
 
 /// What a global shortcut does.
 public enum HotKeyAction: String, CaseIterable, Codable, Sendable {
-    case highlight, laser, ink, pause
+    case highlight, laser, ink, pause, nextScene, clearInk
 
     public var displayName: String {
         switch self {
@@ -88,6 +109,8 @@ public enum HotKeyAction: String, CaseIterable, Codable, Sendable {
         case .laser: "Toggle laser"
         case .ink: "Toggle ink"
         case .pause: "Pause or resume"
+        case .nextScene: "Next scene"
+        case .clearInk: "Clear drawings"
         }
     }
 }
@@ -113,6 +136,8 @@ public struct TriggerSettings: Codable, Equatable, Sendable {
             HotKeyAction.laser.rawValue: HotKey(keyCode: 37, modifiers: mods),
             HotKeyAction.ink.rawValue: HotKey(keyCode: 34, modifiers: mods),
             HotKeyAction.pause.rawValue: HotKey(keyCode: 35, modifiers: mods),
+            HotKeyAction.nextScene.rawValue: HotKey(keyCode: 45, modifiers: mods),
+            HotKeyAction.clearInk.rawValue: HotKey(keyCode: 7, modifiers: mods),
         ]
     }()
 
@@ -121,6 +146,11 @@ public struct TriggerSettings: Codable, Equatable, Sendable {
     public init() {}
 
     public func hotkey(for action: HotKeyAction) -> HotKey? { hotkeys[action.rawValue] }
+
+    /// Another action that already uses `key`, if any.
+    public func conflict(for key: HotKey, excluding action: HotKeyAction) -> HotKeyAction? {
+        HotKeyAction.allCases.first { $0 != action && hotkeys[$0.rawValue] == key }
+    }
 
     private enum CodingKeys: String, CodingKey {
         case shakeEnabled, shakeAction, doubleTapEnabled, doubleTapKey, doubleTapAction
@@ -156,6 +186,8 @@ public enum TriggerCommand: Equatable, Sendable {
     case toggle(EffectKind)
     case set(EffectKind, Bool)
     case togglePause
+    case nextScene
+    case clearInk
 }
 
 /// Which effects are running right now; the router uses it to keep drawing from setting off the shake.
@@ -204,6 +236,8 @@ public struct TriggerRouter: Equatable, Sendable {
             case .laser: return [.toggle(.laser)]
             case .ink: return [.toggle(.ink)]
             case .pause: return [.togglePause]
+            case .nextScene: return [.nextScene]
+            case .clearInk: return [.clearInk]
             }
         }
     }

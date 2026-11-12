@@ -318,7 +318,21 @@ final class AppCoordinator {
             }
         case .togglePause:
             setPaused(!isPaused)
+        case .nextScene:
+            cycleScene()
+        case .clearInk:
+            ink.clearAll()
         }
+    }
+
+    /// Switches to the next scene in the list, wrapping around.
+    func cycleScene() {
+        let ids = settings.settings.profiles.map(\.id)
+        guard ids.count > 1 else { return }
+        let current = appliedProfileID ?? settings.settings.baseProfileID
+        let next = ids[((ids.firstIndex(of: current) ?? -1) + 1) % ids.count]
+        chooseProfile(next)
+        onTriggersChange?()
     }
 
     func setPaused(_ paused: Bool) {
@@ -330,6 +344,10 @@ final class AppCoordinator {
             ink.deactivate()
         }
         onTriggersChange?()
+    }
+
+    func suspendHotkeys(_ on: Bool) {
+        if on { hotkeys.unregisterAll() } else { applyTriggers() }
     }
 
     func updateTriggers(_ edit: (inout TriggerSettings) -> Void) {

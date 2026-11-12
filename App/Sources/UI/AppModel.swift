@@ -121,6 +121,8 @@ final class AppModel: ObservableObject {
     func setIntensity(_ value: Double) { coordinator.setHighlightIntensity(value); bump() }
     func setLensDim(_ value: Double) { coordinator.setLensDim(value); bump() }
     func setOptions(_ edit: (inout HighlightOptions) -> Void) { coordinator.setHighlightOptions(edit); bump() }
+    /// Pauses the global shortcuts while one is being recorded, so pressing it does not trigger it.
+    func suspendHotkeys(_ on: Bool) { coordinator.suspendHotkeys(on) }
     func setHideRules(_ edit: (inout HideRules) -> Void) { coordinator.setHideRules(edit); bump() }
     var hideReason: HideReason? { coordinator.hideReason }
     func setRipples(_ on: Bool) { coordinator.setClickRipples(on); bump() }
