@@ -20,6 +20,7 @@ final class AppModel: ObservableObject {
         coordinator.ink.onChange = { [weak self] in self?.bump() }
         coordinator.onSizeChange = { [weak self] in self?.bump() }
         coordinator.onTriggersChange = { [weak self] in self?.bump() }
+        coordinator.onShareChange = { [weak self] in self?.bump() }
     }
 
     func bump() { revision += 1 }
@@ -30,6 +31,12 @@ final class AppModel: ObservableObject {
     var needsInputMonitoring: Bool { coordinator.needsInputMonitoring }
     var failedHotkeys: [HotKeyAction] { coordinator.failedHotkeys }
     var cursorScale: Double { Double(coordinator.cursorSize.currentScale ?? 1) }
+
+    // MARK: Share safety
+
+    var shareStatus: ShareSafeStatus { coordinator.shareSafe.status }
+    var declaredShare: DeclaredShare? { coordinator.shareSafe.declared }
+    func declareShare(_ value: DeclaredShare?) { coordinator.shareSafe.declare(value); bump() }
 
     // MARK: Profiles
 

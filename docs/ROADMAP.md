@@ -68,9 +68,9 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 ### F. Share safety
 | Feature | Tier | Status |
 |---|---|---|
-| Menu bar status: effects visible to viewers or not | V1 | open |
-| Manual "I am sharing" reminder, honest about what is unverified | V1 | open |
-| Detection of window-share (needs a method that does not require Screen Recording) | V1 | open, research |
+| Menu bar status: icon turns amber when the share status needs attention | V1 | done |
+| Manual "I am sharing" declaration plus conferencing-app reminder | V1 | done, untested in real calls |
+| Detection of window-share | V1 | verdict: not reliable with public API; private ScreenWatcher family is a later spike, see docs/research/2026-11-12-share-detection.md |
 | Mirror mode so window-share works | LATER | open |
 
 ### G. App shell, UI and UX

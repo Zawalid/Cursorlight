@@ -18,11 +18,14 @@ final class AppCoordinator {
     let highlight: HighlightController
     let ink: InkController
     let cursorSize: CursorSizeController
+    let shareSafe = ShareSafeMonitor()
 
     /// Called after the cursor size changes, so the menu can refresh its checkmark.
     var onSizeChange: (() -> Void)?
     /// Called after pause state or trigger settings change, so the menu can refresh.
     var onTriggersChange: (() -> Void)?
+    /// Called when the share status changes.
+    var onShareChange: (() -> Void)?
     private(set) var isPaused = false
     /// True while a per-app rule has switched Beacon off for the frontmost app.
     private(set) var isOffForApp = false
@@ -67,6 +70,8 @@ final class AppCoordinator {
         modifiers.onEvent = { [weak self] event in self?.handle(event) }
         applyTriggers()
         applyDisplayScope()
+        shareSafe.onChange = { [weak self] in self?.onShareChange?() }
+        shareSafe.start()
         switcher.frontmostChanged(to: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
         workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
@@ -379,6 +384,7 @@ final class AppCoordinator {
         clicks.stop()
         if let workspaceObserver { NSWorkspace.shared.notificationCenter.removeObserver(workspaceObserver) }
         workspaceObserver = nil
+        shareSafe.stop()
         modifiers.stop()
         hotkeys.unregisterAll()
         ink.stop()

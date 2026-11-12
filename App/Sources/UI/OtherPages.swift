@@ -115,11 +115,7 @@ struct DisplaysPage: View {
                     BeaconSegmented(options: DisplayScope.allCases.map { ($0, $0.displayName) }, selection: Binding(get: { model.displayScope }, set: { model.setDisplayScope($0) }))
                 }
             }
-            SettingsGroup {
-                SettingRow(title: "Sharing a single window?", subtitle: "Viewers will not see effects. Beacon works when you share the whole screen.", showsDivider: false) {
-                    EmptyView()
-                }
-            }
+            ShareStatusCard()
         }
     }
 }

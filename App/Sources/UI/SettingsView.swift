@@ -90,15 +90,86 @@ struct BrandMark: View {
     }
 }
 
-/// Plain reminder about full-screen versus window share. Detection arrives later; this does not claim any.
+/// A compact share status for the sidebar.
 struct ShareNote: View {
+    @EnvironmentObject private var model: AppModel
+
     var body: some View {
+        let info = ShareStatusInfo(model.shareStatus)
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "rectangle.on.rectangle").font(.system(size: 11)).foregroundStyle(Theme.dim).padding(.top, 1)
-            Text("Share the whole screen so viewers can see effects.")
-                .font(.system(size: 11)).foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
+            Image(systemName: info.symbol).font(.system(size: 11)).foregroundStyle(info.tint).padding(.top, 1)
+            Text(info.short).font(.system(size: 11)).foregroundStyle(info.tint)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(info.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+/// Words and color for each share status. Never says viewers can see effects unless the user said so.
+struct ShareStatusInfo {
+    let symbol: String
+    let tint: Color
+    let title: String
+    let body: String
+    let short: String
+
+    init(_ status: ShareSafeStatus) {
+        switch status {
+        case .idle:
+            symbol = "rectangle.on.rectangle"; tint = Theme.dim
+            title = "Sharing your screen?"
+            body = "Viewers only see effects when you share the whole screen, not one window."
+            short = "Share the whole screen so viewers can see effects."
+        case .ok:
+            symbol = "checkmark.circle"; tint = Theme.ok
+            title = "Viewers can see your effects"
+            body = "You said you are sharing the whole screen."
+            short = "Whole screen shared: viewers can see effects."
+        case .warnSingleWindow:
+            symbol = "exclamationmark.triangle"; tint = Theme.warn
+            title = "Viewers will not see effects"
+            body = "You said you are sharing one window. Share the whole screen instead."
+            short = "One window shared: viewers will not see effects."
+        case let .reminder(app):
+            symbol = "info.circle"; tint = Theme.warn
+            title = "\(app) is open"
+            body = "Share the whole screen, not one window, so viewers see effects."
+            short = "\(app) is open. Share the whole screen."
+        case .notSharing:
+            symbol = "rectangle.on.rectangle.slash"; tint = Theme.dim
+            title = "Not sharing"
+            body = "Tell Beacon when you start sharing and it will check."
+            short = "Not sharing."
+        }
+    }
+}
+
+/// The share status with a control for telling Beacon what is being shared.
+struct ShareStatusCard: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        let info = ShareStatusInfo(model.shareStatus)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: info.symbol).foregroundStyle(info.tint).font(.system(size: 14))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(info.title).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text)
+                    Text(info.body).font(.system(size: 11)).foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("I am sharing").font(.system(size: 11)).foregroundStyle(Theme.faint)
+                BeaconSegmented(
+                    options: [(DeclaredShare?.some(.notSharing), "Nothing"), (.some(.wholeScreen), "Screen"), (.some(.singleWindow), "A window")],
+                    selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0) }),
+                    fills: true
+                )
+            }
+        }
+        .padding(12)
+        .background(info.tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(info.tint.opacity(0.22)))
     }
 }

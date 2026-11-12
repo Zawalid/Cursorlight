@@ -1,5 +1,6 @@
 import AppKit
 import BeaconCore
+import Combine
 import SwiftUI
 
 /// The menu bar item. Click opens the popover; right click opens a short menu.
@@ -9,6 +10,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private let popover = NSPopover()
     private var model: AppModel?
     private var eventMonitor: Any?
+    private var cancellable: AnyCancellable?
 
     func install(model: AppModel?) {
         guard statusItem == nil else { return }
@@ -21,6 +23,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         statusItem = item
 
         if let model {
+            // Tint the icon amber while the share status needs attention.
+            cancellable = model.objectWillChange.sink { [weak self, weak model] _ in
+                DispatchQueue.main.async {
+                    let attention = model?.shareStatus.needsAttention ?? false
+                    self?.statusItem?.button?.contentTintColor = attention ? .systemOrange : nil
+                }
+            }
             popover.behavior = .transient
             popover.animates = true
             popover.delegate = self

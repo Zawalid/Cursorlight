@@ -41,17 +41,7 @@ struct PopoverView: View {
             .opacity(model.isPaused ? 0.45 : 1)
             .allowsHitTesting(!model.isPaused)
 
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "rectangle.on.rectangle").foregroundStyle(Theme.dim).font(.system(size: 13))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Share the whole screen").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text)
-                    Text("Viewers only see effects when you share a full display, not one window.")
-                        .font(.system(size: 11)).foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(12)
-            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .padding(.top, 14)
+            ShareStatusCard().padding(.top, 14)
 
             Rectangle().fill(Theme.line).frame(height: 1).padding(.top, 14)
             HStack {

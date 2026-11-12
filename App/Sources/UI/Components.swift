@@ -100,6 +100,8 @@ struct BeaconSlider: View {
 struct BeaconSegmented<Value: Hashable>: View {
     let options: [(value: Value, title: String)]
     @Binding var selection: Value
+    /// Stretch the segments to fill the available width.
+    var fills = false
 
     var body: some View {
         HStack(spacing: 2) {
@@ -111,6 +113,8 @@ struct BeaconSegmented<Value: Hashable>: View {
                     Text(option.title)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(selection == option.value ? Theme.text : Theme.dim)
+                        .lineLimit(1)
+                        .frame(maxWidth: fills ? .infinity : nil)
                         .padding(.horizontal, 12).padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
