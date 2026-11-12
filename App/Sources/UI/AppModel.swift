@@ -44,6 +44,8 @@ final class AppModel: ObservableObject {
     // MARK: Share safety
 
     var shareStatus: ShareSafeStatus { coordinator.shareSafe.status }
+    /// The call apps that are open right now, for their icons.
+    var conferencingApps: [ConferencingApp] { coordinator.shareSafe.running }
     var declaredShare: DeclaredShare? { coordinator.shareSafe.declared }
     func declareShare(_ value: DeclaredShare?) { coordinator.shareSafe.declare(value); bump() }
 

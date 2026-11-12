@@ -146,8 +146,8 @@ struct ShareChip: View {
         let info = ShareStatusInfo(model.shareStatus)
         Button { open.toggle() } label: {
             CanvasChip {
-                HStack(spacing: 7) {
-                    Circle().fill(info.chipTint).frame(width: 7, height: 7)
+                HStack(spacing: 8) {
+                    ShareGlyph(apps: model.conferencingApps, info: info)
                     Text(info.pill)
                 }
             }
@@ -155,7 +155,10 @@ struct ShareChip: View {
         .buttonStyle(.plain)
         .popover(isPresented: $open, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(info.title).font(.system(size: 13, weight: .semibold))
+                HStack(spacing: 10) {
+                    ShareGlyph(apps: model.conferencingApps, info: info, size: 26)
+                    Text(info.title).font(.system(size: 13, weight: .semibold))
+                }
                 Text(info.body).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 Divider()
                 Picker("I am sharing", selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0); open = false })) {
@@ -167,6 +170,50 @@ struct ShareChip: View {
             }
             .padding(14).frame(width: 280)
         }
+    }
+}
+
+/// The icon in front of the share status: the real icon of each call app that is open, with a small dot in the status
+/// color on the first. With no call app open it is a symbol in the status color.
+struct ShareGlyph: View {
+    let apps: [ConferencingApp]
+    let info: ShareStatusInfo
+    var size: CGFloat = 18
+
+    var body: some View {
+        if apps.isEmpty {
+            Image(systemName: info.symbol)
+                .font(.system(size: size * 0.66, weight: .medium))
+                .foregroundStyle(info.chipTint)
+                .frame(width: size, height: size)
+        } else {
+            HStack(spacing: -size * 0.3) {
+                ForEach(Array(apps.prefix(3).enumerated()), id: \.offset) { index, app in
+                    icon(for: app)
+                        .overlay(alignment: .bottomTrailing) { if index == 0 { statusDot } }
+                        .zIndex(Double(-index))
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func icon(for app: ConferencingApp) -> some View {
+        if let image = AppIconCache.shared.icon(for: [app.bundleID]) {
+            Image(nsImage: image).resizable().interpolation(.high).frame(width: size, height: size)
+        } else {
+            Image(systemName: "video.fill")
+                .font(.system(size: size * 0.5, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: size * 0.24, style: .continuous))
+        }
+    }
+
+    private var statusDot: some View {
+        Circle().fill(info.chipTint)
+            .frame(width: size * 0.4, height: size * 0.4)
+            .overlay(Circle().stroke(Color.black.opacity(0.85), lineWidth: 1.5))
+            .offset(x: size * 0.12, y: size * 0.12)
     }
 }
 
