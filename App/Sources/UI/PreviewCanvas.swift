@@ -37,9 +37,27 @@ struct PreviewCanvas: View {
         )
     }
 
-    static func draw(_ context: inout GraphicsContext, size: CGSize, time: Double, style: HighlightStyle, look: HighlightLook) {
+    /// Recent pointer positions, so a trail can look back in time while the mouse drives the preview.
+    final class PointerHistory {
+        private var samples: [(point: CGPoint, time: Double)] = []
+
+        func record(_ point: CGPoint, at time: Double) {
+            samples.append((point, time))
+            while let first = samples.first, first.time < time - 1 { samples.removeFirst() }
+        }
+
+        func position(at time: Double) -> CGPoint? {
+            samples.last { $0.time <= time }?.point ?? samples.first?.point
+        }
+    }
+
+    static func draw(
+        _ context: inout GraphicsContext, size: CGSize, time: Double, style: HighlightStyle, look: HighlightLook,
+        pointer: CGPoint? = nil, history: PointerHistory? = nil
+    ) {
         drawWindow(&context, size: size)
-        let p = position(at: time, in: size)
+        let p = pointer ?? position(at: time, in: size)
+        history?.record(p, at: time)
         let recipe = style.recipe.applying(look)
         let accent = Color(rgba: look.accentColor(for: style))
         let light = Color(rgba: Palette.light)
@@ -66,7 +84,7 @@ struct PreviewCanvas: View {
         case .comet:
             let steps = 18
             for k in stride(from: steps, through: 1, by: -1) {
-                let q = position(at: time - Double(k) * 0.022, in: size)
+                let q = history?.position(at: time - Double(k) * 0.022) ?? position(at: time - Double(k) * 0.022, in: size)
                 let a = 1 - Double(k) / Double(steps)
                 let d = recipe.comet.headDiameter * (0.25 + 0.75 * a)
                 context.fill(Path(ellipseIn: CGRect(x: q.x - d / 2, y: q.y - d / 2, width: d, height: d)), with: .color(accent.opacity(0.75 * a * a)))
@@ -95,7 +113,8 @@ struct PreviewCanvas: View {
             context.fill(Path(ellipseIn: CGRect(x: p.x - c, y: p.y - c, width: 2 * c, height: 2 * c)), with: .color(light))
         }
         context.opacity = 1
-        drawArrow(&context, at: p)
+        // With the real mouse on the preview, the real cursor is already there.
+        if pointer == nil { drawArrow(&context, at: p) }
     }
 
     private static func glow(_ context: inout GraphicsContext, at p: CGPoint, radius: CGFloat, color: Color, alpha: Double) {
@@ -110,16 +129,25 @@ struct PreviewCanvas: View {
         ))
     }
 
+    /// A small desktop: a light document window beside a dark panel, so every style is seen on both.
     private static func drawWindow(_ context: inout GraphicsContext, size: CGSize) {
-        let frame = CGRect(x: 26, y: 22, width: size.width - 52, height: size.height - 70)
-        context.fill(Path(roundedRect: frame, cornerRadius: 10), with: .color(Color(white: 0.955)))
-        context.fill(Path(roundedRect: CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: 22), cornerRadius: 10), with: .color(Color(white: 0.89)))
-        for (i, w) in [0.55, 0.72, 0.40].enumerated() {
-            let bar = CGRect(x: frame.minX + 18, y: frame.minY + 40 + CGFloat(i) * 18, width: frame.width * w, height: 8)
-            context.fill(Path(roundedRect: bar, cornerRadius: 4), with: .color(Color(white: 0.79)))
+        let doc = CGRect(x: size.width * 0.07, y: size.height * 0.16, width: size.width * 0.5, height: size.height)
+        context.fill(Path(roundedRect: doc, cornerRadius: 10), with: .color(Color(white: 0.94)))
+        context.fill(Path(roundedRect: CGRect(x: doc.minX, y: doc.minY, width: doc.width, height: 22), cornerRadius: 10), with: .color(Color(white: 0.87)))
+        for (i, w) in [0.62, 0.78, 0.46, 0.7].enumerated() {
+            let bar = CGRect(x: doc.minX + 20, y: doc.minY + 46 + CGFloat(i) * 22, width: doc.width * w, height: 8)
+            context.fill(Path(roundedRect: bar, cornerRadius: 4), with: .color(Color(white: 0.78)))
         }
-        let button = CGRect(x: frame.minX + 18, y: frame.minY + 100, width: frame.width * 0.24, height: 18)
-        context.fill(Path(roundedRect: button, cornerRadius: 6), with: .color(Color(red: 0.30, green: 0.64, blue: 1)))
+        let button = CGRect(x: doc.minX + 20, y: doc.minY + 150, width: doc.width * 0.26, height: 22)
+        context.fill(Path(roundedRect: button, cornerRadius: 7), with: .color(Color(red: 0.30, green: 0.64, blue: 1)))
+
+        let panel = CGRect(x: size.width * 0.62, y: size.height * 0.1, width: size.width * 0.31, height: size.height)
+        context.fill(Path(roundedRect: panel, cornerRadius: 10), with: .color(Color(white: 0.14)))
+        context.fill(Path(roundedRect: CGRect(x: panel.minX, y: panel.minY, width: panel.width, height: 22), cornerRadius: 10), with: .color(Color(white: 0.19)))
+        for i in 0..<5 {
+            let row = CGRect(x: panel.minX + 16, y: panel.minY + 42 + CGFloat(i) * 26, width: panel.width * (i % 2 == 0 ? 0.7 : 0.5), height: 9)
+            context.fill(Path(roundedRect: row, cornerRadius: 4.5), with: .color(Color(white: 0.27)))
+        }
     }
 
     private static func drawArrow(_ context: inout GraphicsContext, at p: CGPoint) {

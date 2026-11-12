@@ -141,11 +141,11 @@ enum SettingsPage: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .highlight: "Highlight"
-        case .ink: "Ink and laser"
-        case .triggers: "Triggers"
-        case .profiles: "Profiles and apps"
-        case .displays: "Displays"
+        case .highlight: "Look"
+        case .ink: "Draw"
+        case .triggers: "Keys"
+        case .profiles: "Apps"
+        case .displays: "Screens"
         case .about: "About"
         }
     }
