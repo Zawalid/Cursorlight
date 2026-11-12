@@ -19,7 +19,7 @@ struct SettingsView: View {
         }
         .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 860, minHeight: 620)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
 
     @ViewBuilder
@@ -63,44 +63,79 @@ struct TopBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Spacer().frame(width: 70)
-            HStack(spacing: 2) {
-                ForEach(model.profiles) { profile in
-                    let active = model.appliedProfileID == profile.id
-                    Button { model.chooseProfile(profile.id) } label: {
-                        Text(profile.name).font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(active ? Theme.window : Theme.dim)
-                            .padding(.horizontal, 12).padding(.vertical, 5)
-                            .background(active ? Theme.text : .clear, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(active ? .isSelected : [])
-                    .contextMenu {
-                        if model.profiles.count > 1 { Button("Delete \(profile.name)", role: .destructive) { model.deleteProfile(profile.id) } }
-                    }
-                }
-                Button { model.addProfile() } label: {
-                    Image(systemName: "plus").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.dim)
-                        .padding(.horizontal, 9).padding(.vertical, 6)
-                }
-                .buttonStyle(.plain)
-                .help("Save the current look as a new scene")
+            // Room for the traffic lights, which sit in the same row.
+            Spacer().frame(width: 84)
+            Segmented(
+                items: model.profiles.map { ($0.id, $0.name) },
+                selection: model.appliedProfileID,
+                select: { model.chooseProfile($0) },
+                delete: model.profiles.count > 1 ? { model.deleteProfile($0) } : nil
+            )
+            Button { model.addProfile() } label: {
+                Image(systemName: "plus").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.dim)
+                    .frame(width: 26, height: 26).glassCapsule(circle: true)
             }
-            .padding(3)
-            .background(Theme.card, in: Capsule())
-            .overlay(Capsule().stroke(Theme.line))
+            .buttonStyle(.plain)
+            .help("Save the current look as a new scene")
             Spacer()
             SignalPill()
             Button { page = .about } label: {
-                Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.dim)
-                    .frame(width: 28, height: 28).background(Theme.card, in: Circle()).overlay(Circle().stroke(Theme.line))
+                Image(systemName: "ellipsis").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.dim)
+                    .frame(width: 28, height: 28).glassCapsule(circle: true)
             }
             .buttonStyle(.plain)
             .help("About, updates and launch at login")
         }
-        .padding(.horizontal, 16)
-        .frame(height: 38)
-        .padding(.bottom, 8)
+        .padding(.trailing, 20)
+        .frame(height: 52)
+    }
+}
+
+/// A glass segmented control: a translucent track and a white thumb on the selected item.
+struct Segmented: View {
+    let items: [(id: String, title: String)]
+    let selection: String
+    let select: (String) -> Void
+    var delete: ((String) -> Void)?
+    @Namespace private var thumb
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(items, id: \.id) { item in
+                let on = item.id == selection
+                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.88)) { select(item.id) } } label: {
+                    Text(item.title).font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(on ? Theme.text : Theme.dim)
+                        .padding(.horizontal, 14).frame(height: 26)
+                        .background {
+                            if on {
+                                Capsule().fill(Color.white.opacity(0.95))
+                                    .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
+                                    .matchedGeometryEffect(id: "thumb", in: thumb)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+                .contextMenu {
+                    if let delete { Button("Delete \(item.title)", role: .destructive) { delete(item.id) } }
+                }
+            }
+        }
+        .padding(3)
+        .glassCapsule()
+    }
+}
+
+extension View {
+    /// A translucent capsule (or circle) with a light edge, for controls that float over the window.
+    func glassCapsule(circle: Bool = false) -> some View {
+        self
+            .background(.regularMaterial, in: Capsule())
+            .background(Color.white.opacity(0.28), in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.7), lineWidth: 1))
+            .overlay(Capsule().stroke(Theme.line, lineWidth: 0.5).padding(-0.5))
+            .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
     }
 }
 
@@ -116,9 +151,8 @@ struct SignalPill: View {
                 Circle().fill(info.tint).frame(width: 7, height: 7).shadow(color: info.tint.opacity(0.9), radius: 4)
                 Text(info.pill).font(.system(size: 12)).foregroundStyle(Theme.dim)
             }
-            .padding(.horizontal, 12).padding(.vertical, 6)
-            .background(Theme.card, in: Capsule())
-            .overlay(Capsule().stroke(Theme.line))
+            .padding(.horizontal, 12).frame(height: 28)
+            .glassCapsule()
         }
         .buttonStyle(.plain)
         .popover(isPresented: $open, arrowEdge: .bottom) {
@@ -135,37 +169,43 @@ struct SignalPill: View {
                 .pickerStyle(.segmented).labelsHidden()
             }
             .padding(14).frame(width: 280)
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(.light)
         }
     }
 }
 
-/// A floating pill that moves between the five sections.
+/// A floating glass pill that moves between the five sections.
 struct Dock: View {
     @Binding var page: SettingsPage
+    @Namespace private var thumb
     private let items: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays]
 
     var body: some View {
         HStack(spacing: 2) {
             ForEach(items) { item in
-                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) { page = item } } label: {
+                let on = page == item
+                Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) { page = item } } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: item.symbol).font(.system(size: 12))
+                        Image(systemName: item.symbol).font(.system(size: 12, weight: .medium))
                         Text(item.title).font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundStyle(page == item ? Theme.window : Theme.dim)
-                    .padding(.horizontal, 13).padding(.vertical, 8)
-                    .background(page == item ? Theme.text : .clear, in: Capsule())
+                    .foregroundStyle(on ? Theme.text : Theme.dim)
+                    .padding(.horizontal, 14).frame(height: 32)
+                    .background {
+                        if on {
+                            Capsule().fill(Color.white.opacity(0.95))
+                                .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
+                                .matchedGeometryEffect(id: "dock", in: thumb)
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
-                .accessibilityAddTraits(page == item ? .isSelected : [])
+                .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
         .padding(4)
-        .background(.ultraThinMaterial, in: Capsule())
-        .background(Theme.raised.opacity(0.7), in: Capsule())
-        .overlay(Capsule().stroke(Theme.line))
-        .shadow(color: .black.opacity(0.35), radius: 14, y: 6)
+        .glassCapsule()
+        .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
     }
 }
 
@@ -177,7 +217,7 @@ struct BrandMark: View {
             .overlay(
                 Circle().fill(RadialGradient(colors: [.white, Theme.accent, Theme.accent.opacity(0)], center: .center, startRadius: 0, endRadius: 13))
             )
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.white.opacity(0.1)))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.line))
     }
 }
 

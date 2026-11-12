@@ -13,6 +13,7 @@ final class FirstClickHostingView<Content: View>: NSHostingView<Content> {
 final class WindowControllers {
     private let model: AppModel
     private var settings: NSWindow?
+    private var settingsHost: FirstClickHostingView<AnyView>?
     private var welcome: NSWindow?
 
     init(model: AppModel) {
@@ -27,16 +28,16 @@ final class WindowControllers {
 
     func showSettings(_ page: SettingsPage) {
         let root = AnyView(SettingsView(page: page).environmentObject(model))
-        if let window = settings, let host = window.contentView as? FirstClickHostingView<AnyView> {
+        if settings != nil, let host = settingsHost {
             host.rootView = root
         } else {
-            let window = Self.makeWindow(size: NSSize(width: 940, height: 680), resizable: true)
+            let window = Self.makeWindow(size: NSSize(width: 980, height: 700), resizable: true)
             window.title = Branding.appName
             let host = FirstClickHostingView(rootView: root)
-            host.sizingOptions = []
-            window.contentView = host
-            window.setContentSize(NSSize(width: 940, height: 680))
-            window.contentMinSize = NSSize(width: 860, height: 600)
+            Self.install(host, in: window)
+            settingsHost = host
+            window.setContentSize(NSSize(width: 980, height: 700))
+            window.contentMinSize = NSSize(width: 900, height: 640)
             window.center()
             window.setFrameAutosaveName("BeaconSettings")
             settings = window
@@ -48,8 +49,7 @@ final class WindowControllers {
         let view = AnyView(FirstRunView { [weak self] in self?.welcome?.close() }.environmentObject(model))
         let window = Self.makeWindow(size: NSSize(width: 580, height: 520), resizable: false)
         let host = FirstClickHostingView(rootView: view)
-        host.sizingOptions = []
-        window.contentView = host
+        Self.install(host, in: window)
         window.setContentSize(NSSize(width: 580, height: 520))
         window.center()
         welcome = window
@@ -66,6 +66,22 @@ final class WindowControllers {
     func windowClosed() {
         let open = [settings, welcome].compactMap { $0 }.contains { $0.isVisible }
         if !open { NSApp.setActivationPolicy(.accessory) }
+    }
+
+    /// Puts the SwiftUI view on a translucent material, so the window is glass and the wallpaper tints it.
+    static func install(_ host: NSView, in window: NSWindow) {
+        let glass = NSVisualEffectView()
+        glass.material = .underWindowBackground
+        glass.blendingMode = .behindWindow
+        glass.state = .active
+        window.contentView = glass
+        if let host = host as? NSHostingView<AnyView> { host.sizingOptions = [] }
+        host.translatesAutoresizingMaskIntoConstraints = false
+        glass.addSubview(host)
+        NSLayoutConstraint.activate([
+            host.leadingAnchor.constraint(equalTo: glass.leadingAnchor), host.trailingAnchor.constraint(equalTo: glass.trailingAnchor),
+            host.topAnchor.constraint(equalTo: glass.topAnchor), host.bottomAnchor.constraint(equalTo: glass.bottomAnchor),
+        ])
     }
 
     static func present(_ window: NSWindow?) {
@@ -88,8 +104,13 @@ final class WindowControllers {
         window.isReleasedWhenClosed = false
         // Open on the Space the person is looking at, including a full-screen one, instead of on another Space.
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
-        window.backgroundColor = NSColor(red: 0.09, green: 0.09, blue: 0.106, alpha: 1)
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.appearance = NSAppearance(named: .aqua)
+        // An empty unified toolbar makes the title bar tall, which centers the traffic lights in a row of their own.
+        window.toolbar = NSToolbar(identifier: "beacon.window")
+        window.toolbarStyle = .unified
+        window.titlebarSeparatorStyle = .none
         return window
     }
 }

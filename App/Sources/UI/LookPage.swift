@@ -7,10 +7,10 @@ struct LookPage: View {
     private var settings: BeaconSettings { model.settings }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             Stage(style: settings.highlightStyle, look: settings.look)
                 .frame(minHeight: 240, maxHeight: .infinity)
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: 16) {
                 stylePane
                 tunePane
             }
@@ -105,10 +105,13 @@ struct Pane<Content: View>: View {
             Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.dim)
             content
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.white.opacity(0.7), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.line, lineWidth: 0.5).padding(-0.5))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
     }
 }
 

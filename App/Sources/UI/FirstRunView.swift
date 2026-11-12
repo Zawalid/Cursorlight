@@ -15,7 +15,7 @@ struct FirstRunView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { i in
-                    Capsule().fill(i <= step ? Theme.accent : Color.white.opacity(0.14)).frame(height: 3)
+                    Capsule().fill(i <= step ? Theme.accent : Theme.fillMid).frame(height: 3)
                 }
             }
             .padding(.bottom, 26)
@@ -42,7 +42,7 @@ struct FirstRunView: View {
         .padding(.horizontal, 38).padding(.vertical, 32)
         .frame(width: 580, height: 520)
         .background(Theme.window)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
 
     private func advance() {

@@ -58,9 +58,9 @@ struct BeaconToggle: View {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) { isOn.toggle() }
         } label: {
             ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule().fill(isOn ? Theme.accent : Color.white.opacity(0.16)).frame(width: 38, height: 22)
+                Capsule().fill(isOn ? Theme.accent : Theme.fillMid).frame(width: 38, height: 22)
                 Circle().fill(.white).frame(width: 18, height: 18).padding(2)
-                    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                    .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
             }
         }
         .buttonStyle(.plain)
@@ -77,10 +77,10 @@ struct BeaconSlider: View {
         let span = range.upperBound - range.lowerBound
         let fraction = span > 0 ? (value - range.lowerBound) / span : 0
         ZStack(alignment: .leading) {
-            Capsule().fill(Color.white.opacity(0.14)).frame(height: 4)
+            Capsule().fill(Theme.fillMid).frame(height: 4)
             Capsule().fill(Theme.accent).frame(width: max(width * fraction, 0), height: 4)
             Circle().fill(.white).frame(width: 16, height: 16)
-                .shadow(color: .black.opacity(0.5), radius: 3, y: 1)
+                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
                 .offset(x: width * fraction - 8)
         }
         .frame(width: width, height: 22)
@@ -118,7 +118,7 @@ struct BeaconSegmented<Value: Hashable>: View {
                         .padding(.horizontal, 12).padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(selection == option.value ? Color.white.opacity(0.14) : .clear)
+                                .fill(selection == option.value ? Color.white.opacity(0.9) : .clear)
                         )
                 }
                 .buttonStyle(.plain)
@@ -165,10 +165,11 @@ struct Keycap: View {
     var body: some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Color(white: 0.9))
+            .foregroundStyle(Theme.text)
             .padding(.horizontal, 7).padding(.vertical, 2)
-            .background(Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Color.white.opacity(0.1)))
+            .background(Color.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.fillMid))
+            .shadow(color: .black.opacity(0.08), radius: 0, y: 1)
     }
 }
 
@@ -230,9 +231,9 @@ struct SwatchButton: View {
     var body: some View {
         Button(action: action) {
             Circle().fill(fill).frame(width: 22, height: 22)
-                .overlay(Circle().stroke(Color.white.opacity(0.14), lineWidth: 1))
+                .overlay(Circle().stroke(Theme.fillMid, lineWidth: 1))
                 .padding(2)
-                .overlay(Circle().stroke(isSelected ? Color.white : .clear, lineWidth: 2))
+                .overlay(Circle().stroke(isSelected ? Theme.text : .clear, lineWidth: 2))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -257,6 +258,6 @@ struct GhostButtonStyle: ButtonStyle {
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(Theme.text)
             .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(Color.white.opacity(configuration.isPressed ? 0.14 : 0.09), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(Color.black.opacity(configuration.isPressed ? 0.12 : 0.07), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
     }
 }
