@@ -989,7 +989,11 @@ struct DisplaysPage: View {
             } header: {
                 Text("Floating bar")
             } footer: {
-                Text("Show or hide it with \(TriggersPage.caps(for: model.settings.triggers.hotkey(for: .toggleToolbar)).joined()). Drag the dotted handle to move it.")
+                if let key = model.settings.triggers.hotkey(for: .toggleToolbar) {
+                    Text("Show or hide it with \(key.displayString). Drag the dotted handle to move it.")
+                } else {
+                    Text("Set a shortcut for it in Keys. Drag the dotted handle to move it.")
+                }
             }
             Section {
                 HStack(alignment: .top, spacing: 12) {

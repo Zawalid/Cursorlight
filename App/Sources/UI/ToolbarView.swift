@@ -27,6 +27,7 @@ struct ToolbarView: View {
                 if model.isOn(.ink) { inkControls } else { highlightControls }
                 separator
                 SceneMenu(selection: model.appliedProfileID, allowsOff: false) { id in if let id { model.chooseProfile(id) } }
+                    .tint(Color.white.opacity(0.85))
                 IconButton(symbol: "chevron.left", label: "Shrink the bar") { model.setToolbar { $0.collapsed = true } }
                 IconButton(symbol: "xmark", label: "Hide the bar. Bring it back with the shortcut or in Screens.") { model.setToolbar { $0.enabled = false } }
             }
@@ -67,7 +68,7 @@ struct ToolbarView: View {
             } label: {
                 Text(model.settings.highlightStyle.displayName).font(.system(size: 12, weight: .medium))
             }
-            .menuStyle(.borderlessButton).fixedSize().help("Highlight style")
+            .menuStyle(.borderlessButton).fixedSize().tint(Color.white.opacity(0.85)).help("Highlight style")
             HStack(spacing: 1) {
                 ForEach(AccentChoice.allCases, id: \.self) { accent in
                     Dot(
