@@ -87,4 +87,14 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.settings.look.intensity, 0.6, accuracy: 0.0001)
         XCTAssertEqual(reloaded.settings.look.lensDim, 0.7, accuracy: 0.0001)
     }
+
+    func testInkSettingsPersist() {
+        let store = SettingsStore(defaults: defaults)
+        XCTAssertEqual(store.settings.inkStyle, .marker)
+        store.update { $0.inkStyle = .neon; $0.inkColor = .green; $0.inkCleanup = false }
+        let reloaded = SettingsStore(defaults: defaults)
+        XCTAssertEqual(reloaded.settings.inkStyle, .neon)
+        XCTAssertEqual(reloaded.settings.inkColor, .green)
+        XCTAssertFalse(reloaded.settings.inkCleanup)
+    }
 }

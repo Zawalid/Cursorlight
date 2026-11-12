@@ -37,12 +37,12 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 ### C. Mark up
 | Feature | Tier | Status |
 |---|---|---|
-| Ink: hold a key and draw, strokes fade on their own | V1 | open |
-| Shape cleanup: circle, arrow, underline, rectangle | V1 | open |
+| Ink: draw, strokes fade on their own | V1 | done as menu mode (Escape ends); hold-key trigger in M4 |
+| Shape cleanup: ellipse, rectangle, line, underline, arrow | V1 | done, unit-tested on synthetic strokes; real hand strokes untested |
 | Ink styles: marker, highlighter, neon, chalk | V1 | open (marker, highlighter, neon first) |
-| Ink colour quick switch (number keys while held) | V1 | open |
+| Ink colour quick switch (keys 1 to 5) | V1 | done in menu mode |
 | Emphasis box | V1.1 | open |
-| Undo last stroke, clear all | V1 | open (cheap) |
+| Undo last stroke, clear all | V1 | done (Cmd-Z, C in menu mode) |
 | Persistent drawing mode (does not fade) | V1.1 | open |
 
 ### D. Summon and control

@@ -15,6 +15,10 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var highlightSize: Double
     public var highlightIntensity: Double
     public var lensDim: Double
+    public var inkStyle: InkStyle
+    public var inkColor: InkColor
+    /// Turn circles, rectangles, lines and arrows into clean shapes when a stroke ends.
+    public var inkCleanup: Bool
 
     public var look: HighlightLook {
         HighlightLook(accent: accent, size: highlightSize, intensity: highlightIntensity, lensDim: lensDim)
@@ -28,12 +32,16 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         accent: .styleDefault,
         highlightSize: 1,
         highlightIntensity: 1,
-        lensDim: 0.5
+        lensDim: 0.5,
+        inkStyle: .marker,
+        inkColor: .red,
+        inkCleanup: true
     )
 
     public init(
         version: Int, highlightStyle: HighlightStyle, clickRipples: Bool, shakeSensitivity: Double,
-        accent: AccentChoice, highlightSize: Double, highlightIntensity: Double, lensDim: Double
+        accent: AccentChoice, highlightSize: Double, highlightIntensity: Double, lensDim: Double,
+        inkStyle: InkStyle = .marker, inkColor: InkColor = .red, inkCleanup: Bool = true
     ) {
         self.version = version
         self.highlightStyle = highlightStyle
@@ -43,10 +51,14 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.highlightSize = highlightSize
         self.highlightIntensity = highlightIntensity
         self.lensDim = lensDim
+        self.inkStyle = inkStyle
+        self.inkColor = inkColor
+        self.inkCleanup = inkCleanup
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
+        case inkStyle, inkColor, inkCleanup
     }
 
     public init(from decoder: Decoder) throws {
@@ -60,6 +72,9 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         highlightSize = (try? c.decode(Double.self, forKey: .highlightSize)) ?? d.highlightSize
         highlightIntensity = (try? c.decode(Double.self, forKey: .highlightIntensity)) ?? d.highlightIntensity
         lensDim = (try? c.decode(Double.self, forKey: .lensDim)) ?? d.lensDim
+        inkStyle = (try? c.decode(InkStyle.self, forKey: .inkStyle)) ?? d.inkStyle
+        inkColor = (try? c.decode(InkColor.self, forKey: .inkColor)) ?? d.inkColor
+        inkCleanup = (try? c.decode(Bool.self, forKey: .inkCleanup)) ?? d.inkCleanup
     }
 
     /// Returns a copy with every value forced into its valid range.

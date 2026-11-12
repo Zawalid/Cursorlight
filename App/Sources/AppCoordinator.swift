@@ -10,6 +10,7 @@ final class AppCoordinator {
     private var shake: ShakeRecognizer
     let settings: SettingsStore
     let highlight: HighlightController
+    let ink: InkController
     let cursorSize: CursorSizeController
 
     /// Called after the cursor size changes, so the menu can refresh its checkmark.
@@ -26,11 +27,20 @@ final class AppCoordinator {
             ripplesEnabled: current.clickRipples,
             look: current.look
         )
+        ink = InkController(
+            overlays: overlays, style: current.inkStyle, color: current.inkColor, cleanupEnabled: current.inkCleanup
+        )
+        // The overlay manager has one hook; both controllers follow window changes through it.
+        overlays.onWindowsChanged = { [weak self] in
+            self?.highlight.windowsChanged()
+            self?.ink.windowsChanged()
+        }
     }
 
     func start() {
         overlays.start()
         highlight.start()
+        ink.start()
         tracker.onMove = { [weak self] position, time in
             self?.pointerMoved(to: position, at: time)
         }
@@ -77,6 +87,25 @@ final class AppCoordinator {
         highlight.setLook(settings.settings.look)
     }
 
+    func toggleInk() {
+        if ink.isActive { ink.deactivate() } else { ink.activate(takesKey: true) }
+    }
+
+    func setInkStyle(_ style: InkStyle) {
+        ink.setStyle(style)
+        settings.update { $0.inkStyle = style }
+    }
+
+    func setInkColor(_ color: InkColor) {
+        ink.setColor(color)
+        settings.update { $0.inkColor = color }
+    }
+
+    func setInkCleanup(_ enabled: Bool) {
+        ink.setCleanupEnabled(enabled)
+        settings.update { $0.inkCleanup = enabled }
+    }
+
     func setShakeSensitivity(_ value: Double) {
         settings.update { $0.shakeSensitivity = value }
         shake = ShakeRecognizer(sensitivity: settings.settings.shakeSensitivity)
@@ -114,6 +143,7 @@ final class AppCoordinator {
         tracker.stop()
         clicks.onButton = nil
         clicks.stop()
+        ink.stop()
         highlight.stop()
         overlays.stop()
     }

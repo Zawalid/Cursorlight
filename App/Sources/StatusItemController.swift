@@ -9,6 +9,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private var highlightItem: NSMenuItem?
     private var ripplesItem: NSMenuItem?
     private var laserItem: NSMenuItem?
+    private var inkItem: NSMenuItem?
+    private var inkCleanupItem: NSMenuItem?
+    private var inkStyleItems: [(style: InkStyle, item: NSMenuItem)] = []
+    private var inkColorItems: [(color: InkColor, item: NSMenuItem)] = []
     private var accentItems: [(accent: AccentChoice, item: NSMenuItem)] = []
     private var sizeLookItems: [(value: Double, item: NSMenuItem)] = []
     private var intensityItems: [(value: Double, item: NSMenuItem)] = []
@@ -38,6 +42,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         if let coordinator {
             addHighlightItems(to: menu, coordinator: coordinator)
+            menu.addItem(.separator())
+            addInkItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
             addCursorItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
@@ -85,6 +91,47 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         addLookItems(to: menu)
         coordinator.highlight.onChange = { [weak self] in self?.refreshChecks() }
+    }
+
+    private func addInkItems(to menu: NSMenu, coordinator: AppCoordinator) {
+        let toggle = NSMenuItem(title: "Start ink", action: #selector(toggleInk), keyEquivalent: "")
+        toggle.target = self
+        toggle.toolTip = "Draw on the screen. Escape stops, Cmd-Z undoes, C clears, 1 to 5 pick a color."
+        menu.addItem(toggle)
+        inkItem = toggle
+
+        let styles = NSMenu(title: "Ink style")
+        styles.delegate = self
+        for style in InkStyle.allCases {
+            let item = NSMenuItem(title: style.displayName, action: #selector(setInkStyle(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = style.rawValue
+            styles.addItem(item)
+            inkStyleItems.append((style, item))
+        }
+        let styleParent = NSMenuItem(title: "Ink style", action: nil, keyEquivalent: "")
+        styleParent.submenu = styles
+        menu.addItem(styleParent)
+
+        let colors = NSMenu(title: "Ink color")
+        colors.delegate = self
+        for color in InkColor.allCases {
+            let item = NSMenuItem(title: color.displayName, action: #selector(setInkColor(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = color.rawValue
+            colors.addItem(item)
+            inkColorItems.append((color, item))
+        }
+        let colorParent = NSMenuItem(title: "Ink color", action: nil, keyEquivalent: "")
+        colorParent.submenu = colors
+        menu.addItem(colorParent)
+
+        let cleanup = NSMenuItem(title: "Clean up shapes", action: #selector(toggleInkCleanup), keyEquivalent: "")
+        cleanup.target = self
+        menu.addItem(cleanup)
+        inkCleanupItem = cleanup
+
+        coordinator.ink.onChange = { [weak self] in self?.refreshChecks() }
     }
 
     private static let lookSizes: [(String, Double)] = [("Small", 0.75), ("Normal", 1.0), ("Large", 1.35), ("Extra large", 1.7)]
@@ -167,6 +214,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         highlightItem?.title = highlight?.isOn == true ? "Turn highlight off" : "Turn highlight on"
         ripplesItem?.state = highlight?.ripplesEnabled == true ? .on : .off
         laserItem?.title = highlight?.isLaserOn == true ? "Laser trail off" : "Laser trail on"
+        inkItem?.title = coordinator?.ink.isActive == true ? "Stop ink" : "Start ink"
+        if let ink = coordinator?.ink {
+            for (style, item) in inkStyleItems { item.state = style == ink.style ? .on : .off }
+            for (color, item) in inkColorItems { item.state = color == ink.color ? .on : .off }
+        }
+        inkCleanupItem?.state = coordinator?.settings.settings.inkCleanup == true ? .on : .off
         if let current = coordinator?.settings.settings {
             for (accent, item) in accentItems { item.state = accent == current.accent ? .on : .off }
             mark(sizeLookItems, current: current.highlightSize)
@@ -205,6 +258,29 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private func mark(_ items: [(value: Double, item: NSMenuItem)], current: Double) {
         let nearest = items.min { abs($0.value - current) < abs($1.value - current) }
         for entry in items { entry.item.state = entry.item === nearest?.item ? .on : .off }
+    }
+
+    @objc private func toggleInk() {
+        coordinator?.toggleInk()
+        refreshChecks()
+    }
+
+    @objc private func setInkStyle(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let style = InkStyle(rawValue: raw) else { return }
+        coordinator?.setInkStyle(style)
+        refreshChecks()
+    }
+
+    @objc private func setInkColor(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let color = InkColor(rawValue: raw) else { return }
+        coordinator?.setInkColor(color)
+        refreshChecks()
+    }
+
+    @objc private func toggleInkCleanup() {
+        guard let current = coordinator?.settings.settings.inkCleanup else { return }
+        coordinator?.setInkCleanup(!current)
+        refreshChecks()
     }
 
     @objc private func toggleLaser() {
