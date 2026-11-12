@@ -61,12 +61,17 @@ struct LookPage: View {
     private var settings: BeaconSettings { model.settings }
 
     var body: some View {
+        VStack(spacing: 0) {
+            Stage(style: settings.highlightStyle, look: settings.look)
+                .frame(height: 250)
+                .padding(.horizontal, 22).padding(.top, 8)
+            form
+        }
+        .background(Theme.window)
+    }
+
+    private var form: some View {
         Form {
-            Section {
-                Stage(style: settings.highlightStyle, look: settings.look)
-                    .frame(height: 250)
-                    .bareRow()
-            }
             Section {
                 TileRow(
                     items: HighlightStyle.allCases, selection: settings.highlightStyle, title: { $0.displayName },
@@ -134,11 +139,16 @@ struct InkPage: View {
     private var settings: BeaconSettings { model.settings }
 
     var body: some View {
+        VStack(spacing: 0) {
+            InkPreview(style: settings.inkStyle, color: settings.inkColor, cleanup: settings.inkCleanup, fade: settings.inkFadeAfter)
+                .padding(.horizontal, 22).padding(.top, 8)
+            form
+        }
+        .background(Theme.window)
+    }
+
+    private var form: some View {
         Form {
-            Section {
-                InkPreview(style: settings.inkStyle, color: settings.inkColor, cleanup: settings.inkCleanup, fade: settings.inkFadeAfter)
-                    .bareRow()
-            }
             Section("Pen") {
                 TileRow(
                     items: InkStyle.allCases, selection: settings.inkStyle, title: { $0.displayName },
