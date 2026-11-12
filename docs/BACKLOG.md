@@ -17,6 +17,7 @@ Permission key: **none** keeps the "no Screen Recording, no Accessibility" promi
 - Settings window: canvas and inspector, six pages
 - Spotlight region: drag a lit region, shape, dim, soft edge, click-through
 - Cursor and effect designs: click effects (ripple, double ring, burst, pulse) with an optional click sound, Crosshair style, Follow Reduce Motion, locator ring when the pointer jumps displays
+- Scene presets (Teaching, Webinar, Tutorial, Pairing, High visibility) and export and import of scene files
 - Presenting tools: text labels, number stamps (also fading pins), check, cross, star, heart, question and exclamation stamps, whiteboard (white or black), cover box, filled translucent box, eraser, arrow, double arrow, bracket, Shift for straight lines, persistent strokes (the fade switch), presenter timer chip
 
 ## Next
@@ -61,8 +62,6 @@ Nothing queued. Pick from the lists below. Left over from presenting tools: curv
 
 | Idea | Size | Permission | Why |
 |---|---|---|---|
-| Export and import scenes as files | S | none | Share a look with a team |
-| Built-in scene presets: Meeting, Recording, Teaching, Dark app | S | none | Good defaults from minute one |
 | Scene gallery with preview | M | none | Browse and pick visually |
 | Per-display scenes | M | none | A different look on each screen |
 | Auto scene by app category (video call, editor, browser) | S | none | Fewer rules to write |

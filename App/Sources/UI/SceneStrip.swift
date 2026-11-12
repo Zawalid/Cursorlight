@@ -11,6 +11,7 @@ struct SceneStrip: View {
     @State private var dropTarget: String?
     @State private var endTargeted = false
     @State private var deleting: Profile?
+    @State private var importError: String?
     @FocusState private var nameFocused: Bool
 
     private let spring = Animation.spring(response: 0.3, dampingFraction: 0.86)
@@ -114,6 +115,7 @@ struct SceneStrip: View {
     private func menu(for profile: Profile) -> some View {
         Button("Rename") { beginRename(profile) }
         Button("Duplicate") { model.duplicateProfile(profile.id) }
+        Button("Export…") { model.exportScene(profile) }
         if model.profiles.count > 1 {
             Divider()
             Button("Delete…", role: .destructive) { deleting = profile }
@@ -121,9 +123,26 @@ struct SceneStrip: View {
     }
 
     private var addCard: some View {
-        Button {
-            model.addProfile()
-            beginRename(model.profiles.first { $0.id == model.appliedProfileID })
+        Menu {
+            Button("Save the current look as a scene") {
+                model.addProfile()
+                beginRename(model.profiles.first { $0.id == model.appliedProfileID })
+            }
+            Menu("Add a preset") {
+                ForEach(ScenePresets.all, id: \.key) { preset in
+                    Button {
+                        model.addPreset(preset)
+                    } label: {
+                        Label {
+                            Text("\(preset.name): \(preset.detail)")
+                        } icon: {
+                            Image(nsImage: MenuThumbnail.style(preset.snapshot.highlightStyle, tint: Color(rgba: Profile(id: "p", name: "p", snapshot: preset.snapshot).highlightColor)))
+                        }
+                    }
+                }
+            }
+            Divider()
+            Button("Import a scene file…") { importError = model.importScene() }
         } label: {
             VStack(spacing: 7) {
                 Image(systemName: "plus").font(.system(size: 14, weight: .medium))
@@ -138,13 +157,18 @@ struct SceneStrip: View {
             .foregroundStyle(Color.white.opacity(endTargeted ? 0.9 : 0.55))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .help("Save the current look as a new scene. Drop a card here to move it to the end.")
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .help("Save the current look, add a preset, or import a scene file. Drop a card here to move it to the end.")
         .dropDestination(for: String.self) { ids, _ in
             guard let moved = ids.first else { return false }
             withAnimation(spring) { model.moveProfile(moved, before: nil) }
             return true
         } isTargeted: { endTargeted = $0 }
+        .alert("Could not import", isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importError ?? "")
+        }
     }
 
     // MARK: Renaming

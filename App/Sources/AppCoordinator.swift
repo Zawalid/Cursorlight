@@ -255,6 +255,12 @@ final class AppCoordinator {
         settings.update { $0.profiles = Profile.reordered($0.profiles, moving: id, before: target) }
     }
 
+    /// Adds a finished scene (from a preset or an imported file) and switches to it.
+    func addProfile(_ profile: Profile) {
+        settings.update { $0.profiles.append(profile) }
+        chooseProfile(profile.id)
+    }
+
     func renameProfile(_ id: String, to name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }

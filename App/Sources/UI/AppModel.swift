@@ -60,6 +60,38 @@ final class AppModel: ObservableObject {
 
     func chooseProfile(_ id: String) { coordinator.chooseProfile(id); bump() }
     func addProfile() { coordinator.addProfile(); bump() }
+    func addPreset(_ preset: ScenePresets.Preset) {
+        coordinator.addProfile(ScenePresets.scene(from: preset, existing: profiles))
+        bump()
+    }
+
+    /// Saves a scene as a file anyone with Beacon can import.
+    func exportScene(_ profile: Profile) {
+        guard let data = SceneFile(name: profile.name, snapshot: profile.snapshot).encoded() else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: SceneFile.fileExtension) ?? .json]
+        panel.nameFieldStringValue = "\(profile.name).\(SceneFile.fileExtension)"
+        panel.message = "Save this scene to share it"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    /// Adds a scene from a file. Returns an error message when the file is not a Beacon scene.
+    @discardableResult
+    func importScene() -> String? {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: SceneFile.fileExtension) ?? .json, .json]
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a Beacon scene file"
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        guard let data = try? Data(contentsOf: url), let file = SceneFile.decode(data) else {
+            return "That file is not a Beacon scene, or it comes from a newer version."
+        }
+        coordinator.addProfile(file.scene(existing: profiles))
+        bump()
+        return nil
+    }
+
     func duplicateProfile(_ id: String) { coordinator.duplicateProfile(id); bump() }
     func moveProfile(_ id: String, before target: String?) { coordinator.moveProfile(id, before: target); bump() }
     func deleteProfile(_ id: String) { coordinator.deleteProfile(id); bump() }
