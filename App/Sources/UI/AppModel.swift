@@ -154,6 +154,11 @@ final class AppModel: ObservableObject {
         """
     }
 
+    func setToolbar(_ edit: (inout ToolbarSettings) -> Void) { coordinator.setToolbar(edit); bump() }
+    func undoInk() { coordinator.undoInk() }
+    func clearInk() { coordinator.clearInk() }
+    var anyEffectRunning: Bool { coordinator.highlight.isOn || coordinator.highlight.isLaserOn || coordinator.ink.isActive }
+
     func resetAllSettings() { coordinator.resetAllSettings(); bump() }
 
     func suspendHotkeys(_ on: Bool) { coordinator.suspendHotkeys(on) }

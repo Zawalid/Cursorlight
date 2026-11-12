@@ -38,6 +38,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var highlightOptions: HighlightOptions
     /// Situations where effects hide by themselves.
     public var hideRules: HideRules
+    /// The floating control bar.
+    public var toolbar: ToolbarSettings
 
     public static let inkFadeRange: ClosedRange<Double> = 0.8...8
     public static let inkWidthRange: ClosedRange<Double> = 0.6...2.5
@@ -69,7 +71,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         appRules: [],
         displayScope: .all,
         highlightOptions: HighlightOptions(),
-        hideRules: HideRules()
+        hideRules: HideRules(),
+        toolbar: ToolbarSettings()
     )
 
     public init(
@@ -87,7 +90,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         appRules: [AppRule] = [],
         displayScope: DisplayScope = .all,
         highlightOptions: HighlightOptions = HighlightOptions(),
-        hideRules: HideRules = HideRules()
+        hideRules: HideRules = HideRules(),
+        toolbar: ToolbarSettings = ToolbarSettings()
     ) {
         self.version = version
         self.highlightStyle = highlightStyle
@@ -112,12 +116,13 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.displayScope = displayScope
         self.highlightOptions = highlightOptions
         self.hideRules = hideRules
+        self.toolbar = toolbar
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
         case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, inkWidth, inkShapes, inkFades, welcomeSeen
-        case profiles, baseProfileID, appRules, displayScope, highlightOptions, hideRules
+        case profiles, baseProfileID, appRules, displayScope, highlightOptions, hideRules, toolbar
     }
 
     public init(from decoder: Decoder) throws {
@@ -145,6 +150,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         displayScope = (try? c.decode(DisplayScope.self, forKey: .displayScope)) ?? d.displayScope
         highlightOptions = ((try? c.decode(HighlightOptions.self, forKey: .highlightOptions)) ?? d.highlightOptions).sanitized()
         hideRules = (try? c.decode(HideRules.self, forKey: .hideRules)) ?? d.hideRules
+        toolbar = (try? c.decode(ToolbarSettings.self, forKey: .toolbar)) ?? d.toolbar
         // Settings saved before profiles existed: their current look becomes the Stream profile.
         if let stored = try? c.decode([Profile].self, forKey: .profiles), !stored.isEmpty {
             profiles = stored

@@ -967,6 +967,31 @@ struct DisplaysPage: View {
                      : "The main display is the one with the menu bar.")
             }
             Section {
+                Toggle(isOn: Binding(get: { model.settings.toolbar.enabled }, set: { v in model.setToolbar { $0.enabled = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Show the floating bar")
+                        Text("Quick controls for highlight, laser, drawing, colors and scenes.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                if model.settings.toolbar.enabled {
+                    Picker("Show", selection: Binding(get: { model.settings.toolbar.visibility }, set: { v in model.setToolbar { $0.visibility = v } })) {
+                        ForEach(ToolbarVisibility.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    }
+                }
+                Toggle(isOn: Binding(get: { model.settings.toolbar.hiddenFromViewers }, set: { v in model.setToolbar { $0.hiddenFromViewers = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Hide it from screen sharing")
+                        Text("Viewers see your effects but not the bar. Check it in your call app.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                Button("Reset position") { model.setToolbar { $0.originX = nil; $0.originY = nil } }
+                    .disabled(model.settings.toolbar.origin == nil)
+            } header: {
+                Text("Floating bar")
+            } footer: {
+                Text("Show or hide it with \(TriggersPage.caps(for: model.settings.triggers.hotkey(for: .toggleToolbar)).joined()). Drag the dotted handle to move it.")
+            }
+            Section {
                 HStack(alignment: .top, spacing: 12) {
                     ShareGlyph(apps: model.conferencingApps, info: info, size: 30)
                     VStack(alignment: .leading, spacing: 2) {

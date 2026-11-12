@@ -241,3 +241,38 @@ final class InkChoicesTests: XCTestCase {
         XCTAssertEqual(decoded.snapshot.inkShapes, [.ellipse, .arrow])
     }
 }
+
+final class ToolbarSettingsTests: XCTestCase {
+    func testIsOffByDefaultAndHiddenFromViewers() {
+        let t = ToolbarSettings()
+        XCTAssertFalse(t.enabled)
+        XCTAssertTrue(t.hiddenFromViewers)
+        XCTAssertFalse(t.isShown(effectRunning: true))
+    }
+
+    func testVisibilityRules() {
+        var t = ToolbarSettings()
+        t.enabled = true
+        XCTAssertTrue(t.isShown(effectRunning: false))
+        t.visibility = .whileEffectOn
+        XCTAssertFalse(t.isShown(effectRunning: false))
+        XCTAssertTrue(t.isShown(effectRunning: true))
+    }
+
+    func testRoundTripKeepsPosition() throws {
+        var settings = BeaconSettings.defaults
+        settings.toolbar.enabled = true
+        settings.toolbar.originX = 120
+        settings.toolbar.originY = 48
+        settings.toolbar.collapsed = true
+        let decoded = try JSONDecoder().decode(BeaconSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.toolbar.origin, CGPoint(x: 120, y: 48))
+        XCTAssertTrue(decoded.toolbar.collapsed)
+        XCTAssertNil(ToolbarSettings().origin)
+    }
+
+    func testShortcutDefaultAndRouting() {
+        XCTAssertEqual(TriggerSettings().hotkey(for: .toggleToolbar)?.displayString, "⌃⌥B")
+        XCTAssertEqual(TriggerRouter(settings: TriggerSettings()).route(.hotkey(.toggleToolbar), active: .init()), [.toggleToolbar])
+    }
+}

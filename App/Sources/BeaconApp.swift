@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var coordinator: AppCoordinator?
     private var model: AppModel?
     private var windows: WindowControllers?
+    private var toolbar: ToolbarController?
     var debugInkActive: Bool { coordinator?.ink.isActive ?? false }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -66,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let windows = WindowControllers(model: model)
             self.model = model
             self.windows = windows
+            self.toolbar = ToolbarController(model: model)
             statusItemController.install(model: model)
             if environment.opensSettingsAtLaunch {
                 windows.showSettings(environment.launchPage.flatMap(SettingsPage.init(rawValue:)) ?? .highlight)

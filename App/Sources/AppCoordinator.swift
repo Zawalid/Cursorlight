@@ -322,8 +322,18 @@ final class AppCoordinator {
             cycleScene()
         case .clearInk:
             ink.clearAll()
+        case .toggleToolbar:
+            setToolbar { $0.enabled.toggle() }
         }
     }
+
+    func setToolbar(_ edit: (inout ToolbarSettings) -> Void) {
+        settings.update { edit(&$0.toolbar) }
+        onTriggersChange?()
+    }
+
+    func undoInk() { ink.undo() }
+    func clearInk() { ink.clearAll() }
 
     /// Switches to the next scene in the list, wrapping around.
     func cycleScene() {
