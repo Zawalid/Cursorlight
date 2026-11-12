@@ -9,16 +9,36 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Theme.window
-            VStack(spacing: 0) {
-                TopBar(page: $page)
-                content
-            }
-            .ignoresSafeArea(.container, edges: .top)
-            Dock(page: $page).padding(.bottom, 16)
+            content
+            Dock(page: $page).padding(.bottom, 14)
         }
-        .ignoresSafeArea(.container, edges: .top)
-        .frame(minWidth: 860, minHeight: 620)
+        .frame(minWidth: 900, minHeight: 640)
+        .background(WindowGlass().ignoresSafeArea())
+        // The top row lives in the real window toolbar: the title bar swallows clicks on anything placed under it.
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Picker("Scene", selection: Binding(get: { model.appliedProfileID }, set: { model.chooseProfile($0) })) {
+                    ForEach(model.profiles) { Text($0.name).tag($0.id) }
+                }
+                .pickerStyle(.segmented)
+                .frame(minWidth: 280)
+            }
+            ToolbarItem(placement: .navigation) {
+                Button { model.addProfile() } label: { Image(systemName: "plus") }
+                    .help("Save the current look as a new scene")
+            }
+            ToolbarItem(placement: .primaryAction) { SignalPill() }
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("About, updates and launch at login") { page = .about }
+                    if model.profiles.count > 1, let current = model.profiles.first(where: { $0.id == model.appliedProfileID }) {
+                        Divider()
+                        Button("Delete scene \(current.name)", role: .destructive) { model.deleteProfile(current.id) }
+                    }
+                } label: { Image(systemName: "ellipsis") }
+                .menuIndicator(.hidden)
+            }
+        }
         .preferredColorScheme(.light)
     }
 
@@ -27,7 +47,8 @@ struct SettingsView: View {
         if page == .highlight {
             LookPage()
                 .padding(.horizontal, 20)
-                .padding(.bottom, 76)
+                .padding(.top, 4)
+                .padding(.bottom, 70)
         } else {
             pageContainer {
                 Group {
@@ -56,87 +77,17 @@ struct SettingsView: View {
     }
 }
 
-/// Scenes on the left, the share signal and a small menu on the right. Sits under the transparent title bar.
-struct TopBar: View {
-    @EnvironmentObject private var model: AppModel
-    @Binding var page: SettingsPage
-
-    var body: some View {
-        HStack(spacing: 10) {
-            // Room for the traffic lights, which sit in the same row.
-            Spacer().frame(width: 84)
-            Segmented(
-                items: model.profiles.map { ($0.id, $0.name) },
-                selection: model.appliedProfileID,
-                select: { model.chooseProfile($0) },
-                delete: model.profiles.count > 1 ? { model.deleteProfile($0) } : nil
-            )
-            Button { model.addProfile() } label: {
-                Image(systemName: "plus").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.dim)
-                    .frame(width: 26, height: 26).glassCapsule(circle: true)
-            }
-            .buttonStyle(.plain)
-            .help("Save the current look as a new scene")
-            Spacer()
-            SignalPill()
-            Button { page = .about } label: {
-                Image(systemName: "ellipsis").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.dim)
-                    .frame(width: 28, height: 28).glassCapsule(circle: true)
-            }
-            .buttonStyle(.plain)
-            .help("About, updates and launch at login")
-        }
-        .padding(.trailing, 20)
-        .frame(height: 52)
+/// The window background: the system's translucent material, tinted by the wallpaper behind the window.
+struct WindowGlass: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .underWindowBackground
+        view.blendingMode = .behindWindow
+        view.state = .active
+        return view
     }
-}
 
-/// A glass segmented control: a translucent track and a white thumb on the selected item.
-struct Segmented: View {
-    let items: [(id: String, title: String)]
-    let selection: String
-    let select: (String) -> Void
-    var delete: ((String) -> Void)?
-    @Namespace private var thumb
-
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(items, id: \.id) { item in
-                let on = item.id == selection
-                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.88)) { select(item.id) } } label: {
-                    Text(item.title).font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(on ? Theme.text : Theme.dim)
-                        .padding(.horizontal, 14).frame(height: 26)
-                        .background {
-                            if on {
-                                Capsule().fill(Color.white.opacity(0.95))
-                                    .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
-                                    .matchedGeometryEffect(id: "thumb", in: thumb)
-                            }
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? .isSelected : [])
-                .contextMenu {
-                    if let delete { Button("Delete \(item.title)", role: .destructive) { delete(item.id) } }
-                }
-            }
-        }
-        .padding(3)
-        .glassCapsule()
-    }
-}
-
-extension View {
-    /// A translucent capsule (or circle) with a light edge, for controls that float over the window.
-    func glassCapsule(circle: Bool = false) -> some View {
-        self
-            .background(.regularMaterial, in: Capsule())
-            .background(Color.white.opacity(0.28), in: Capsule())
-            .overlay(Capsule().stroke(Color.white.opacity(0.7), lineWidth: 1))
-            .overlay(Capsule().stroke(Theme.line, lineWidth: 0.5).padding(-0.5))
-            .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
-    }
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
 }
 
 /// The share status as a small beacon. Click to say what you are sharing.
@@ -147,20 +98,17 @@ struct SignalPill: View {
     var body: some View {
         let info = ShareStatusInfo(model.shareStatus)
         Button { open.toggle() } label: {
-            HStack(spacing: 7) {
-                Circle().fill(info.tint).frame(width: 7, height: 7).shadow(color: info.tint.opacity(0.9), radius: 4)
-                Text(info.pill).font(.system(size: 12)).foregroundStyle(Theme.dim)
+            HStack(spacing: 6) {
+                Circle().fill(info.tint).frame(width: 7, height: 7)
+                Text(info.pill).font(.system(size: 12))
             }
-            .padding(.horizontal, 12).frame(height: 28)
-            .glassCapsule()
         }
-        .buttonStyle(.plain)
         .popover(isPresented: $open, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(info.title).font(.system(size: 13, weight: .semibold))
-                Text(info.body).font(.system(size: 12)).foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
+                Text(info.body).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 Divider()
-                Text("I am sharing").font(.system(size: 11)).foregroundStyle(Theme.faint)
+                Text("I am sharing").font(.system(size: 11)).foregroundStyle(.tertiary)
                 Picker("", selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0); open = false })) {
                     Text("Nothing").tag(DeclaredShare?.some(.notSharing))
                     Text("Screen").tag(DeclaredShare?.some(.wholeScreen))
@@ -169,43 +117,60 @@ struct SignalPill: View {
                 .pickerStyle(.segmented).labelsHidden()
             }
             .padding(14).frame(width: 280)
-            .preferredColorScheme(.light)
         }
     }
 }
 
-/// A floating glass pill that moves between the five sections.
+/// A floating pill that moves between the five sections. Each item fills its whole slot, so there are no dead gaps.
 struct Dock: View {
     @Binding var page: SettingsPage
     @Namespace private var thumb
+    @State private var hovered: SettingsPage?
     private let items: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays]
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             ForEach(items) { item in
                 let on = page == item
-                Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) { page = item } } label: {
+                Button {
+                    DebugLog.write("dock \(item.rawValue)")
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) { page = item }
+                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: item.symbol).font(.system(size: 12, weight: .medium))
                         Text(item.title).font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundStyle(on ? Theme.text : Theme.dim)
-                    .padding(.horizontal, 14).frame(height: 32)
+                    .foregroundStyle(on || hovered == item ? Theme.text : Theme.dim)
+                    .padding(.horizontal, 16).frame(height: 34)
                     .background {
                         if on {
-                            Capsule().fill(Color.white.opacity(0.95))
-                                .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
-                                .matchedGeometryEffect(id: "dock", in: thumb)
+                            Capsule().fill(Color.white.opacity(0.9)).matchedGeometryEffect(id: "dock", in: thumb)
+                        } else if hovered == item {
+                            Capsule().fill(Color.black.opacity(0.07))
                         }
                     }
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .onHover { hovered = $0 ? item : (hovered == item ? nil : hovered) }
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
         .padding(4)
-        .glassCapsule()
-        .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
+        .modifier(DockGlass())
+    }
+}
+
+/// Real Liquid Glass where the system has it, a plain material before that. No hand-made shadows.
+struct DockGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.glassEffect(.regular, in: Capsule())
+        } else {
+            content
+                .background(.regularMaterial, in: Capsule())
+                .overlay(Capsule().stroke(Theme.line, lineWidth: 0.5))
+        }
     }
 }
 

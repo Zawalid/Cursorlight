@@ -13,7 +13,7 @@ final class FirstClickHostingView<Content: View>: NSHostingView<Content> {
 final class WindowControllers {
     private let model: AppModel
     private var settings: NSWindow?
-    private var settingsHost: FirstClickHostingView<AnyView>?
+    private var settingsController: NSHostingController<AnyView>?
     private var welcome: NSWindow?
 
     init(model: AppModel) {
@@ -28,18 +28,20 @@ final class WindowControllers {
 
     func showSettings(_ page: SettingsPage) {
         let root = AnyView(SettingsView(page: page).environmentObject(model))
-        if settings != nil, let host = settingsHost {
-            host.rootView = root
+        if settings != nil, let controller = settingsController {
+            controller.rootView = root
         } else {
-            let window = Self.makeWindow(size: NSSize(width: 980, height: 700), resizable: true)
+            let window = Self.makeWindow(size: NSSize(width: 980, height: 700), resizable: true, toolbar: true)
             window.title = Branding.appName
-            let host = FirstClickHostingView(rootView: root)
-            Self.install(host, in: window)
-            settingsHost = host
+            let controller = NSHostingController(rootView: root)
+            // Lets the SwiftUI view's .toolbar become the window's real toolbar.
+            controller.sceneBridgingOptions = [.toolbars]
+            window.contentViewController = controller
+            settingsController = controller
             window.setContentSize(NSSize(width: 980, height: 700))
             window.contentMinSize = NSSize(width: 900, height: 640)
             window.center()
-            window.setFrameAutosaveName("BeaconSettings")
+            window.setFrameAutosaveName("BeaconSettings.v2")
             settings = window
         }
         Self.present(settings)
@@ -93,7 +95,7 @@ final class WindowControllers {
         window.orderFrontRegardless()
     }
 
-    static func makeWindow(size: NSSize, resizable: Bool) -> NSWindow {
+    static func makeWindow(size: NSSize, resizable: Bool, toolbar: Bool = false) -> NSWindow {
         var mask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
         if resizable { mask.insert(.resizable) }
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: mask, backing: .buffered, defer: false)
@@ -107,10 +109,10 @@ final class WindowControllers {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.appearance = NSAppearance(named: .aqua)
-        // An empty unified toolbar makes the title bar tall, which centers the traffic lights in a row of their own.
-        window.toolbar = NSToolbar(identifier: "beacon.window")
-        window.toolbarStyle = .unified
-        window.titlebarSeparatorStyle = .none
+        if toolbar {
+            window.toolbarStyle = .unified
+            window.titlebarSeparatorStyle = .none
+        }
         return window
     }
 }

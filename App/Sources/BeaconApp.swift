@@ -24,13 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         if ProcessInfo.processInfo.environment["BEACON_DEBUG_EVENTS"] == "1" {
             // Diagnostic only: appends every mouse and scroll event the app receives, and main-thread stalls, to a file.
-            let path = "/tmp/beacon-events.log"
-            FileManager.default.createFile(atPath: path, contents: nil)
-            let handle = FileHandle(forWritingAtPath: path)
-            func write(_ text: String) {
-                handle?.seekToEndOfFile()
-                handle?.write(Data((text + "\n").utf8))
-            }
+            FileManager.default.createFile(atPath: "/tmp/beacon-events.log", contents: nil)
+            func write(_ text: String) { DebugLog.write(text) }
             write("started")
             NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp, .leftMouseDragged, .scrollWheel, .rightMouseDown]) { event in
                 let hit = event.window?.contentView?.hitTest(event.locationInWindow)
@@ -41,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             var last = ProcessInfo.processInfo.systemUptime
             Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in
                 let now = ProcessInfo.processInfo.systemUptime
-                if now - last > 0.5 { write("STALL \(String(format: "%.2f", now - last))s") }
+                if now - last > 0.08 { write("STALL \(String(format: "%.2f", now - last))s") }
                 last = now
             }
         }

@@ -6,7 +6,7 @@ enum DebugLog {
     private static let path = "/tmp/beacon-events.log"
 
     static func write(_ text: String) {
-        guard isOn, let data = (text + "\n").data(using: .utf8) else { return }
+        guard isOn, let data = (String(format: "%.3f ", ProcessInfo.processInfo.systemUptime) + text + "\n").data(using: .utf8) else { return }
         if let handle = FileHandle(forWritingAtPath: path) {
             handle.seekToEndOfFile()
             handle.write(data)

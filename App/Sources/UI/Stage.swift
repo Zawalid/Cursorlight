@@ -21,7 +21,6 @@ struct Stage: View {
         .background(Theme.stage)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.black.opacity(0.25), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.16), radius: 14, y: 6)
         .overlay(alignment: .topLeading) {
             Text("Move your mouse here")
                 .font(.system(size: 11, weight: .medium)).foregroundStyle(Color.white.opacity(0.7))
