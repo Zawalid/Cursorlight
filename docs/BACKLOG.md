@@ -19,6 +19,7 @@ Permission key: **none** keeps the "no Screen Recording, no Accessibility" promi
 - Cursor and effect designs: click effects (ripple, double ring, burst, pulse) with an optional click sound, Crosshair style, Follow Reduce Motion, locator ring when the pointer jumps displays
 - Scene presets (Teaching, Webinar, Tutorial, Pairing, High visibility) and export and import of scene files
 - App category rules (calls, code, browsers, slides, design, video), the "Viewers" preview on the canvas, keystroke display, key sound and hide while typing (all three listen to the keyboard through optional Input Monitoring)
+- `beacon://` links to control Beacon from Stream Deck, Raycast, Alfred, Shortcuts (Open URLs) and scripts
 - Presenting tools: text labels, number stamps (also fading pins), check, cross, star, heart, question and exclamation stamps, whiteboard (white or black), cover box, filled translucent box, eraser, arrow, double arrow, bracket, Shift for straight lines, persistent strokes (the fade switch), presenter timer chip
 
 ## Next
@@ -49,7 +50,7 @@ Nothing queued. Pick from the lists below. Left over from presenting tools: curv
 
 | Idea | Size | Permission | Why |
 |---|---|---|---|
-| `beacon://` URL scheme and Shortcuts actions | M | none | Stream Deck, Raycast, Alfred, scripts |
+| Native Shortcuts actions (App Intents), so Beacon shows up in the Shortcuts app by name | M | none | The URL scheme already works through Open URLs |
 | Presentation clicker support: map clicker buttons to laser and next scene | M | Input | Presenters already own clickers |
 | Mouse side-button trigger | S | Input | Hands stay on the mouse |
 | Per-scene shortcuts | S | none | Jump straight to a scene |
