@@ -19,8 +19,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var coordinator: AppCoordinator?
     private var model: AppModel?
     private var windows: WindowControllers?
+    var debugInkActive: Bool { coordinator?.ink.isActive ?? false }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if ProcessInfo.processInfo.environment["BEACON_DEBUG_EVENTS"] == "1" {
+            // Diagnostic only: appends every mouse and scroll event the app receives, and main-thread stalls, to a file.
+            let path = "/tmp/beacon-events.log"
+            FileManager.default.createFile(atPath: path, contents: nil)
+            let handle = FileHandle(forWritingAtPath: path)
+            func write(_ text: String) {
+                handle?.seekToEndOfFile()
+                handle?.write(Data((text + "\n").utf8))
+            }
+            write("started")
+            NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp, .leftMouseDragged, .scrollWheel, .rightMouseDown]) { event in
+                let hit = event.window?.contentView?.hitTest(event.locationInWindow)
+                let ink = (NSApp.delegate as? AppDelegate)?.debugInkActive ?? false
+                write("event \(event.type.rawValue) modal=\(NSApp.modalWindow != nil) keyWin=\(NSApp.keyWindow?.title ?? "none") window=\(event.window?.title ?? "none") key=\(event.window?.isKeyWindow ?? false) active=\(NSApp.isActive) ink=\(ink) hit=\(hit.map { String(describing: type(of: $0)) } ?? "nil")")
+                return event
+            }
+            var last = ProcessInfo.processInfo.systemUptime
+            Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in
+                let now = ProcessInfo.processInfo.systemUptime
+                if now - last > 0.5 { write("STALL \(String(format: "%.2f", now - last))s") }
+                last = now
+            }
+        }
         if ClickSelfTest.isRequested {
             ClickSelfTest.run()
             NSApp.terminate(nil)
@@ -53,6 +77,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // Launch-at-login and Sparkle are added in later tasks; both are gated
         // on environment.allowsLaunchAtLogin / environment.allowsUpdater.
+    }
+
+    /// Opening the app again (Finder, `open`, the Dock) shows the settings window on the current Space.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        windows?.showSettings(.highlight)
+        return true
     }
 
     func applicationWillTerminate(_ notification: Notification) {

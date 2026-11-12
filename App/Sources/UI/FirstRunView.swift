@@ -3,8 +3,13 @@ import SwiftUI
 
 struct FirstRunView: View {
     @EnvironmentObject private var model: AppModel
-    @State private var step = 0
+    @State private var step: Int
     let finish: () -> Void
+
+    init(startAt step: Int = 0, finish: @escaping () -> Void) {
+        _step = State(initialValue: step)
+        self.finish = finish
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

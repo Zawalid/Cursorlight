@@ -61,6 +61,7 @@ struct SettingsView: View {
 
     private func navButton(_ item: SettingsPage) -> some View {
         Button {
+            DebugLog.write("nav \(item.rawValue)")
             withAnimation(.easeOut(duration: 0.18)) { page = item }
         } label: {
             HStack(spacing: 10) {

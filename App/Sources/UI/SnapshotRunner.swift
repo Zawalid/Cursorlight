@@ -22,7 +22,9 @@ enum SnapshotRunner {
             render(SettingsView(page: page, scrolls: false).environmentObject(model).frame(width: 940, height: 900), name: "settings-\(page.rawValue)", into: directory)
         }
         render(PopoverView().environmentObject(model), name: "popover", into: directory)
-        render(FirstRunView(finish: {}).environmentObject(model), name: "firstrun", into: directory)
+        for step in 0..<3 {
+            render(FirstRunView(startAt: step, finish: {}).environmentObject(model), name: "firstrun-\(step + 1)", into: directory)
+        }
         defaults.removePersistentDomain(forName: suite)
     }
 

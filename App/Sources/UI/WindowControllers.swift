@@ -19,6 +19,10 @@ final class WindowControllers {
         self.model = model
         model.openSettings = { [weak self] page in self?.showSettings(page) }
         model.openWelcome = { [weak self] in self?.showWelcome() }
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { [weak self] _ in
+            // The closing window is still visible during this notification; check again right after.
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.windowClosed() } }
+        }
     }
 
     func showSettings(_ page: SettingsPage) {
@@ -28,7 +32,9 @@ final class WindowControllers {
         } else {
             let window = Self.makeWindow(size: NSSize(width: 940, height: 680), resizable: true)
             window.title = Branding.appName
-            window.contentView = FirstClickHostingView(rootView: root)
+            let host = FirstClickHostingView(rootView: root)
+            host.sizingOptions = []
+            window.contentView = host
             window.setContentSize(NSSize(width: 940, height: 680))
             window.contentMinSize = NSSize(width: 860, height: 600)
             window.center()
@@ -41,17 +47,32 @@ final class WindowControllers {
     func showWelcome() {
         let view = AnyView(FirstRunView { [weak self] in self?.welcome?.close() }.environmentObject(model))
         let window = Self.makeWindow(size: NSSize(width: 580, height: 520), resizable: false)
-        window.contentView = FirstClickHostingView(rootView: view)
+        let host = FirstClickHostingView(rootView: view)
+        host.sizingOptions = []
+        window.contentView = host
         window.setContentSize(NSSize(width: 580, height: 520))
         window.center()
         welcome = window
         Self.present(window)
     }
 
+    /// A menu bar app is an accessory app, and accessory apps are not reliably activated when one of their windows is
+    /// clicked: the window stays inactive and its buttons never fire. While a window is open the app becomes a regular
+    /// app (Dock icon, real activation); it goes back to accessory when the last window closes.
+    static func becomeRegular() {
+        NSApp.setActivationPolicy(.regular)
+    }
+
+    func windowClosed() {
+        let open = [settings, welcome].compactMap { $0 }.contains { $0.isVisible }
+        if !open { NSApp.setActivationPolicy(.accessory) }
+    }
+
     static func present(_ window: NSWindow?) {
         guard let window else { return }
+        becomeRegular()
         // Cooperative activation (macOS 14 and later): the old ignoringOtherApps form no longer forces it.
-        NSApp.activate()
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
     }

@@ -3,7 +3,7 @@ import AppKit
 /// Receives the mouse while Ink is active, so the drag never reaches the app underneath. Covers the display minus the
 /// menu bar and Dock, which stay usable.
 @MainActor
-final class InkInputWindow: NSWindow {
+final class InkInputWindow: NSPanel {
     var onDown: ((CGPoint) -> Void)?
     var onDrag: ((CGPoint) -> Void)?
     var onUp: ((CGPoint) -> Void)?
@@ -12,7 +12,8 @@ final class InkInputWindow: NSWindow {
 
     init(frame: CGRect, takesKey: Bool) {
         self.takesKey = takesKey
-        super.init(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        super.init(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        hidesOnDeactivate = false
         isReleasedWhenClosed = false
         isOpaque = false
         // Nearly invisible but not clear: fully clear pixels would let the window server skip hit-testing.
