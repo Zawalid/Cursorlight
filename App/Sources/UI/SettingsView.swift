@@ -38,6 +38,9 @@ struct SettingsView: View {
         .overlay(alignment: .topTrailing) { ShareChip().padding(.top, 14).padding(.trailing, 16) }
         .overlay(alignment: .bottomLeading) { OnChip().padding(16) }
         .overlay(alignment: .bottom) { SceneSwitcher().padding(.bottom, 20) }
+        .overlay(alignment: .bottomTrailing) {
+            ShortcutChip(action: page == .ink ? .ink : .highlight) { page = .triggers }.padding(16)
+        }
     }
 }
 
@@ -183,7 +186,7 @@ struct OnChip: View {
             }
         }
         .buttonStyle(.plain)
-        .help("Shake the pointer, or press Control Option H")
+        .help("Click to turn the highlight on or off")
     }
 }
 

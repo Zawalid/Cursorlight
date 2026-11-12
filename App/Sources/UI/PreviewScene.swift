@@ -47,7 +47,7 @@ enum PreviewScene: String, CaseIterable, Identifiable {
         switch self {
         case .slides: ["File", "Edit", "View", "Insert", "Format", "Window", "Help"]
         case .code: ["File", "Edit", "View", "Navigate", "Product", "Window", "Help"]
-        case .dashboard: ["File", "Edit", "View", "History", "Bookmarks", "Window", "Help"]
+        case .dashboard: ["File", "Edit", "View", "History", "Bookmarks", "Help"]
         }
     }
 

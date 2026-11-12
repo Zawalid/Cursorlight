@@ -28,10 +28,6 @@ struct Stage: View {
             }
         }
         .background(Theme.stage)
-        .overlay(alignment: .bottomTrailing) {
-            HStack(spacing: 4) { Keycap(text: "⌃", dark: true); Keycap(text: "⌥", dark: true); Keycap(text: "H", dark: true) }
-                .padding(16)
-        }
         .onContinuousHover { phase in
             switch phase {
             case let .active(point): hover = point
