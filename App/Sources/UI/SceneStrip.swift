@@ -157,7 +157,7 @@ struct SceneStrip: View {
             .foregroundStyle(Color.white.opacity(endTargeted ? 0.9 : 0.55))
             .contentShape(Rectangle())
         }
-        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden).fixedSize()
         .help("Save the current look, add a preset, or import a scene file. Drop a card here to move it to the end.")
         .dropDestination(for: String.self) { ids, _ in
             guard let moved = ids.first else { return false }
