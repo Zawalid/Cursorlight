@@ -155,19 +155,32 @@ struct PreviewCanvas: View {
                 guard age >= 0, age < Autopilot.rippleLength else { continue }
                 let base = look.accentColor(for: style)
                 let tint = Color(rgba: Palette.rippleAccent(base: base, button: click.right ? .right : .left))
-                drawRipple(&fx, at: unscale(click.point), phase: age / Autopilot.rippleLength, color: tint)
+                drawRipple(&fx, at: unscale(click.point), phase: age / Autopilot.rippleLength, color: tint, effect: look.options.clickEffect)
             }
         }
         // With the real mouse on the preview, the real cursor is already there.
         if pointer == nil { drawArrow(&fx, at: p) }
     }
 
-    private static func drawRipple(_ context: inout GraphicsContext, at p: CGPoint, phase: Double, color: Color) {
-        let e = 1 - pow(1 - phase, 3)
-        let r = 8 + 46 * e
-        let fade = 1 - phase
-        context.fill(Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r)), with: .color(color.opacity(0.22 * fade)))
-        context.stroke(Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r)), with: .color(color.opacity(0.85 * fade)), lineWidth: 1 + 3 * fade)
+    private static func drawRipple(_ context: inout GraphicsContext, at p: CGPoint, phase: Double, color: Color, effect: ClickEffect = .ripple) {
+        func ring(_ phase: Double, scale: CGFloat = 1, dashed: Bool = false, filled: Double = 0.22, width: CGFloat = 3) {
+            guard phase >= 0, phase < 1 else { return }
+            let e = 1 - pow(1 - phase, 3)
+            let r = (8 + 46 * e) * scale
+            let fade = 1 - phase
+            let rect = CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r)
+            if filled > 0 { context.fill(Path(ellipseIn: rect), with: .color(color.opacity(filled * fade))) }
+            context.stroke(
+                Path(ellipseIn: rect), with: .color(color.opacity(0.85 * fade)),
+                style: StrokeStyle(lineWidth: 1 + width * fade, lineCap: .round, dash: dashed ? [1.5, 9] : [])
+            )
+        }
+        switch effect {
+        case .ripple: ring(phase)
+        case .doubleRing: ring(phase); ring(phase - 0.2)
+        case .burst: ring(phase, scale: 1.25, dashed: true, filled: 0, width: 4)
+        case .pulse: ring(phase, scale: 1.2, filled: 0.5, width: 0.5)
+        }
     }
 
     private static func glow(_ context: inout GraphicsContext, at p: CGPoint, radius: CGFloat, color: Color, alpha: Double) {

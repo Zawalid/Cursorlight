@@ -73,6 +73,15 @@ public struct HighlightLook: Equatable, Sendable {
         accent == .custom ? RGBA(hex: options.customAccent) : accent.color
     }
 
+    /// The same look with the movement toned down, for people who asked their Mac for less motion.
+    public func reducingMotion() -> HighlightLook {
+        var o = options
+        o.auraBreathing = false
+        o.cometTail = min(o.cometTail, 0.5)
+        o.sonarRings = 1
+        return HighlightLook(accent: accent, size: Double(size), intensity: Double(intensity), lensDim: Double(lensDim), options: o)
+    }
+
     /// The accent to draw a style with.
     public func accentColor(for style: HighlightStyle) -> RGBA {
         resolvedAccent ?? Palette.accent(for: style)
@@ -93,6 +102,20 @@ extension StyleRecipe {
             r.keyline.darkWidth *= CGFloat(o.keylineWidth)
             r.sonar.ringCount = o.sonarRings
             r.lens.feather = CGFloat(o.lensSoftness)
+            switch o.clickEffect {
+            case .ripple: break
+            case .doubleRing: r.ripple.duration = 0.62
+            case .pulse:
+                r.ripple.fillAlpha = 0.5
+                r.ripple.startWidth = 1.5
+                r.ripple.endWidth = 0.5
+                r.ripple.endRadius *= 1.35
+            case .burst:
+                r.ripple.fillAlpha = 0
+                r.ripple.startWidth = 4.5
+                r.ripple.endWidth = 2
+                r.ripple.endRadius *= 1.45
+            }
         }
         r.aura.radius *= k
         r.aura.core.blur *= k

@@ -1,5 +1,19 @@
 import Foundation
 
+/// How a click shows.
+public enum ClickEffect: String, CaseIterable, Codable, Sendable {
+    case ripple, doubleRing, burst, pulse
+
+    public var displayName: String {
+        switch self {
+        case .ripple: "Ripple"
+        case .doubleRing: "Double ring"
+        case .burst: "Burst"
+        case .pulse: "Pulse"
+        }
+    }
+}
+
 /// The extra choices for one look: one option per style, and fading when the pointer is still. Tolerant to decode, and
 /// clamped in `sanitized()`.
 public struct HighlightOptions: Codable, Equatable, Sendable {
@@ -23,6 +37,13 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     public var fadeAfterStill = 0.0
     /// The color used when the accent is "Custom", as `#RRGGBB`.
     public var customAccent = "#FF6A3D"
+    /// What a click looks like, and whether it also makes a small sound.
+    public var clickEffect: ClickEffect = .ripple
+    public var clickSound = false
+    /// Follow the system "Reduce motion" setting: no breathing, a short tail, one sonar ring.
+    public var respectReduceMotion = true
+    /// A quick ring where the pointer lands when it jumps to another display.
+    public var locatorPulse = true
     /// Spotlight region: shape, darkness outside, soft edge width and corner radius.
     public var spotlightShape: SpotlightShape = .rounded
     public var spotlightDim = 0.6
@@ -43,6 +64,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case auraBreathing, cometTail, keylineWidth, sonarRings, lensSoftness, fadeAfterStill, customAccent
         case spotlightShape, spotlightDim, spotlightSoftness, spotlightCorner
+        case clickEffect, clickSound, respectReduceMotion, locatorPulse
     }
 
     public init(from decoder: Decoder) throws {
@@ -56,6 +78,10 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
         fadeAfterStill = (try? c.decode(Double.self, forKey: .fadeAfterStill)) ?? d.fadeAfterStill
         customAccent = (try? c.decode(String.self, forKey: .customAccent)) ?? d.customAccent
         spotlightShape = (try? c.decode(SpotlightShape.self, forKey: .spotlightShape)) ?? d.spotlightShape
+        clickEffect = (try? c.decode(ClickEffect.self, forKey: .clickEffect)) ?? d.clickEffect
+        clickSound = (try? c.decode(Bool.self, forKey: .clickSound)) ?? d.clickSound
+        respectReduceMotion = (try? c.decode(Bool.self, forKey: .respectReduceMotion)) ?? d.respectReduceMotion
+        locatorPulse = (try? c.decode(Bool.self, forKey: .locatorPulse)) ?? d.locatorPulse
         spotlightDim = (try? c.decode(Double.self, forKey: .spotlightDim)) ?? d.spotlightDim
         spotlightSoftness = (try? c.decode(Double.self, forKey: .spotlightSoftness)) ?? d.spotlightSoftness
         spotlightCorner = (try? c.decode(Double.self, forKey: .spotlightCorner)) ?? d.spotlightCorner

@@ -327,3 +327,65 @@ final class CustomColorTests: XCTestCase {
         XCTAssertEqual(scene.highlightColor.hexString, "#AA00FF")
     }
 }
+
+final class ClickEffectTests: XCTestCase {
+    private func clicked(_ effect: ClickEffect) -> HighlightModel {
+        var options = HighlightOptions()
+        options.clickEffect = effect
+        var m = HighlightModel(style: .aura, pointer: .zero, look: HighlightLook(options: options))
+        m.mouseDown(.left, at: 0)
+        m.mouseUp(.left, at: CGPoint(x: 50, y: 50), time: 0.1)
+        return m
+    }
+
+    func testRippleMakesOneRing() {
+        var m = clicked(.ripple)
+        XCTAssertEqual(m.step(pointer: .zero, time: 0.2).ripples.count, 1)
+    }
+
+    func testDoubleRingAddsASecondRingAfterAShortDelay() {
+        var m = clicked(.doubleRing)
+        XCTAssertEqual(m.step(pointer: .zero, time: 0.11).ripples.count, 1, "the second ring has not started yet")
+        XCTAssertEqual(m.step(pointer: .zero, time: 0.3).ripples.count, 2)
+    }
+
+    func testBurstIsDashed() {
+        var m = clicked(.burst)
+        XCTAssertEqual(m.step(pointer: .zero, time: 0.2).ripples.first?.dashed, true)
+        var plain = clicked(.ripple)
+        XCTAssertEqual(plain.step(pointer: .zero, time: 0.2).ripples.first?.dashed, false)
+    }
+
+    func testPulseIsFilledMoreThanARipple() {
+        var pulse = HighlightOptions(); pulse.clickEffect = .pulse
+        XCTAssertGreaterThan(HighlightStyle.aura.recipe.applying(HighlightLook(options: pulse)).ripple.fillAlpha,
+                             HighlightStyle.aura.recipe.applying(HighlightLook()).ripple.fillAlpha)
+    }
+
+    func testLocateAddsARingEvenWhenTheHighlightIsOff() {
+        var m = HighlightModel(style: .aura, pointer: .zero)
+        m.locate(at: CGPoint(x: 400, y: 300), time: 1)
+        XCTAssertEqual(m.step(pointer: .zero, time: 1.1).ripples.count, 1)
+        XCTAssertFalse(m.isOn)
+    }
+
+    func testReducingMotionTonesTheLookDown() {
+        let reduced = HighlightLook().reducingMotion()
+        XCTAssertFalse(reduced.options.auraBreathing)
+        XCTAssertEqual(reduced.options.sonarRings, 1)
+        XCTAssertLessThanOrEqual(reduced.options.cometTail, 0.5)
+        XCTAssertEqual(reduced.accent, HighlightLook().accent)
+    }
+
+    func testNewOptionsRoundTrip() throws {
+        var s = BeaconSettings.defaults
+        s.highlightOptions.clickEffect = .burst
+        s.highlightOptions.clickSound = true
+        s.highlightOptions.locatorPulse = false
+        let decoded = try JSONDecoder().decode(BeaconSettings.self, from: JSONEncoder().encode(s))
+        XCTAssertEqual(decoded.highlightOptions.clickEffect, .burst)
+        XCTAssertTrue(decoded.highlightOptions.clickSound)
+        XCTAssertFalse(decoded.highlightOptions.locatorPulse)
+        XCTAssertTrue(decoded.highlightOptions.respectReduceMotion)
+    }
+}

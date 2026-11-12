@@ -116,8 +116,17 @@ struct LookPage: View {
             Section {
                 Toggle(isOn: Binding(get: { settings.clickRipples }, set: { model.setRipples($0) })) {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Click ripples")
+                        Text("Click effect")
                         Text("A ring spreads from the pointer on every click.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                if settings.clickRipples {
+                    ClickEffectRow(selection: options.clickEffect, tint: settings.look.resolvedAccent.map { Color(rgba: $0) }) { v in model.setOptions { $0.clickEffect = v } }
+                    Toggle(isOn: Binding(get: { options.clickSound }, set: { v in model.setOptions { $0.clickSound = v } })) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Click sound")
+                            Text("A soft tick on every click while effects are on.").font(.system(size: 11)).foregroundStyle(.secondary)
+                        }
                     }
                 }
                 Toggle(isOn: Binding(
@@ -179,6 +188,22 @@ struct LookPage: View {
                 } else {
                     Text("Set a shortcut in Keys, then drag a region and everything else dims. Clicks still reach what is inside.")
                 }
+            }
+            Section {
+                Toggle(isOn: Binding(get: { options.respectReduceMotion }, set: { v in model.setOptions { $0.respectReduceMotion = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Follow Reduce Motion")
+                        Text("When your Mac asks for less motion: no breathing, a short tail.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                Toggle(isOn: Binding(get: { options.locatorPulse }, set: { v in model.setOptions { $0.locatorPulse = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Locate on display jump")
+                        Text("A quick ring where the pointer lands on another display.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Comfort")
             }
             Section {
                 Toggle(isOn: Binding(get: { settings.hideRules.fullScreenApps }, set: { v in model.setHideRules { $0.fullScreenApps = v } })) {
@@ -1443,6 +1468,51 @@ struct ToolTiles: View {
                 }
             }
             Text(tool.detail).font(.system(size: 11)).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// The four click effects as small drawn tiles.
+struct ClickEffectRow: View {
+    let selection: ClickEffect
+    let tint: Color?
+    let select: (ClickEffect) -> Void
+
+    var body: some View {
+        let color = tint ?? Theme.accent
+        HStack(spacing: 8) {
+            ForEach(ClickEffect.allCases, id: \.self) { effect in
+                let on = effect == selection
+                Button { select(effect) } label: {
+                    VStack(spacing: 5) {
+                        Canvas { context, size in
+                            let c = CGPoint(x: size.width / 2, y: size.height / 2)
+                            func ring(_ r: CGFloat, _ a: Double, dashed: Bool = false, width: CGFloat = 2) {
+                                let path = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r))
+                                context.stroke(path, with: .color(color.opacity(a)), style: StrokeStyle(lineWidth: width, lineCap: .round, dash: dashed ? [1.5, 5] : []))
+                            }
+                            switch effect {
+                            case .ripple: ring(14, 0.9); ring(8, 0.4, width: 1.5)
+                            case .doubleRing: ring(16, 0.9); ring(9, 0.9)
+                            case .burst: ring(15, 1, dashed: true, width: 3)
+                            case .pulse:
+                                context.fill(Path(ellipseIn: CGRect(x: c.x - 15, y: c.y - 15, width: 30, height: 30)), with: .color(color.opacity(0.45)))
+                                ring(15, 0.5, width: 1)
+                            }
+                        }
+                        .frame(maxWidth: .infinity).frame(height: 40)
+                        .background(Theme.stage, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(on ? color : Color.white.opacity(0.1), lineWidth: on ? 2 : 1))
+                        Text(effect.displayName).font(.system(size: 10.5, weight: on ? .semibold : .regular)).foregroundStyle(on ? Theme.text : Theme.faint)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(effect.displayName)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
         }
         .padding(.vertical, 2)
     }

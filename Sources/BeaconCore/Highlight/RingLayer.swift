@@ -42,6 +42,8 @@ final class RingLayer {
         let w = state.lineWidth
         ring.path = Self.circle(r)
         ring.lineWidth = w
+        ring.lineCap = state.dashed ? .round : .butt
+        ring.lineDashPattern = state.dashed ? [NSNumber(value: Double(w * 0.9)), NSNumber(value: Double(max(8, w * 3)))] : nil
         ring.strokeColor = color.with(alpha: 1).cgColor
 
         keyline.path = Self.circle(r + w / 2 + 0.5)

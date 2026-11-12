@@ -9,6 +9,8 @@ public struct RingState: Equatable, Sendable {
     public var alpha: CGFloat
     public var fillAlpha: CGFloat = 0
     public var button: MouseButton = .left
+    /// Drawn as a ring of short dashes, for the burst.
+    public var dashed = false
 }
 
 /// Click ripple shape over normalized time t in 0...1: radius eases out (cubic), the stroke thins linearly, the

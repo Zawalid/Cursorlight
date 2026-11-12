@@ -203,6 +203,12 @@ public final class HighlightController {
         wake()
     }
 
+    /// A quick ring at `point`, where the pointer landed after jumping to another display.
+    public func locate(at point: CGPoint) {
+        model.locate(at: point, time: clock())
+        wake()
+    }
+
     /// Turns the laser trail on or off (held key, toggle or menu).
     public func setLaser(_ on: Bool) {
         laserModel.setHighlight(on, at: clock(), pointer: pointer())

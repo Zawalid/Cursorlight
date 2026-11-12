@@ -36,6 +36,7 @@ final class AppCoordinator {
     /// Why a hide rule has switched Beacon off right now, if one has.
     private(set) var hideReason: HideReason?
     private var spaceObserver: NSObjectProtocol?
+    private var motionObserver: NSObjectProtocol?
 
     init(cursorSize: CursorSizeController, settings: SettingsStore = SettingsStore()) {
         self.cursorSize = cursorSize
@@ -85,6 +86,7 @@ final class AppCoordinator {
             tracker.start()
             clicks.onButton = { [weak self] button, isDown, position in
                 self?.highlight.mouseButton(button, isDown: isDown, at: position)
+                self?.playClickSound(isDown: isDown)
             }
             clicks.start()
         }
@@ -114,6 +116,9 @@ final class AppCoordinator {
             }
             reevaluateProfile()
             updateHideReason()
+            motionObserver = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
+            ) { [weak self] _ in MainActor.assumeIsolated { self?.applyLook() } }
         }
     }
 
@@ -198,7 +203,7 @@ final class AppCoordinator {
         settings.update { $0.apply(profile.snapshot) }
         let current = settings.settings
         highlight.setStyle(current.highlightStyle)
-        highlight.setLook(current.look)
+        highlight.setLook(effectiveLook)
         spotlight.setStyle(current.look.options.spotlight)
         highlight.setRipplesEnabled(current.clickRipples)
         ink.setStyle(current.inkStyle)
@@ -439,7 +444,25 @@ final class AppCoordinator {
         }
     }
 
+    private var lastDisplay: CGDirectDisplayID?
+
+    private func playClickSound(isDown: Bool) {
+        guard isDown, highlight.ripplesEnabled, settings.settings.highlightOptions.clickSound, !isOffForApp, !isPaused else { return }
+        NSSound(named: NSSound.Name("Tink"))?.play()
+    }
+
+    /// Reads the system "Reduce motion" setting into the look, when the user asked Beacon to follow it.
+    private var effectiveLook: HighlightLook {
+        let look = settings.settings.look
+        return look.options.respectReduceMotion && NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? look.reducingMotion() : look
+    }
+
     private func pointerMoved(to position: CGPoint, at time: TimeInterval) {
+        let display = NSScreen.screens.first { $0.frame.contains(position) }.flatMap { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value }
+        if let display, let last = lastDisplay, display != last, settings.settings.highlightOptions.locatorPulse, !isOffForApp {
+            highlight.locate(at: position)
+        }
+        if display != nil { lastDisplay = display }
         highlight.pointerMoved()
         if shake.feed(position: position, time: time) {
             handle(.shake)
@@ -482,7 +505,7 @@ final class AppCoordinator {
     }
 
     private func applyLook() {
-        highlight.setLook(settings.settings.look)
+        highlight.setLook(effectiveLook)
         spotlight.setStyle(settings.settings.look.options.spotlight)
     }
 

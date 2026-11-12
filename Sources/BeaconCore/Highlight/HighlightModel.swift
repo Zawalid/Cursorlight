@@ -47,6 +47,7 @@ public struct HighlightModel: Equatable, Sendable {
         var center: CGPoint
         var startRadius: CGFloat
         var button: MouseButton
+        var dashed = false
     }
 
     struct Press: Equatable, Sendable {
@@ -179,7 +180,12 @@ public struct HighlightModel: Equatable, Sendable {
         let curve = RippleCurve(recipe: recipe.ripple)
         let startRadius = press.map { curve.press(elapsed: time - $0.start, center: point, button: button).radius }
         press = nil
-        ripples.append(Ripple(start: time, center: point, startRadius: startRadius ?? recipe.ripple.startRadius, button: button))
+        let effect = look.options.clickEffect
+        let from = startRadius ?? recipe.ripple.startRadius
+        ripples.append(Ripple(start: time, center: point, startRadius: from, button: button, dashed: effect == .burst))
+        if effect == .doubleRing {
+            ripples.append(Ripple(start: time + 0.14, center: point, startRadius: recipe.ripple.startRadius, button: button))
+        }
         if ripples.count > recipe.ripple.maxConcurrent {
             ripples.removeFirst(ripples.count - recipe.ripple.maxConcurrent)
         }
@@ -201,6 +207,15 @@ public struct HighlightModel: Equatable, Sendable {
             return (lastTime ?? 0) < breathEnd
         }
         return false
+    }
+
+    /// A quick ring at `point`, for finding the pointer after it jumps to another display.
+    public mutating func locate(at point: CGPoint, time: TimeInterval) {
+        guard point.x.isFinite, point.y.isFinite else { return }
+        ripples.append(Ripple(start: time, center: point, startRadius: recipe.ripple.startRadius * 2, button: .left, dashed: false))
+        if ripples.count > recipe.ripple.maxConcurrent {
+            ripples.removeFirst(ripples.count - recipe.ripple.maxConcurrent)
+        }
     }
 
     /// Advances to `time` with the latest pointer position and returns what to draw.
@@ -280,11 +295,12 @@ public struct HighlightModel: Equatable, Sendable {
     private func frame(at time: TimeInterval) -> HighlightFrame {
         var frame = HighlightFrame.hidden(time: time, style: style, at: follower.position)
         let curve = RippleCurve(recipe: recipe.ripple)
-        frame.ripples = ripples.map { ripple in
-            curve.ring(
-                at: (time - ripple.start) / recipe.ripple.duration, center: ripple.center,
-                from: ripple.startRadius, button: ripple.button
-            )
+        frame.ripples = ripples.compactMap { ripple in
+            let t = (time - ripple.start) / recipe.ripple.duration
+            guard t >= 0 else { return nil }
+            var ring = curve.ring(at: t, center: ripple.center, from: ripple.startRadius, button: ripple.button)
+            ring.dashed = ripple.dashed
+            return ring
         }
         frame.press = press.map { curve.press(elapsed: time - $0.start, center: pointer, button: $0.button) }
         guard toggle.isVisible else { return frame }
