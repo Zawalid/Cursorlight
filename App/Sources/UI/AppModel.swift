@@ -56,6 +56,8 @@ final class AppModel: ObservableObject {
 
     func chooseProfile(_ id: String) { coordinator.chooseProfile(id); bump() }
     func addProfile() { coordinator.addProfile(); bump() }
+    func duplicateProfile(_ id: String) { coordinator.duplicateProfile(id); bump() }
+    func moveProfile(_ id: String, before target: String?) { coordinator.moveProfile(id, before: target); bump() }
     func deleteProfile(_ id: String) { coordinator.deleteProfile(id); bump() }
     func renameProfile(_ id: String, to name: String) { coordinator.renameProfile(id, to: name); bump() }
     func setDisplayScope(_ scope: DisplayScope) { coordinator.setDisplayScope(scope); bump() }

@@ -163,11 +163,29 @@ final class AppCoordinator {
         chooseProfile(id)
     }
 
+    /// Copies a scene next to the original and switches to the copy.
+    func duplicateProfile(_ id: String) {
+        let existing = settings.settings.profiles
+        guard let source = existing.first(where: { $0.id == id }) else { return }
+        let copyID = "custom-\(UUID().uuidString.prefix(8).lowercased())"
+        let copy = Profile(id: copyID, name: Profile.copyName(of: source.name, existing: existing), snapshot: source.snapshot)
+        settings.update { s in
+            let index = s.profiles.firstIndex(where: { $0.id == id }).map { $0 + 1 } ?? s.profiles.count
+            s.profiles.insert(copy, at: index)
+        }
+        chooseProfile(copyID)
+    }
+
+    /// Moves a scene to sit just before another, or to the end when `target` is nil.
+    func moveProfile(_ id: String, before target: String?) {
+        settings.update { $0.profiles = Profile.reordered($0.profiles, moving: id, before: target) }
+    }
+
     func renameProfile(_ id: String, to name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         settings.update { s in
-            if let index = s.profiles.firstIndex(where: { $0.id == id }) { s.profiles[index].name = String(trimmed.prefix(24)) }
+            if let index = s.profiles.firstIndex(where: { $0.id == id }) { s.profiles[index].name = String(trimmed.prefix(Profile.maxNameLength)) }
         }
     }
 
@@ -177,7 +195,8 @@ final class AppCoordinator {
         if wasLive { settings.liveProfileID = nil }
         settings.update { s in
             s.profiles.removeAll { $0.id == id }
-            for index in s.appRules.indices where s.appRules[index].profileID == id { s.appRules[index].profileID = nil }
+            // Apps that used this scene go back to the default scene; a nil profile would switch Beacon off for them.
+            s.appRules.removeAll { $0.profileID == id }
         }
         let remaining = settings.settings
         if switcher.base == id { switcher.setBase(remaining.baseProfileID) }

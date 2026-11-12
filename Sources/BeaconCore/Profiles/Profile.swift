@@ -84,6 +84,43 @@ public struct Profile: Codable, Equatable, Identifiable, Sendable {
         let sizeWord = size >= 1.3 ? "large" : (size <= 0.85 ? "small" : "medium")
         return "\(snapshot.highlightStyle.displayName), \(sizeWord)"
     }
+
+    /// The color the highlight really draws in: the chosen accent, or the style's own.
+    public var highlightColor: RGBA {
+        snapshot.accent.color ?? Palette.accent(for: snapshot.highlightStyle)
+    }
+
+    /// Longest name a scene can have.
+    public static let maxNameLength = 24
+
+    /// A name for a copy: "Meeting copy", then "Meeting copy 2", and so on, within the name limit.
+    public static func copyName(of name: String, existing: [Profile]) -> String {
+        let taken = Set(existing.map(\.name))
+        let first = String("\(name) copy".prefix(maxNameLength))
+        if !taken.contains(first) { return first }
+        var number = 2
+        while true {
+            let suffix = " copy \(number)"
+            let candidate = String(name.prefix(maxNameLength - suffix.count)) + suffix
+            if !taken.contains(candidate) { return candidate }
+            number += 1
+        }
+    }
+
+    /// The list with `id` moved to sit just before `target`, or to the end when `target` is nil.
+    /// Unknown ids, or a move onto itself, return the list unchanged.
+    public static func reordered(_ profiles: [Profile], moving id: String, before target: String?) -> [Profile] {
+        guard id != target, let from = profiles.firstIndex(where: { $0.id == id }) else { return profiles }
+        if let target, !profiles.contains(where: { $0.id == target }) { return profiles }
+        var result = profiles
+        let moved = result.remove(at: from)
+        if let target, let to = result.firstIndex(where: { $0.id == target }) {
+            result.insert(moved, at: to)
+        } else {
+            result.append(moved)
+        }
+        return result
+    }
 }
 
 /// What to do when an app is frontmost: use a profile, or switch Beacon off.

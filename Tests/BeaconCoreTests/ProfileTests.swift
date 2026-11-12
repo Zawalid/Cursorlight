@@ -123,3 +123,50 @@ final class ProfileSettingsTests: XCTestCase {
         XCTAssertEqual(Profile(id: "x", name: "X", snapshot: ProfileSnapshot(highlightStyle: .lens, highlightSize: 1.5)).summary, "Lens, large")
     }
 }
+
+final class SceneListTests: XCTestCase {
+    private func scenes(_ names: [String]) -> [Profile] {
+        names.map { Profile(id: $0.lowercased(), name: $0, snapshot: ProfileSnapshot()) }
+    }
+
+    func testCopyNameAddsCopyThenNumbers() {
+        let list = scenes(["Meeting"])
+        XCTAssertEqual(Profile.copyName(of: "Meeting", existing: list), "Meeting copy")
+        let withCopy = scenes(["Meeting", "Meeting copy"])
+        XCTAssertEqual(Profile.copyName(of: "Meeting", existing: withCopy), "Meeting copy 2")
+    }
+
+    func testCopyNameStaysWithinTheLimit() {
+        let long = String(repeating: "x", count: Profile.maxNameLength)
+        let name = Profile.copyName(of: long, existing: scenes([long]))
+        XCTAssertLessThanOrEqual(name.count, Profile.maxNameLength)
+        let second = Profile.copyName(of: long, existing: scenes([long]) + scenes([name]))
+        XCTAssertLessThanOrEqual(second.count, Profile.maxNameLength)
+        XCTAssertNotEqual(name, second)
+    }
+
+    func testMoveBeforeTarget() {
+        let list = scenes(["A", "B", "C", "D"])
+        XCTAssertEqual(Profile.reordered(list, moving: "d", before: "b").map(\.name), ["A", "D", "B", "C"])
+        XCTAssertEqual(Profile.reordered(list, moving: "a", before: "d").map(\.name), ["B", "C", "A", "D"])
+    }
+
+    func testMoveToEndWhenNoTarget() {
+        let list = scenes(["A", "B", "C"])
+        XCTAssertEqual(Profile.reordered(list, moving: "a", before: nil).map(\.name), ["B", "C", "A"])
+    }
+
+    func testMoveIgnoresUnknownAndSelf() {
+        let list = scenes(["A", "B"])
+        XCTAssertEqual(Profile.reordered(list, moving: "zzz", before: "a"), list)
+        XCTAssertEqual(Profile.reordered(list, moving: "a", before: "zzz"), list)
+        XCTAssertEqual(Profile.reordered(list, moving: "a", before: "a"), list)
+    }
+
+    func testHighlightColorFollowsAccentThenStyle() {
+        var scene = Profile(id: "x", name: "X", snapshot: ProfileSnapshot(highlightStyle: .sonar))
+        XCTAssertEqual(scene.highlightColor, Palette.accent(for: .sonar))
+        scene.snapshot.accent = .blue
+        XCTAssertEqual(scene.highlightColor, RGBA(hex: "#4DA3FF"))
+    }
+}

@@ -185,60 +185,6 @@ struct OnChip: View {
     }
 }
 
-/// The scenes as a strip of thumbnails under the canvas, like slides: each shows its own style. Click to switch.
-struct SceneStrip: View {
-    @EnvironmentObject private var model: AppModel
-    @State private var renaming: Profile?
-    @State private var draft = ""
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ForEach(model.profiles) { profile in
-                let on = model.appliedProfileID == profile.id
-                Button { model.chooseProfile(profile.id) } label: {
-                    VStack(spacing: 6) {
-                        StyleThumbnail(style: profile.snapshot.highlightStyle)
-                            .frame(width: 104, height: 58)
-                            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Theme.accent : Color.white.opacity(0.12), lineWidth: on ? 2.5 : 1))
-                        Text(profile.name).font(.system(size: 11, weight: on ? .semibold : .regular))
-                            .foregroundStyle(on ? Color.white : Color.white.opacity(0.6)).lineLimit(1)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? .isSelected : [])
-                .contextMenu {
-                    Button("Rename…") { draft = profile.name; renaming = profile }
-                    if model.profiles.count > 1 { Button("Delete", role: .destructive) { model.deleteProfile(profile.id) } }
-                }
-            }
-            Button { model.addProfile() } label: {
-                VStack(spacing: 6) {
-                    Image(systemName: "plus").font(.system(size: 14, weight: .medium))
-                        .frame(width: 104, height: 58)
-                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
-                    Text("New scene").font(.system(size: 11))
-                }
-                .foregroundStyle(Color.white.opacity(0.55))
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Save the current look as a new scene")
-            Spacer()
-        }
-        .padding(.horizontal, 20).padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.black.opacity(0.35))
-        .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1) }
-        .alert("Rename Scene", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField("Name", text: $draft)
-            Button("Rename") { if let id = renaming?.id { model.renameProfile(id, to: draft) }; renaming = nil }
-            Button("Cancel", role: .cancel) { renaming = nil }
-        }
-    }
-}
-
 /// The product mark: a bright core inside a glowing ring, in the accent color.
 struct BrandMark: View {
     var body: some View {

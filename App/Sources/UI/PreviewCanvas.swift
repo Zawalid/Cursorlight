@@ -215,10 +215,14 @@ struct PreviewCanvas: View {
 /// Small static thumbnails for the style cards.
 struct StyleThumbnail: View {
     let style: HighlightStyle
+    /// The scene's own color; nil uses the style's default.
+    var color: Color? = nil
+    /// Draws the effect larger or smaller, to mirror the scene's size setting.
+    var scale: CGFloat = 1
 
     var body: some View {
         ZStack {
-            let accent = Color(rgba: Palette.accent(for: style))
+            let accent = color ?? Color(rgba: Palette.accent(for: style))
             switch style {
             case .aura:
                 Circle().fill(RadialGradient(colors: [Color(white: 0.9).opacity(0.75), accent.opacity(0.35), .clear], center: .center, startRadius: 0, endRadius: 24)).frame(width: 48, height: 48)
@@ -235,5 +239,6 @@ struct StyleThumbnail: View {
                 Circle().fill(.white).frame(width: 8, height: 8)
             }
         }
+        .scaleEffect(scale)
     }
 }
