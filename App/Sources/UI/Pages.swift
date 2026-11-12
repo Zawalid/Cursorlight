@@ -941,15 +941,14 @@ struct DisplaysPage: View {
         let info = ShareStatusInfo(model.shareStatus)
         Form {
             Section {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 14) {
-                        ForEach(Array(screens.enumerated()), id: \.offset) { index, screen in
-                            DisplayTile(screen: screen, isMain: index == 0, on: model.displayScope == .all || index == 0)
-                        }
+                HStack(alignment: .top, spacing: 14) {
+                    Spacer(minLength: 0)
+                    ForEach(Array(screens.enumerated()), id: \.offset) { index, screen in
+                        DisplayTile(screen: screen, isMain: index == 0, on: model.displayScope == .all || index == 0)
                     }
-                    .padding(.vertical, 8).padding(.horizontal, 2)
-                    .frame(maxWidth: .infinity)
+                    Spacer(minLength: 0)
                 }
+                .padding(.vertical, 8)
                 Picker("Show effects on", selection: Binding(get: { model.displayScope }, set: { model.setDisplayScope($0) })) {
                     ForEach(DisplayScope.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }
@@ -1030,15 +1029,16 @@ struct DisplayTile: View {
             .shadow(color: on ? Theme.accent.opacity(0.3) : .clear, radius: 7)
             .saturation(on ? 1 : 0.2).opacity(on ? 1 : 0.55)
             VStack(spacing: 2) {
+                Text(screen.localizedName).font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.text).lineLimit(1)
                 HStack(spacing: 5) {
-                    Text(screen.localizedName).font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.text).lineLimit(1)
                     if isMain { Pill(text: "Main", tint: Theme.accent) }
+                    Text(verbatim: "\(Int(screen.frame.width)) x \(Int(screen.frame.height))")
+                        .font(.system(size: 10)).foregroundStyle(on ? Theme.dim : Theme.faint)
                 }
-                Text("\(Int(screen.frame.width)) x \(Int(screen.frame.height))  \(on ? "effects on" : "effects off")")
-                    .font(.system(size: 10)).foregroundStyle(on ? Theme.dim : Theme.faint)
+                Text(on ? "Effects on" : "Effects off").font(.system(size: 10)).foregroundStyle(on ? Theme.ok : Theme.faint)
             }
         }
-        .frame(width: width + 20)
+        .frame(width: width + 50)
     }
 }
 
