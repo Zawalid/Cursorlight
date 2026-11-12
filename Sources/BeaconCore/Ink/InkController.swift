@@ -25,6 +25,11 @@ public final class InkController {
     public private(set) var widthScale: CGFloat = 1
     /// A custom pen color; nil uses `color`.
     public private(set) var customColor: RGBA?
+    /// What a drag does: draw, erase, drag out a box or arrow, place a stamp or a text label.
+    public private(set) var tool: InkTool = .pen
+    public private(set) var stamp: StampKind = .number
+    /// A solid backdrop under the marks while drawing.
+    public private(set) var board: InkBoard = .none
     /// True while the input windows are up and the drag draws.
     public private(set) var isActive = false
     public var onChange: (() -> Void)?
@@ -107,8 +112,34 @@ public final class InkController {
         if model.isDrawing { model.end(at: clock()) }
         isActive = false
         for host in hosts.values { closeInput(of: host) }
+        if board != .none { setBoard(.none) }
         wake()
         onChange?()
+    }
+
+    public func setTool(_ tool: InkTool) {
+        self.tool = tool
+        for host in hosts.values { host.input?.finishText(commit: true) }
+        onChange?()
+    }
+
+    public func setStamp(_ stamp: StampKind) {
+        self.stamp = stamp
+        self.tool = .stamp
+        onChange?()
+    }
+
+    public func setBoard(_ board: InkBoard) {
+        self.board = board
+        for host in hosts.values { host.renderer.setBoard(board) }
+        onChange?()
+    }
+
+    /// Starts drawing on a blank board.
+    public func activateBoard(_ board: InkBoard) {
+        guard isRunning else { return }
+        if !isActive { activate(takesKey: true) }
+        setBoard(board)
     }
 
     public func setStyle(_ style: InkStyle) {
@@ -158,20 +189,64 @@ public final class InkController {
 
     // MARK: Input
 
+    private static let eraserRadius: CGFloat = 16
+
     func pointerDown(_ point: CGPoint) {
-        model.begin(at: point, style: style, color: color, widthScale: widthScale, customColor: customColor)
+        switch tool {
+        case .pen:
+            model.begin(at: point, style: style, color: color, widthScale: widthScale, customColor: customColor)
+        case .eraser:
+            model.erase(at: point, radius: Self.eraserRadius)
+            redraw()
+        case .stamp:
+            model.placeStamp(stamp, at: point, color: color, customColor: customColor, time: clock())
+        case .text:
+            beginText(at: point)
+        case .box, .redact, .arrow, .doubleArrow, .bracket:
+            if let kind = tool.dragKind {
+                model.begin(at: point, style: style, color: color, widthScale: widthScale, customColor: customColor, kind: kind)
+            }
+        }
         wake()
     }
 
     func pointerDragged(_ point: CGPoint) {
-        model.append(point)
+        switch tool {
+        case .eraser:
+            if model.erase(at: point, radius: Self.eraserRadius) { redraw() }
+        case .pen where NSEvent.modifierFlags.contains(.shift):
+            model.straighten(to: point)
+        case .stamp, .text:
+            break
+        default:
+            model.append(point)
+        }
         wake()
     }
 
     func pointerUp(_ point: CGPoint) {
-        model.append(point)
-        model.end(at: clock())
+        switch tool {
+        case .eraser, .stamp, .text:
+            break
+        case .pen where NSEvent.modifierFlags.contains(.shift):
+            model.straighten(to: point)
+            model.end(at: clock())
+        default:
+            model.append(point)
+            model.end(at: clock())
+        }
         wake()
+    }
+
+    /// Opens a text field where you clicked; what you type becomes a label.
+    private func beginText(at point: CGPoint) {
+        guard let host = hosts.values.first(where: { $0.input?.frame.contains(point) == true }), let input = host.input else { return }
+        let rgba = customColor ?? color.rgba
+        input.beginTextEntry(at: point, color: NSColor(srgbRed: rgba.red, green: rgba.green, blue: rgba.blue, alpha: 1)) { [weak self] text in
+            guard let self else { return }
+            self.model.placeText(text, at: point, color: self.color, customColor: self.customColor, time: self.clock())
+            self.wake()
+        }
     }
 
     func keyDown(_ event: NSEvent) {
@@ -182,6 +257,10 @@ public final class InkController {
             undo()
         } else if chars == "c" || event.keyCode == 51 {
             clearAll()
+        } else if chars == "w" {
+            setBoard(board.next)
+        } else if let picked = InkTool.allCases.first(where: { $0.key == chars }) {
+            setTool(picked)
         } else if let digit = Int(chars), (1...InkColor.allCases.count).contains(digit) {
             setColor(InkColor.allCases[digit - 1])
         }

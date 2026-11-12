@@ -175,6 +175,17 @@ final class AppModel: ObservableObject {
     // MARK: Ink
 
     func setInkStyle(_ style: InkStyle) { coordinator.setInkStyle(style); bump() }
+    var inkTool: InkTool { coordinator.ink.tool }
+    var inkStamp: StampKind { coordinator.ink.stamp }
+    var inkBoard: InkBoard { coordinator.ink.board }
+    func setInkTool(_ tool: InkTool) { coordinator.ink.setTool(tool); bump() }
+    func setInkStamp(_ stamp: StampKind) { coordinator.ink.setStamp(stamp); bump() }
+    func setInkBoard(_ board: InkBoard) { coordinator.ink.setBoard(board); bump() }
+    /// Starts drawing on a blank board, or stops if one is already up.
+    func toggleWhiteboard(_ board: InkBoard) {
+        if coordinator.ink.isActive, coordinator.ink.board == board { coordinator.ink.deactivate() } else { coordinator.ink.activateBoard(board) }
+        bump()
+    }
     func setInkColor(_ color: InkColor) { coordinator.setInkColor(color); bump() }
     func setInkCustom(_ hex: String) { coordinator.setInkCustom(hex); bump() }
     func setInkCleanup(_ on: Bool) { coordinator.setInkCleanup(on); bump() }

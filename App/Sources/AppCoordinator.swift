@@ -336,6 +336,8 @@ final class AppCoordinator {
             setToolbar { $0.enabled.toggle() }
         case .spotlight:
             spotlight.cycle()
+        case .whiteboard:
+            if ink.isActive, ink.board != .none { ink.deactivate() } else { ink.activateBoard(.white) }
         }
     }
 

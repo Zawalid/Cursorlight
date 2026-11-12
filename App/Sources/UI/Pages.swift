@@ -362,6 +362,14 @@ struct InkPage: View {
 
     var body: some View {
         Form {
+            Section {
+                ToolTiles(tool: model.inkTool, stamp: model.inkStamp, rgba: settings.penColor,
+                          pickTool: { model.setInkTool($0) }, pickStamp: { model.setInkStamp($0) })
+            } header: {
+                Text("Tool")
+            } footer: {
+                Text("Pick a tool here, on the floating bar, or with its key while drawing.")
+            }
             Section("Pen") {
                 PenRow(selection: settings.inkStyle, rgba: settings.penColor, width: settings.inkWidth) { model.setInkStyle($0) }
                 LabeledContent {
@@ -424,6 +432,12 @@ struct InkPage: View {
             Section {
                 LabeledContent("Draw now") {
                     Button(model.isOn(.ink) ? "Stop" : "Start") { model.toggle(.ink) }
+                }
+                LabeledContent("Whiteboard") {
+                    HStack(spacing: 8) {
+                        Button(model.inkBoard == .white ? "Stop white" : "White") { model.toggleWhiteboard(.white) }
+                        Button(model.inkBoard == .black ? "Stop black" : "Black") { model.toggleWhiteboard(.black) }
+                    }
                 }
                 Button("Reset pen") { resetPen() }
                     .foregroundStyle(isDefault ? Color.secondary : Theme.accent)
@@ -544,6 +558,25 @@ struct DrawingKeys: View {
                 card("Stop", ["esc"])
             }
             ColorKeys(selected: selected, select: select)
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    ForEach(InkTool.allCases, id: \.self) { tool in
+                        VStack(spacing: 4) {
+                            Keycap(text: tool.key.uppercased())
+                            Text(tool.displayName).font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    VStack(spacing: 4) {
+                        Keycap(text: "W")
+                        Text("Board").font(.system(size: 9)).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                Text("Switch tool").font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 10)
+            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 
@@ -1309,5 +1342,108 @@ struct SpotlightShapeRow: View {
         case .rounded: AnyShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         case .ellipse: AnyShape(Ellipse())
         }
+    }
+}
+
+extension InkTool {
+    var symbol: String {
+        switch self {
+        case .pen: "pencil.tip"
+        case .eraser: "eraser"
+        case .box: "rectangle.fill"
+        case .redact: "eye.slash.fill"
+        case .arrow: "arrow.up.right"
+        case .doubleArrow: "arrow.left.and.right"
+        case .bracket: "ruler"
+        case .stamp: "1.circle.fill"
+        case .text: "textformat"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .pen: "Draw freehand. Hold Shift for a straight line."
+        case .eraser: "Drag over a mark to remove it."
+        case .box: "Drag a see-through filled box."
+        case .redact: "Drag an opaque cover over something. It stays until you clear."
+        case .arrow: "Drag from the tail to the tip."
+        case .doubleArrow: "An arrow with a head at both ends."
+        case .bracket: "A line with end ticks, to mark a span."
+        case .stamp: "Click to place a numbered marker, check, cross or star."
+        case .text: "Click, type, press Return."
+        }
+    }
+}
+
+extension StampKind {
+    var symbol: String {
+        switch self {
+        case .number: "1.circle.fill"
+        case .check: "checkmark.circle.fill"
+        case .cross: "xmark.circle.fill"
+        case .star: "star.fill"
+        case .heart: "heart.fill"
+        case .question: "questionmark.circle.fill"
+        case .exclamation: "exclamationmark.circle.fill"
+        }
+    }
+}
+
+/// The drawing tools as tiles, with a stamp picker under them when Stamp is chosen.
+struct ToolTiles: View {
+    let tool: InkTool
+    let stamp: StampKind
+    let rgba: RGBA
+    let pickTool: (InkTool) -> Void
+    let pickStamp: (StampKind) -> Void
+    @State private var hovered: InkTool?
+
+    var body: some View {
+        let tint = Color(rgba: rgba)
+        VStack(spacing: 10) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 3), spacing: 8) {
+                ForEach(InkTool.allCases, id: \.self) { item in
+                    let on = item == tool
+                    Button { pickTool(item) } label: {
+                        VStack(spacing: 5) {
+                            Image(systemName: item.symbol).font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(on ? tint : Color.white.opacity(0.6))
+                            Text(item.displayName).font(.system(size: 11, weight: on ? .semibold : .regular))
+                                .foregroundStyle(on ? Theme.text : Theme.dim).lineLimit(1).minimumScaleFactor(0.8)
+                            Text(item.key.uppercased()).font(.system(size: 9, weight: .medium, design: .rounded)).foregroundStyle(Theme.faint)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 9)
+                        .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? tint.opacity(0.9) : Color.white.opacity(hovered == item ? 0.25 : 0.09), lineWidth: on ? 1.5 : 1))
+                        .shadow(color: on ? tint.opacity(0.28) : .clear, radius: 6)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { hovered = $0 ? item : (hovered == item ? nil : hovered) }
+                    .help(item.detail)
+                    .accessibilityLabel(item.displayName)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            if tool == .stamp {
+                HStack(spacing: 6) {
+                    ForEach(StampKind.allCases, id: \.self) { kind in
+                        let on = kind == stamp
+                        Button { pickStamp(kind) } label: {
+                            Image(systemName: kind.symbol).font(.system(size: 16))
+                                .foregroundStyle(on ? tint : Color.white.opacity(0.5))
+                                .frame(maxWidth: .infinity).frame(height: 32)
+                                .background(on ? tint.opacity(0.14) : Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help(kind.displayName)
+                        .accessibilityLabel(kind.displayName)
+                    }
+                }
+            }
+            Text(tool.detail).font(.system(size: 11)).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 2)
     }
 }

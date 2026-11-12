@@ -129,6 +129,25 @@ struct ToolbarView: View {
 
     private var inkControls: some View {
         HStack(spacing: 6) {
+            Menu {
+                ForEach(InkTool.allCases, id: \.self) { tool in
+                    Button {
+                        model.setInkTool(tool)
+                    } label: {
+                        Label(tool == model.inkTool ? "\(tool.displayName)  \u{2713}" : tool.displayName, systemImage: tool.symbol)
+                    }
+                }
+                Divider()
+                ForEach(StampKind.allCases, id: \.self) { kind in
+                    Button { model.setInkStamp(kind) } label: { Label("Stamp: \(kind.displayName)", systemImage: kind.symbol) }
+                }
+                Divider()
+                Button { model.toggleWhiteboard(.white) } label: { Label("White board", systemImage: "square") }
+                Button { model.toggleWhiteboard(.black) } label: { Label("Black board", systemImage: "square.fill") }
+            } label: {
+                Image(systemName: model.inkTool.symbol).font(.system(size: 13, weight: .semibold))
+            }
+            .menuStyle(.borderlessButton).fixedSize().tint(Color.white.opacity(0.9)).barTip("tool", $hovered)
             HStack(spacing: 1) {
                 if let custom = model.settings.inkCustom {
                     Dot(fill: Color(rgba: RGBA(hex: custom)), selected: true, auto: false, label: "Custom color") {}
@@ -278,6 +297,7 @@ private enum BarTips {
         case "style": return BarTip(title: "Highlight style", detail: "Aura, Lens, Comet, Keyline or Sonar.")
         case "color": return BarTip(title: "Highlight color", detail: "Changes the color of the highlight and laser.")
         case "inkColor": return BarTip(title: "Pen color", detail: "Also keys 1 to 8 while drawing.")
+        case "tool": return BarTip(title: model.inkTool.displayName, detail: model.inkTool.detail)
         case "undo": return BarTip(title: "Undo", detail: "Removes the last stroke.", keys: ["⌘", "Z"])
         case "clear": return BarTip(title: "Clear drawings", detail: "Fades everything away.", keys: keys(.clearInk))
         case "scene": return BarTip(title: "Scene", detail: "Switch the whole look at once.", keys: keys(.nextScene))

@@ -35,14 +35,74 @@ final class InkInputWindow: NSPanel {
         convertPoint(toScreen: event.locationInWindow)
     }
 
+    // MARK: Text entry
+
+    private var textField: NSTextField?
+    private var textDelegate: TextEntryDelegate?
+    private var onTextCommit: ((String) -> Void)?
+    var isEditingText: Bool { textField != nil }
+
+    /// Puts a text field at `point` (global coordinates) and calls `commit` with what was typed when Return is pressed.
+    func beginTextEntry(at point: CGPoint, color: NSColor, commit: @escaping (String) -> Void) {
+        finishText(commit: true)
+        let local = convertPoint(fromScreen: point)
+        let field = NSTextField(frame: CGRect(x: local.x, y: local.y - 17, width: 360, height: 34))
+        field.font = .systemFont(ofSize: 24, weight: .bold)
+        field.textColor = color
+        field.isBordered = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.placeholderString = "Type, then Return"
+        field.shadow = {
+            let shadow = NSShadow()
+            shadow.shadowColor = NSColor.black.withAlphaComponent(0.6)
+            shadow.shadowBlurRadius = 2
+            shadow.shadowOffset = NSSize(width: 0, height: -1)
+            return shadow
+        }()
+        let delegate = TextEntryDelegate { [weak self] committed in self?.finishText(commit: committed) }
+        field.delegate = delegate
+        contentView?.addSubview(field)
+        textField = field
+        textDelegate = delegate
+        onTextCommit = commit
+        makeFirstResponder(field)
+    }
+
+    func finishText(commit: Bool) {
+        guard let field = textField else { return }
+        let text = field.stringValue
+        field.removeFromSuperview()
+        textField = nil
+        textDelegate = nil
+        makeFirstResponder(contentView)
+        let callback = onTextCommit
+        onTextCommit = nil
+        if commit { callback?(text) }
+    }
+
     override func sendEvent(_ event: NSEvent) {
         switch event.type {
-        case .leftMouseDown: onDown?(global(event))
+        case .leftMouseDown:
+            finishText(commit: true)
+            onDown?(global(event))
         case .leftMouseDragged: onDrag?(global(event))
         case .leftMouseUp: onUp?(global(event))
-        case .keyDown: onKey?(event)
+        case .keyDown:
+            if isEditingText { super.sendEvent(event) } else { onKey?(event) }
         default: super.sendEvent(event)
         }
+    }
+}
+
+private final class TextEntryDelegate: NSObject, NSTextFieldDelegate {
+    let finish: (Bool) -> Void
+    init(finish: @escaping (Bool) -> Void) { self.finish = finish }
+
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+        if selector == #selector(NSResponder.insertNewline(_:)) { finish(true); return true }
+        if selector == #selector(NSResponder.cancelOperation(_:)) { finish(false); return true }
+        return false
     }
 }
 
