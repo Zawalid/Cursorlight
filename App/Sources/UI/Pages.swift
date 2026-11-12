@@ -1052,6 +1052,8 @@ struct DisplayTile: View {
 struct AboutPage: View {
     @EnvironmentObject private var model: AppModel
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
+    @State private var confirmingReset = false
+    @State private var copied = false
 
     private var version: String {
         let info = Bundle.main.infoDictionary
@@ -1063,29 +1065,79 @@ struct AboutPage: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Version", value: version)
+                HStack(spacing: 14) {
+                    BrandMark().frame(width: 56, height: 56)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Branding.appName).font(.system(size: 20, weight: .bold))
+                        Text("Version \(version)").font(.system(size: 12)).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+                Text("Find, point and mark up your screen while you share it.")
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+            Section {
+                privacyRow("lock.shield", "No accounts, no analytics", "Nothing about you leaves this Mac.", .ok)
+                privacyRow("rectangle.dashed.badge.record", "Screen Recording", "Not needed. Beacon never reads your screen.", .ok)
+                privacyRow("accessibility", "Accessibility", "Not needed.", .ok)
+                if model.needsInputMonitoring {
+                    privacyRow("keyboard", "Input Monitoring", "Optional, and off. Only double-tap and hold use it.", .warn)
+                } else {
+                    privacyRow("keyboard", "Input Monitoring", "Optional, and fine as it is.", .ok)
+                }
+            } header: {
+                Text("Privacy")
+            }
+            Section {
                 Toggle("Launch at login", isOn: Binding(get: { launchAtLogin }, set: { LaunchAtLogin.set($0); launchAtLogin = LaunchAtLogin.isEnabled }))
                     .disabled(!LaunchAtLogin.isAvailable)
-            } header: {
-                Text(Branding.appName)
-            }
+            } header: { Text("General") }
             Section {
                 Toggle("Check for updates automatically", isOn: Binding(get: { model.automaticUpdateChecks }, set: { model.setAutomaticUpdateChecks($0) }))
                     .disabled(!model.updatesConfigured)
-                Button("Check Now") { model.checkForUpdates() }
+                Button("Check now") { model.checkForUpdates() }
             } header: {
                 Text("Updates")
             } footer: {
                 Text(model.updatesConfigured ? "Asks GitHub once a day. Nothing installs without your OK." : "This build has no update signing key yet.")
             }
             Section {
-                Button("Show Welcome Guide") { model.openWelcome() }
+                Button("Show welcome guide") { model.openWelcome() }
+                Button(copied ? "Copied" : "Copy diagnostics") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(model.diagnostics(version: version), forType: .string)
+                    copied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copied = false }
+                }
+                Button("Reset all settings…", role: .destructive) { confirmingReset = true }
+                    .foregroundStyle(Theme.warn)
+            } header: {
+                Text("Help")
             } footer: {
-                Text("No accounts and no analytics. The network is used only for update checks, once they exist.")
+                Text("Diagnostics lists the version, macOS and display setup, with nothing personal, for a bug report.")
             }
         }
         .page()
+        .confirmationDialog("Reset all settings?", isPresented: $confirmingReset, titleVisibility: .visible) {
+            Button("Reset", role: .destructive) { model.resetAllSettings() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Scenes, app rules, shortcuts and looks go back to how Beacon starts.")
+        }
     }
+
+    private func privacyRow(_ symbol: String, _ title: String, _ detail: String, _ state: PrivacyState) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: state == .ok ? "checkmark.circle.fill" : "info.circle.fill")
+                .foregroundStyle(state == .ok ? Theme.ok : Theme.warn).font(.system(size: 14)).padding(.top, 1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                Text(detail).font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private enum PrivacyState { case ok, warn }
 }
 
 /// The eight color keys: each key is the color itself with its number on it, so the mapping needs no legend. Click one

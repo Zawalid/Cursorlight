@@ -346,6 +346,21 @@ final class AppCoordinator {
         onTriggersChange?()
     }
 
+    /// Puts every setting back to how Beacon starts, keeping only that the welcome was seen.
+    func resetAllSettings() {
+        let seen = settings.settings.welcomeSeen
+        settings.liveProfileID = nil
+        settings.update {
+            $0 = BeaconSettings.defaults
+            $0.welcomeSeen = seen
+        }
+        switcher.setBase(settings.settings.baseProfileID)
+        applyProfile(settings.settings.baseProfileID)
+        applyTriggers()
+        applyDisplayScope()
+        updateHideReason()
+    }
+
     func suspendHotkeys(_ on: Bool) {
         if on { hotkeys.unregisterAll() } else { applyTriggers() }
     }

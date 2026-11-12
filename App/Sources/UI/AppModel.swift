@@ -141,6 +141,21 @@ final class AppModel: ObservableObject {
     func setLensDim(_ value: Double) { coordinator.setLensDim(value); bump() }
     func setOptions(_ edit: (inout HighlightOptions) -> Void) { coordinator.setHighlightOptions(edit); bump() }
     /// Pauses the global shortcuts while one is being recorded, so pressing it does not trigger it.
+    /// A plain-text summary for a bug report: no names, no settings content.
+    func diagnostics(version: String) -> String {
+        let os = ProcessInfo.processInfo.operatingSystemVersionString
+        let displays = NSScreen.screens.map { "\(Int($0.frame.width))x\(Int($0.frame.height)) @\(Int($0.backingScaleFactor))x" }.joined(separator: ", ")
+        return """
+        \(Branding.appName) \(version)
+        macOS \(os)
+        Displays: \(displays)
+        Scenes: \(settings.profiles.count), app rules: \(settings.appRules.count)
+        Input Monitoring needed: \(needsInputMonitoring ? "yes" : "no")
+        """
+    }
+
+    func resetAllSettings() { coordinator.resetAllSettings(); bump() }
+
     func suspendHotkeys(_ on: Bool) { coordinator.suspendHotkeys(on) }
     func setHideRules(_ edit: (inout HideRules) -> Void) { coordinator.setHideRules(edit); bump() }
     var hideReason: HideReason? { coordinator.hideReason }
