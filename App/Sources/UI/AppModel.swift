@@ -204,6 +204,7 @@ final class AppModel: ObservableObject {
     func resetAllSettings() { coordinator.resetAllSettings(); bump() }
 
     func suspendHotkeys(_ on: Bool) { coordinator.suspendHotkeys(on) }
+    func setKeystrokes(_ edit: (inout KeystrokeSettings) -> Void) { coordinator.setKeystrokes(edit); bump() }
     func setHideRules(_ edit: (inout HideRules) -> Void) { coordinator.setHideRules(edit); bump() }
     var hideReason: HideReason? { coordinator.hideReason }
     func setRipples(_ on: Bool) { coordinator.setClickRipples(on); bump() }

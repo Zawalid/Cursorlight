@@ -35,7 +35,7 @@ struct SettingsView: View {
                 Stage(style: model.settings.highlightStyle, look: model.settings.look)
             }
         }
-        .overlay(alignment: .topTrailing) { ShareChip().padding(.top, 14).padding(.trailing, 16) }
+        .overlay(alignment: .topTrailing) { HStack(spacing: 8) { ViewerToggle(); ShareChip() }.padding(.top, 14).padding(.trailing, 16) }
         .overlay(alignment: .bottomLeading) { OnChip().padding(16) }
         .overlay(alignment: .bottom) { SceneSwitcher().padding(.bottom, 20) }
         .overlay(alignment: .bottomTrailing) {

@@ -44,6 +44,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var hideRules: HideRules
     /// The floating control bar.
     public var toolbar: ToolbarSettings
+    /// The keystroke display and key sound.
+    public var keystrokes: KeystrokeSettings
 
     public static let inkFadeRange: ClosedRange<Double> = 0.8...8
     public static let inkWidthRange: ClosedRange<Double> = 0.6...2.5
@@ -89,7 +91,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         displayScope: .all,
         highlightOptions: HighlightOptions(),
         hideRules: HideRules(),
-        toolbar: ToolbarSettings()
+        toolbar: ToolbarSettings(),
+        keystrokes: KeystrokeSettings()
     )
 
     public init(
@@ -110,7 +113,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         displayScope: DisplayScope = .all,
         highlightOptions: HighlightOptions = HighlightOptions(),
         hideRules: HideRules = HideRules(),
-        toolbar: ToolbarSettings = ToolbarSettings()
+        toolbar: ToolbarSettings = ToolbarSettings(),
+        keystrokes: KeystrokeSettings = KeystrokeSettings()
     ) {
         self.version = version
         self.highlightStyle = highlightStyle
@@ -138,12 +142,13 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.highlightOptions = highlightOptions
         self.hideRules = hideRules
         self.toolbar = toolbar
+        self.keystrokes = keystrokes
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
         case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, inkWidth, inkCustom, inkShapes, inkFades, welcomeSeen
-        case profiles, baseProfileID, appRules, categoryRules, displayScope, highlightOptions, hideRules, toolbar
+        case profiles, baseProfileID, appRules, categoryRules, displayScope, highlightOptions, hideRules, toolbar, keystrokes
     }
 
     public init(from decoder: Decoder) throws {
@@ -174,6 +179,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         highlightOptions = ((try? c.decode(HighlightOptions.self, forKey: .highlightOptions)) ?? d.highlightOptions).sanitized()
         hideRules = (try? c.decode(HideRules.self, forKey: .hideRules)) ?? d.hideRules
         toolbar = (try? c.decode(ToolbarSettings.self, forKey: .toolbar)) ?? d.toolbar
+        keystrokes = (try? c.decode(KeystrokeSettings.self, forKey: .keystrokes)) ?? d.keystrokes
         // Settings saved before profiles existed: their current look becomes the Stream profile.
         if let stored = try? c.decode([Profile].self, forKey: .profiles), !stored.isEmpty {
             profiles = stored

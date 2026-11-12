@@ -85,6 +85,8 @@ public struct HighlightModel: Equatable, Sendable {
     private var lastSeenPointer: CGPoint?
     private var idleLevel = 1.0
     private var idleTarget = 1.0
+    /// Set while the user types and hideWhileTyping is on; cleared by pointer movement.
+    private var typingHide = false
     static let idleFadeOut: TimeInterval = 0.8
     static let idleFadeIn: TimeInterval = 0.12
 
@@ -262,15 +264,22 @@ public struct HighlightModel: Equatable, Sendable {
     /// Seconds of stillness before the fade starts; 0 when the option is off or for the laser.
     private var idleFadeAfter: Double { isLaser ? 0 : look.options.fadeAfterStill }
 
+    /// A key was pressed. With "hide while typing" on, the highlight fades until the pointer moves again.
+    public mutating func typed() {
+        guard look.options.hideWhileTyping, !isLaser else { return }
+        typingHide = true
+    }
+
     private mutating func updateIdle(pointer: CGPoint, time: TimeInterval, dt: TimeInterval) {
         if let seen = lastSeenPointer, hypot(pointer.x - seen.x, pointer.y - seen.y) > 0.5 {
             lastMoveTime = time
+            typingHide = false
         } else if lastMoveTime == nil {
             lastMoveTime = time
         }
         lastSeenPointer = pointer
         let after = idleFadeAfter
-        let still = after > 0 && toggle.isOn && time - (lastMoveTime ?? time) >= after
+        let still = toggle.isOn && (typingHide || (after > 0 && time - (lastMoveTime ?? time) >= after))
         idleTarget = still ? 0 : 1
         let rate = 1 / (still ? Self.idleFadeOut : Self.idleFadeIn)
         if idleTarget > idleLevel {

@@ -203,6 +203,12 @@ public final class HighlightController {
         wake()
     }
 
+    /// A key was pressed; hides the highlight until the pointer moves, if the look asks for it.
+    public func typed() {
+        model.typed()
+        wake()
+    }
+
     /// A quick ring at `point`, where the pointer landed after jumping to another display.
     public func locate(at point: CGPoint) {
         model.locate(at: point, time: clock())

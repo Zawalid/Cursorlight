@@ -20,6 +20,11 @@ final class AppCoordinator {
     let spotlight: SpotlightController
     let cursorSize: CursorSizeController
     let shareSafe = ShareSafeMonitor()
+    private let keyMonitor = KeyActivityMonitor()
+    /// The keys the display shows right now.
+    private(set) var keystrokeBuffer = KeystrokeBuffer()
+    /// Called after a key was added to the buffer, so the display can show.
+    var onKeystroke: (() -> Void)?
 
     /// Called after the cursor size changes, so the menu can refresh its checkmark.
     var onSizeChange: (() -> Void)?
@@ -98,6 +103,8 @@ final class AppCoordinator {
             applyTriggers()
         }
         if !(all || off.contains("extras")) {
+            keyMonitor.onKey = { [weak self] press in self?.handleKey(press) }
+            applyKeyMonitoring()
             applyDisplayScope()
             shareSafe.onChange = { [weak self] in self?.onShareChange?() }
             shareSafe.start()
@@ -448,16 +455,52 @@ final class AppCoordinator {
     /// True when a modifier trigger is on but cannot see keys outside Beacon yet.
     var needsInputMonitoring: Bool {
         let t = settings.settings.triggers
-        return (t.doubleTapEnabled || t.holdEnabled) && !modifiers.hasGlobalAccess
+        let gestures = (t.doubleTapEnabled || t.holdEnabled) && !modifiers.hasGlobalAccess
+        let keys = wantsKeyMonitoring && !keyMonitor.hasGlobalAccess
+        return gestures || keys
+    }
+
+    /// The keystroke display, key sound and hide-while-typing all listen to the keyboard.
+    private var wantsKeyMonitoring: Bool {
+        let s = settings.settings
+        return s.keystrokes.enabled || s.keystrokes.sound || s.highlightOptions.hideWhileTyping
+    }
+
+    /// Starts or stops the keyboard listener to match what is switched on.
+    func applyKeyMonitoring() {
+        if wantsKeyMonitoring { keyMonitor.start() } else { keyMonitor.stop() }
+        if !settings.settings.keystrokes.enabled { keystrokeBuffer.clear() }
+    }
+
+    private func handleKey(_ press: KeyPress) {
+        guard !isPaused, !isOffForApp else { return }
+        let s = settings.settings
+        highlight.typed()
+        if s.keystrokes.enabled {
+            keystrokeBuffer.push(press, shortcutsOnly: s.keystrokes.shortcutsOnly, at: ProcessInfo.processInfo.systemUptime)
+            onKeystroke?()
+        }
+        if s.keystrokes.sound, !press.isRepeat, let sound = NSSound(named: NSSound.Name("Pop")) {
+            sound.volume = 0.25
+            sound.play()
+        }
+    }
+
+    func setKeystrokes(_ edit: (inout KeystrokeSettings) -> Void) {
+        settings.update { edit(&$0.keystrokes) }
+        applyKeyMonitoring()
+        onTriggersChange?()
     }
 
     func refreshInputMonitoring() {
         modifiers.refreshAccess()
+        keyMonitor.refreshAccess()
     }
 
     func requestInputMonitoring() {
         if InputMonitoring.isGranted {
             modifiers.refreshAccess()
+            keyMonitor.refreshAccess()
         } else {
             InputMonitoring.request()
             InputMonitoring.openSettings()
@@ -507,6 +550,7 @@ final class AppCoordinator {
     func setHighlightOptions(_ edit: (inout HighlightOptions) -> Void) {
         settings.update { edit(&$0.highlightOptions) }
         applyLook()
+        applyKeyMonitoring()
     }
 
     func setHideRules(_ edit: (inout HideRules) -> Void) {

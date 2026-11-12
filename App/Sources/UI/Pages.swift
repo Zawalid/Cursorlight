@@ -196,6 +196,12 @@ struct LookPage: View {
                         Text("When your Mac asks for less motion: no breathing, a short tail.").font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
+                Toggle(isOn: Binding(get: { options.hideWhileTyping }, set: { v in model.setOptions { $0.hideWhileTyping = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Hide while typing")
+                        Text("The highlight steps aside while you type. Needs Input Monitoring.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
                 Toggle(isOn: Binding(get: { options.locatorPulse }, set: { v in model.setOptions { $0.locatorPulse = v } })) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Locate on display jump")
@@ -728,6 +734,26 @@ struct TriggersPage: View {
                 } else {
                     Text("Taken by another app: \(model.failedHotkeys.map(\.displayName).joined(separator: ", ")).")
                 }
+            }
+            Section {
+                Toggle(isOn: Binding(get: { model.settings.keystrokes.enabled }, set: { v in model.setKeystrokes { $0.enabled = v } })) {
+                    caption("Show keys on screen", "Shows what you press, so viewers can follow along.")
+                }
+                if model.settings.keystrokes.enabled {
+                    Toggle(isOn: Binding(get: { model.settings.keystrokes.shortcutsOnly }, set: { v in model.setKeystrokes { $0.shortcutsOnly = v } })) {
+                        caption("Only shortcuts", "Show \u{2318}K but not every letter you type.")
+                    }
+                    Picker("Position", selection: Binding(get: { model.settings.keystrokes.position }, set: { v in model.setKeystrokes { $0.position = v } })) {
+                        ForEach(KeystrokePosition.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    }
+                }
+                Toggle(isOn: Binding(get: { model.settings.keystrokes.sound }, set: { v in model.setKeystrokes { $0.sound = v } })) {
+                    caption("Key sound", "A soft pop on every key press.")
+                }
+            } header: {
+                Text("Keystrokes")
+            } footer: {
+                Text("Needs Input Monitoring to see keys in other apps. Password fields are never shown: the system hides those keys from every app.")
             }
             Section {
                 Button("Restore defaults") { model.updateTriggers { $0 = TriggerSettings() } }

@@ -24,7 +24,7 @@ for w in info where (w[kCGWindowOwnerName as String] as? String) == "Beacon" {
     let w1 = Int(b["Width"] ?? 0), h1 = Int(b["Height"] ?? 0)
     report.append("window \(id) layer \(layer) size \(w1)x\(h1) name \(w[kCGWindowName as String] as? String ?? "")")
     // Skip full-display overlay windows; capture real content windows only.
-    let isBar = ["Beacon bar", "Beacon timer"].contains(w[kCGWindowName as String] as? String ?? "")
+    let isBar = ["Beacon bar", "Beacon timer", "Beacon keys"].contains(w[kCGWindowName as String] as? String ?? "")
     // CAPTURE_OVERLAY=1 also captures Beacon's own full-display effect layer (only its own pixels, never the screen).
     let wantsOverlay = ProcessInfo.processInfo.environment["CAPTURE_OVERLAY"] == "1" && layer == 1000
     if isBar || wantsOverlay || (layer <= 200 && w1 > 100 && h1 > 100) { run(["-x", "-o", "-l", "\(id)", "\(out)/window-\(id).png"]) }

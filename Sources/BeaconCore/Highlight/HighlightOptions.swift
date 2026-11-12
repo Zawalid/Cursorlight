@@ -44,6 +44,9 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     public var respectReduceMotion = true
     /// A quick ring where the pointer lands when it jumps to another display.
     public var locatorPulse = true
+    /// Hide the highlight while you type, and bring it back when the pointer moves. Needs Input Monitoring to see keys
+    /// in other apps.
+    public var hideWhileTyping = false
     /// Spotlight region: shape, darkness outside, soft edge width and corner radius.
     public var spotlightShape: SpotlightShape = .rounded
     public var spotlightDim = 0.6
@@ -64,7 +67,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case auraBreathing, cometTail, keylineWidth, sonarRings, lensSoftness, fadeAfterStill, customAccent
         case spotlightShape, spotlightDim, spotlightSoftness, spotlightCorner
-        case clickEffect, clickSound, respectReduceMotion, locatorPulse
+        case clickEffect, clickSound, respectReduceMotion, locatorPulse, hideWhileTyping
     }
 
     public init(from decoder: Decoder) throws {
@@ -82,6 +85,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
         clickSound = (try? c.decode(Bool.self, forKey: .clickSound)) ?? d.clickSound
         respectReduceMotion = (try? c.decode(Bool.self, forKey: .respectReduceMotion)) ?? d.respectReduceMotion
         locatorPulse = (try? c.decode(Bool.self, forKey: .locatorPulse)) ?? d.locatorPulse
+        hideWhileTyping = (try? c.decode(Bool.self, forKey: .hideWhileTyping)) ?? d.hideWhileTyping
         spotlightDim = (try? c.decode(Double.self, forKey: .spotlightDim)) ?? d.spotlightDim
         spotlightSoftness = (try? c.decode(Double.self, forKey: .spotlightSoftness)) ?? d.spotlightSoftness
         spotlightCorner = (try? c.decode(Double.self, forKey: .spotlightCorner)) ?? d.spotlightCorner

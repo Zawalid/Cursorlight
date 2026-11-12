@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windows: WindowControllers?
     private var toolbar: ToolbarController?
     private var timer: TimerController?
+    private var keystrokes: KeystrokeController?
     var debugInkActive: Bool { coordinator?.ink.isActive ?? false }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -71,6 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.toolbar = ToolbarController(model: model)
             let timer = TimerController(model: model)
             self.timer = timer
+            self.keystrokes = KeystrokeController(coordinator: coordinator, model: model)
             model.toggleTimer = { [weak timer] in timer?.toggle() }
             coordinator.onToggleTimer = { [weak timer] in timer?.toggle() }
             statusItemController.install(model: model)
