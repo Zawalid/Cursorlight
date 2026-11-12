@@ -16,6 +16,8 @@ public struct InkShapeSet: OptionSet, Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let value = try? decoder.singleValueContainer().decode(Int.self)
+        // 31 was "every shape" before triangles and diamonds existed: keep meaning "every shape".
+        if value == 31 { self = .all; return }
         self = value.map { InkShapeSet(rawValue: $0).intersection(.all) } ?? .all
     }
 

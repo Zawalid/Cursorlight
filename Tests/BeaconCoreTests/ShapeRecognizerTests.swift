@@ -158,3 +158,12 @@ final class PolygonShapeTests: XCTestCase {
         XCTAssertEqual(shape.polyline(count: InkModel.morphPointCount, matching: raw)?.count, InkModel.morphPointCount)
     }
 }
+
+final class ShapeSetMigrationTests: XCTestCase {
+    func testOldEveryShapeValueStillMeansEveryShape() throws {
+        let old = try JSONDecoder().decode(InkShapeSet.self, from: Data("31".utf8))
+        XCTAssertEqual(old, .all)
+        let some = try JSONDecoder().decode(InkShapeSet.self, from: Data("5".utf8))
+        XCTAssertEqual(some, [.ellipse, .line])
+    }
+}
