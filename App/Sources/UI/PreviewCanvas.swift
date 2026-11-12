@@ -132,6 +132,17 @@ struct PreviewCanvas: View {
             fx.stroke(ring, with: .color(light), lineWidth: recipe.keyline.lightWidth)
             let dot = recipe.keyline.dotDiameter
             fx.fill(Path(ellipseIn: CGRect(x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot)), with: .color(light))
+        case .crosshair:
+            let gap = recipe.crosshair.gap
+            var arms = Path()
+            for d in [CGPoint(x: 1, y: 0), CGPoint(x: -1, y: 0), CGPoint(x: 0, y: 1), CGPoint(x: 0, y: -1)] {
+                arms.move(to: CGPoint(x: p.x + d.x * gap, y: p.y + d.y * gap))
+                arms.addLine(to: CGPoint(x: p.x + d.x * 4000, y: p.y + d.y * 4000))
+            }
+            fx.stroke(arms, with: .color(.black.opacity(0.3)), lineWidth: recipe.crosshair.lineWidth + 2)
+            fx.stroke(arms, with: .color(accent.opacity(Double(recipe.crosshair.armAlpha))), lineWidth: recipe.crosshair.lineWidth)
+            let r = recipe.crosshair.ringRadius
+            fx.stroke(Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r)), with: .color(accent), lineWidth: 1.5)
         case .sonar:
             for i in 0..<recipe.sonar.ringCount {
                 let phase = ((time + Double(i) * 0.25).truncatingRemainder(dividingBy: 2.2)) / 2.2
@@ -231,6 +242,14 @@ struct StyleThumbnail: View {
                 Circle().fill(.white).frame(width: 9, height: 9).overlay(Circle().stroke(accent, lineWidth: 2)).offset(x: 14, y: -4)
             case .keyline:
                 Circle().stroke(.white, lineWidth: 2.5).frame(width: 30, height: 30)
+            case .crosshair:
+                Rectangle().fill(accent.opacity(0.85)).frame(width: 60, height: 1.5).mask(
+                    HStack(spacing: 0) { Color.black.frame(width: 21); Color.clear.frame(width: 18); Color.black.frame(width: 21) }
+                )
+                Rectangle().fill(accent.opacity(0.85)).frame(width: 1.5, height: 60).mask(
+                    VStack(spacing: 0) { Color.black.frame(height: 21); Color.clear.frame(height: 18); Color.black.frame(height: 21) }
+                )
+                Circle().stroke(accent, lineWidth: 1.5).frame(width: 14, height: 14)
             case .sonar:
                 Circle().stroke(accent.opacity(0.4), lineWidth: 2).frame(width: 46, height: 46)
                 Circle().stroke(accent.opacity(0.8), lineWidth: 2).frame(width: 28, height: 28)

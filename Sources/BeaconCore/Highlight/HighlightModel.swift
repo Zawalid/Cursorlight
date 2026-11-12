@@ -288,7 +288,7 @@ public struct HighlightModel: Equatable, Sendable {
         switch style {
         case .lens: recipe.lens.pressScale
         case .keyline: recipe.keyline.pressScale
-        case .aura, .comet, .sonar: 1
+        case .aura, .comet, .sonar, .crosshair: 1
         }
     }
 
@@ -355,6 +355,11 @@ public struct HighlightModel: Equatable, Sendable {
             let entrance = appearElapsed.map { keyline.appearFrom - (keyline.appearFrom - 1) * CGFloat(Easing.outExpo($0 / recipe.appearDuration)) } ?? 1
             let exit = leaving.map { 1 + 0.15 * CGFloat($0) } ?? 1
             frame.bodyScale = entrance * exit * press
+        case .crosshair:
+            let cross = recipe.crosshair
+            let entrance = appearElapsed.map { cross.appearFrom - (cross.appearFrom - 1) * CGFloat(Easing.outExpo($0 / recipe.appearDuration)) } ?? 1
+            let exit = leaving.map { 1 + 0.15 * CGFloat($0) } ?? 1
+            frame.bodyScale = entrance * exit
         case .sonar:
             let sonar = recipe.sonar
             if let elapsed = appearElapsed {

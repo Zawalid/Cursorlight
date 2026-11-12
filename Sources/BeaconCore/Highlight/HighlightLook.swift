@@ -130,6 +130,9 @@ extension StyleRecipe {
         r.comet.headHaloDiameter *= k
         r.keyline.radius *= k
         r.keyline.dotDiameter *= k
+        r.crosshair.gap *= k
+        r.crosshair.ringRadius *= k
+        r.crosshair.lineWidth *= max(k, 0.8)
         r.sonar.startRadius *= k
         r.sonar.endRadius *= k
         r.sonar.dotRadius *= k

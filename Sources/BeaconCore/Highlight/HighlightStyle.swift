@@ -3,7 +3,7 @@ import Foundation
 
 /// The five looks of the cursor highlight. Raw values are persisted.
 public enum HighlightStyle: String, CaseIterable, Codable, Sendable {
-    case aura, lens, comet, keyline, sonar
+    case aura, lens, comet, keyline, sonar, crosshair
 
     public var displayName: String {
         switch self {
@@ -12,6 +12,7 @@ public enum HighlightStyle: String, CaseIterable, Codable, Sendable {
         case .comet: "Comet"
         case .keyline: "Keyline"
         case .sonar: "Sonar"
+        case .crosshair: "Crosshair"
         }
     }
 
@@ -118,6 +119,19 @@ public struct KeylineRecipe: Equatable, Sendable {
     public var appearFrom: CGFloat = 1.5
 }
 
+/// Two long lines through the pointer, with a small ring at the crossing: the plain "where is it" look.
+public struct CrosshairRecipe: Equatable, Sendable {
+    public init() {}
+
+    /// Empty space between the pointer and where each arm starts.
+    public var gap: CGFloat = 16
+    public var ringRadius: CGFloat = 9
+    public var lineWidth: CGFloat = 1.5
+    public var armAlpha: CGFloat = 0.8
+    /// Scale the lines settle from when they appear.
+    public var appearFrom: CGFloat = 1.6
+}
+
 /// Hidden until summoned, then concentric pulses lock onto a compact dot that stays.
 public struct SonarRecipe: Equatable, Sendable {
     public init() {}
@@ -192,6 +206,7 @@ public struct StyleRecipe: Equatable, Sendable {
     public var comet = CometRecipe()
     public var keyline = KeylineRecipe()
     public var sonar = SonarRecipe()
+    public var crosshair = CrosshairRecipe()
 
     public static func recipe(for style: HighlightStyle) -> StyleRecipe {
         switch style {
@@ -222,6 +237,11 @@ public struct StyleRecipe: Equatable, Sendable {
             StyleRecipe(
                 spring: .standard, appearDuration: 0.76, pulse: nil,
                 ripple: RippleRecipe()
+            )
+        case .crosshair:
+            StyleRecipe(
+                spring: .standard, appearDuration: 0.35, pulse: nil,
+                ripple: RippleRecipe(duration: 0.45, fillAlpha: 0, lightRing: true)
             )
         }
     }

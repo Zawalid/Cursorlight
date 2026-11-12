@@ -99,6 +99,7 @@ final class HighlightRenderer {
         case .comet: buildComet(recipe.comet, accent: accent)
         case .keyline: buildKeyline(recipe.keyline)
         case .sonar: buildSonar(recipe.sonar, accent: accent)
+        case .crosshair: buildCrosshair(recipe.crosshair, accent: accent)
         }
 
         if style == .lens { root.addSublayer(dim) }
@@ -229,6 +230,34 @@ final class HighlightRenderer {
         }
     }
 
+    private func buildCrosshair(_ cross: CrosshairRecipe, accent: RGBA) {
+        let reach: CGFloat = 6000
+        let arms = CGMutablePath()
+        for direction in [CGPoint(x: 1, y: 0), CGPoint(x: -1, y: 0), CGPoint(x: 0, y: 1), CGPoint(x: 0, y: -1)] {
+            arms.move(to: CGPoint(x: direction.x * cross.gap, y: direction.y * cross.gap))
+            arms.addLine(to: CGPoint(x: direction.x * reach, y: direction.y * reach))
+        }
+        func line(_ color: RGBA, width: CGFloat) -> CAShapeLayer {
+            let layer = CAShapeLayer()
+            layer.path = arms
+            layer.fillColor = nil
+            layer.strokeColor = color.cgColor
+            layer.lineWidth = width
+            layer.lineCap = .butt
+            return layer
+        }
+        body.addSublayer(line(Palette.keyline.with(alpha: 0.3), width: cross.lineWidth + 2))
+        body.addSublayer(line(accent.with(alpha: Double(cross.armAlpha)), width: cross.lineWidth))
+        let ring = PointerGeometry.ringBands(
+            edges: [cross.ringRadius - cross.lineWidth - 1, cross.ringRadius - cross.lineWidth, cross.ringRadius, cross.ringRadius + 1], scale: scale
+        )
+        if ring.count == 3 {
+            body.addSublayer(stroke(ring[0], color: Palette.keyline.with(alpha: 0.25)))
+            body.addSublayer(stroke(ring[1], color: accent.with(alpha: 0.95)))
+            body.addSublayer(stroke(ring[2], color: Palette.keyline.with(alpha: 0.3)))
+        }
+    }
+
     private func buildSonar(_ sonar: SonarRecipe, accent: RGBA) {
         sonarRings = (0..<sonar.ringCount).map { _ in
             let ring = RingLayer(scale: scale)
@@ -320,7 +349,7 @@ final class HighlightRenderer {
             body.setAffineTransform(CGAffineTransform(scaleX: frame.bodyScale, y: frame.bodyScale))
             tail.opacity = Float(frame.level)
             renderTail(frame.trail, origin: origin)
-        case .keyline:
+        case .keyline, .crosshair:
             body.setAffineTransform(CGAffineTransform(scaleX: frame.bodyScale, y: frame.bodyScale))
         case .sonar:
             body.opacity = Float(frame.dotLevel)

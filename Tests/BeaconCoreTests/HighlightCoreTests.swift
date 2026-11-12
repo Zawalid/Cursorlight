@@ -489,9 +489,9 @@ final class StyleRecipeTests: XCTestCase {
     }
 
     func testStylesPersistByRawValue() {
-        XCTAssertEqual(HighlightStyle.allCases.map(\.rawValue), ["aura", "lens", "comet", "keyline", "sonar"])
+        XCTAssertEqual(HighlightStyle.allCases.map(\.rawValue), ["aura", "lens", "comet", "keyline", "sonar", "crosshair"])
         XCTAssertEqual(HighlightStyle(rawValue: "comet"), .comet)
-        XCTAssertEqual(Set(HighlightStyle.allCases.map(\.displayName)).count, 5)
+        XCTAssertEqual(Set(HighlightStyle.allCases.map(\.displayName)).count, 6)
     }
 }
 
@@ -505,7 +505,7 @@ final class PaletteTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(accent.contrast(with: white), 2.0, "\(style) on white")
             XCTAssertGreaterThanOrEqual(accent.contrast(with: black), 4.5, "\(style) on black")
         }
-        XCTAssertEqual(Set(HighlightStyle.allCases.map(Palette.accent(for:))).count, 5)
+        XCTAssertEqual(Set(HighlightStyle.allCases.map(Palette.accent(for:))).count, 6)
     }
 
     func testLightCoreAndDarkKeylineAreLuminanceOpposites() {

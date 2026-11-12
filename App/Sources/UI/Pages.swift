@@ -284,6 +284,8 @@ struct LookPage: View {
                     ValueSlider(value: Binding(get: { options.keylineWidth }, set: { v in model.setOptions { $0.keylineWidth = v } }), range: HighlightOptions.lineRange)
                 }
             }
+        case .crosshair:
+            EmptyView()
         case .sonar:
             Section("Sonar") {
                 LabeledContent("Rings") {
@@ -311,6 +313,7 @@ struct LookPage: View {
         case .comet: "A bright head with a tail, so viewers can follow fast movement."
         case .keyline: "A thin two-tone ring that stays readable on any background."
         case .sonar: "Rings pulse in and lock onto the pointer, then a small dot stays."
+        case .crosshair: "Thin lines run through the pointer across the whole screen, so it is easy to find."
         }
     }
 
@@ -327,7 +330,7 @@ struct StyleRow: View {
     @State private var hovered: HighlightStyle?
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 5), spacing: 8) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .top), count: 6), spacing: 8) {
             ForEach(HighlightStyle.allCases, id: \.self) { style in
                 let on = style == selection
                 let accent = tint ?? Color(rgba: Palette.accent(for: style))
@@ -335,7 +338,7 @@ struct StyleRow: View {
                     VStack(spacing: 6) {
                         Color.clear
                             .aspectRatio(1, contentMode: .fit)
-                            .overlay { StyleThumbnail(style: style, color: tint, scale: 0.7) }
+                            .overlay { StyleThumbnail(style: style, color: tint, scale: 0.6) }
                             .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .overlay(

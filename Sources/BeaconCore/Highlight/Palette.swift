@@ -110,6 +110,7 @@ public enum Palette {
         case .comet: RGBA(hex: Branding.accentHex)  // ember coral, the brand accent
         case .keyline: RGBA(hex: "#4DA3FF")  // clear blue
         case .sonar: RGBA(hex: "#14B8A6")  // deep teal
+        case .crosshair: RGBA(hex: "#E8325F")  // strong rose, readable on dark and light
         }
     }
 
