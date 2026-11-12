@@ -23,7 +23,8 @@ final class AppCoordinator {
         highlight = HighlightController(
             overlays: overlays,
             style: current.highlightStyle,
-            ripplesEnabled: current.clickRipples
+            ripplesEnabled: current.clickRipples,
+            look: current.look
         )
     }
 
@@ -45,6 +46,35 @@ final class AppCoordinator {
         if shake.feed(position: position, time: time) {
             highlight.toggle()
         }
+    }
+
+    func setAccent(_ accent: AccentChoice) {
+        settings.update { $0.accent = accent }
+        applyLook()
+    }
+
+    func setHighlightSize(_ size: Double) {
+        settings.update { $0.highlightSize = size }
+        applyLook()
+    }
+
+    func setHighlightIntensity(_ intensity: Double) {
+        settings.update { $0.highlightIntensity = intensity }
+        applyLook()
+    }
+
+    func setLensDim(_ dim: Double) {
+        settings.update { $0.lensDim = dim }
+        applyLook()
+    }
+
+    /// Menu toggle for the laser trail. A held-key trigger arrives with the trigger milestone.
+    func toggleLaser() {
+        highlight.setLaser(!highlight.isLaserOn)
+    }
+
+    private func applyLook() {
+        highlight.setLook(settings.settings.look)
     }
 
     func setShakeSensitivity(_ value: Double) {

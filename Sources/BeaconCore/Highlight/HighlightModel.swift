@@ -61,6 +61,9 @@ public struct HighlightModel: Equatable, Sendable {
 
     public private(set) var style: HighlightStyle
     public private(set) var recipe: StyleRecipe
+    public private(set) var look: HighlightLook
+    /// The laser pointer model: comet drawing with `StyleRecipe.laser`.
+    public let isLaser: Bool
     public var ripplesEnabled: Bool {
         didSet { if !ripplesEnabled { press = nil } }
     }
@@ -77,15 +80,34 @@ public struct HighlightModel: Equatable, Sendable {
     private var breathWeight: Double = 0
     private var pointer: CGPoint
 
-    public init(style: HighlightStyle, ripplesEnabled: Bool = true, pointer: CGPoint = .zero) {
+    public init(
+        style: HighlightStyle, ripplesEnabled: Bool = true, pointer: CGPoint = .zero,
+        look: HighlightLook = .standard, laser: Bool = false
+    ) {
+        let style = laser ? .comet : style
+        let recipe = Self.makeRecipe(style, look: look, laser: laser)
         self.style = style
-        self.recipe = style.recipe
-        self.ripplesEnabled = ripplesEnabled
+        self.recipe = recipe
+        self.look = look
+        isLaser = laser
+        self.ripplesEnabled = ripplesEnabled && !laser
         self.pointer = pointer
-        toggle = HighlightToggle(appearDuration: style.recipe.appearDuration, disappearDuration: style.recipe.disappearDuration)
-        follower = SpringFollower(parameters: style.recipe.spring, position: pointer)
-        trail = TrailBuffer(recipe: style.recipe.comet)
-        pressSpring = ScalarSpring(value: 1, omega: 4 / style.recipe.lens.pressDuration)
+        toggle = HighlightToggle(appearDuration: recipe.appearDuration, disappearDuration: recipe.disappearDuration)
+        follower = SpringFollower(parameters: recipe.spring, position: pointer)
+        trail = TrailBuffer(recipe: recipe.comet)
+        pressSpring = ScalarSpring(value: 1, omega: 4 / recipe.lens.pressDuration)
+    }
+
+    private static func makeRecipe(_ style: HighlightStyle, look: HighlightLook, laser: Bool) -> StyleRecipe {
+        (laser ? StyleRecipe.laser : style.recipe).applying(look)
+    }
+
+    /// Applies new appearance settings in place: sizes change at once, nothing restarts.
+    public mutating func setLook(_ newLook: HighlightLook) {
+        guard newLook != look else { return }
+        look = newLook
+        recipe = Self.makeRecipe(style, look: newLook, laser: isLaser)
+        trail = TrailBuffer(recipe: recipe.comet)
     }
 
     public var isOn: Bool { toggle.isOn }
@@ -94,8 +116,9 @@ public struct HighlightModel: Equatable, Sendable {
 
     public mutating func setStyle(_ newStyle: HighlightStyle, at time: TimeInterval) {
         guard newStyle != style else { return }
+        guard !isLaser else { return }
         style = newStyle
-        recipe = newStyle.recipe
+        recipe = Self.makeRecipe(newStyle, look: look, laser: false)
         toggle.appearDuration = recipe.appearDuration
         toggle.disappearDuration = recipe.disappearDuration
         follower.parameters = recipe.spring

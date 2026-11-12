@@ -30,11 +30,13 @@ public final class HighlightController {
     private final class Host {
         let window: OverlayWindow
         let renderer: HighlightRenderer
+        let laserRenderer: HighlightRenderer
         var link: (any FrameLink)?
 
-        init(window: OverlayWindow, renderer: HighlightRenderer) {
+        init(window: OverlayWindow, renderer: HighlightRenderer, laserRenderer: HighlightRenderer) {
             self.window = window
             self.renderer = renderer
+            self.laserRenderer = laserRenderer
         }
     }
 
@@ -62,6 +64,8 @@ public final class HighlightController {
     }
 
     public private(set) var model: HighlightModel
+    /// The laser pointer: a long trail drawn above the highlight while it is on.
+    public private(set) var laserModel: HighlightModel
     /// Called after the on/off state or the style changes, so menus can refresh.
     public var onChange: (() -> Void)?
 
@@ -83,6 +87,7 @@ public final class HighlightController {
         windows: @escaping @MainActor () -> [OverlayWindow],
         style: HighlightStyle,
         ripplesEnabled: Bool,
+        look: HighlightLook = .standard,
         pointer: @escaping @MainActor () -> CGPoint = { NSEvent.mouseLocation },
         clock: @escaping @MainActor () -> TimeInterval = { CACurrentMediaTime() },
         makeLink: @escaping LinkFactory = HighlightController.displayLinkFactory
@@ -91,20 +96,24 @@ public final class HighlightController {
         self.pointer = pointer
         self.clock = clock
         self.makeLink = makeLink
-        model = HighlightModel(style: style, ripplesEnabled: ripplesEnabled, pointer: pointer())
+        model = HighlightModel(style: style, ripplesEnabled: ripplesEnabled, pointer: pointer(), look: look)
+        laserModel = HighlightModel(style: .comet, pointer: pointer(), look: look, laser: true)
     }
 
     /// Follows `overlays`: its `onWindowsChanged` is taken over to reconcile hosts after every rebuild.
-    public convenience init(overlays: OverlayManager, style: HighlightStyle, ripplesEnabled: Bool) {
+    public convenience init(
+        overlays: OverlayManager, style: HighlightStyle, ripplesEnabled: Bool, look: HighlightLook = .standard
+    ) {
         self.init(
             windows: { [weak overlays] in overlays.map { Array($0.windows.values) } ?? [] },
-            style: style, ripplesEnabled: ripplesEnabled
+            style: style, ripplesEnabled: ripplesEnabled, look: look
         )
         overlays.onWindowsChanged = { [weak self] in self?.windowsChanged() }
     }
 
     public var style: HighlightStyle { model.style }
     public var isOn: Bool { model.isOn }
+    public var isLaserOn: Bool { laserModel.isOn }
     public var ripplesEnabled: Bool { model.ripplesEnabled }
     /// Number of windows currently hosting the highlight.
     public var hostCount: Int { hosts.count }
@@ -169,10 +178,32 @@ public final class HighlightController {
 
     public func setStyle(_ style: HighlightStyle) {
         model.setStyle(style, at: clock())
-        for host in hosts.values { host.renderer.configure(style: style) }
+        for host in hosts.values { host.renderer.configure(spec: renderSpec) }
         wake()
         onChange?()
     }
+
+    /// Size, intensity, dim and accent from the settings. Applied live, without restarting the highlight.
+    public func setLook(_ look: HighlightLook) {
+        model.setLook(look)
+        laserModel.setLook(look)
+        for host in hosts.values {
+            host.renderer.configure(spec: renderSpec)
+            host.laserRenderer.configure(spec: laserSpec)
+        }
+        redraw()
+        wake()
+    }
+
+    /// Turns the laser trail on or off (held key, toggle or menu).
+    public func setLaser(_ on: Bool) {
+        laserModel.setHighlight(on, at: clock(), pointer: pointer())
+        wake()
+        onChange?()
+    }
+
+    private var renderSpec: RenderSpec { RenderSpec(style: model.style, look: model.look) }
+    private var laserSpec: RenderSpec { RenderSpec(laserLook: laserModel.look) }
 
     public func setRipplesEnabled(_ enabled: Bool) {
         model.ripplesEnabled = enabled
@@ -181,7 +212,7 @@ public final class HighlightController {
 
     /// The pointer moved: frames read the position themselves; this only wakes paused links.
     public func pointerMoved() {
-        guard model.isOn || model.toggle.isVisible else { return }
+        guard model.isOn || model.toggle.isVisible || laserModel.isOn || laserModel.toggle.isVisible else { return }
         wake()
     }
 
@@ -205,9 +236,10 @@ public final class HighlightController {
     func tick(_ id: ObjectIdentifier, time: TimeInterval) {
         guard let host = hosts[id] else { return }
         let frame = model.step(pointer: pointer(), time: time)
-        render(frame, on: host)
+        let laserFrame = laserModel.step(pointer: pointer(), time: time)
+        render(frame, laserFrame, on: host)
         let settled = hosts.values.allSatisfy { $0.renderer.isSettled }
-        if !model.needsFrames && settled {
+        if !model.needsFrames && !laserModel.needsFrames && settled {
             // Every window must have drawn the final state before sleeping; pause each link after its own tick.
             host.link?.isPaused = true
         }
@@ -216,15 +248,18 @@ public final class HighlightController {
     /// Draws the current state on every window without waiting for a frame.
     private func redraw() {
         guard !hosts.isEmpty else { return }
-        let frame = model.step(pointer: pointer(), time: clock())
-        for host in hosts.values { render(frame, on: host) }
+        let now = clock()
+        let frame = model.step(pointer: pointer(), time: now)
+        let laserFrame = laserModel.step(pointer: pointer(), time: now)
+        for host in hosts.values { render(frame, laserFrame, on: host) }
     }
 
-    private func render(_ frame: HighlightFrame, on host: Host) {
+    private func render(_ frame: HighlightFrame, _ laserFrame: HighlightFrame, on host: Host) {
         var frames: [CGDirectDisplayID: CGRect] = [:]
         for other in hosts.values { frames[other.window.displayID] = other.window.frame }
         let owner = PointerGeometry.owner(of: frame.center, in: frames)
         host.renderer.render(frame, windowFrame: host.window.frame, isOwner: owner == host.window.displayID)
+        host.laserRenderer.render(laserFrame, windowFrame: host.window.frame, isOwner: true)
     }
 
     /// Follows the current overlay windows. Called on start and when the window set changes, never per event.
@@ -236,9 +271,11 @@ public final class HighlightController {
         }
         for id in plan.add {
             guard let window = current[id] else { continue }
-            let renderer = HighlightRenderer(style: model.style, scale: window.backingScaleFactor)
+            let renderer = HighlightRenderer(spec: renderSpec, scale: window.backingScaleFactor)
             renderer.attach(to: window.rootLayer)
-            let host = Host(window: window, renderer: renderer)
+            let laserRenderer = HighlightRenderer(spec: laserSpec, scale: window.backingScaleFactor)
+            laserRenderer.attach(to: window.rootLayer)
+            let host = Host(window: window, renderer: renderer, laserRenderer: laserRenderer)
             host.link = makeLink(window) { [weak self] time in self?.tick(id, time: time) }
             host.link?.isPaused = isAsleep
             hosts[id] = host
@@ -249,5 +286,6 @@ public final class HighlightController {
         host.link?.invalidate()
         host.link = nil
         host.renderer.detach()
+        host.laserRenderer.detach()
     }
 }

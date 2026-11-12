@@ -7,7 +7,8 @@ import QuartzCore
 @MainActor
 final class HighlightRenderer {
     let root = CALayer()
-    private(set) var style: HighlightStyle
+    private var spec: RenderSpec
+    var style: HighlightStyle { spec.style }
     private let scale: CGFloat
 
     /// Centered on the highlight; carries the transform (stretch, pop, breath, press).
@@ -17,6 +18,7 @@ final class HighlightRenderer {
     private var sonarRings: [RingLayer] = []
     private var ripples: [RingLayer] = []
     private var pressRing: RingLayer
+    private let rippleHost = CALayer()
 
     // Lens
     private let dim = CALayer()
@@ -35,8 +37,12 @@ final class HighlightRenderer {
     private var stamps: [CALayer] = []
     private var stampImages: [CGImage] = []
 
-    init(style: HighlightStyle, scale: CGFloat) {
-        self.style = style
+    convenience init(style: HighlightStyle, scale: CGFloat) {
+        self.init(spec: RenderSpec(style: style, look: .standard), scale: scale)
+    }
+
+    init(spec: RenderSpec, scale: CGFloat) {
+        self.spec = spec
         self.scale = max(scale, 1)
         pulse = RingLayer(scale: self.scale)
         pressRing = RingLayer(scale: self.scale)
@@ -59,9 +65,9 @@ final class HighlightRenderer {
         withoutAnimation { root.removeFromSuperlayer() }
     }
 
-    func configure(style: HighlightStyle) {
-        guard style != self.style else { return }
-        self.style = style
+    func configure(spec: RenderSpec) {
+        guard spec != self.spec else { return }
+        self.spec = spec
         withoutAnimation {
             root.sublayers?.forEach { $0.removeFromSuperlayer() }
             body.sublayers?.forEach { $0.removeFromSuperlayer() }
@@ -73,8 +79,8 @@ final class HighlightRenderer {
     // MARK: Build
 
     private func build() {
-        let recipe = style.recipe
-        let accent = Palette.accent(for: style)
+        let recipe = spec.recipe
+        let accent = spec.accent
         body.bounds = .zero
         body.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         body.setAffineTransform(.identity)
@@ -101,8 +107,12 @@ final class HighlightRenderer {
         if style == .comet { styleLayer.addSublayer(tail) }
         styleLayer.addSublayer(body)
         styleLayer.isHidden = true
-        for ring in ripples { root.addSublayer(ring.container) }
-        root.addSublayer(pressRing.container)
+        styleLayer.opacity = Float(spec.intensity)
+        rippleHost.sublayers?.forEach { $0.removeFromSuperlayer() }
+        rippleHost.opacity = Float(spec.intensity)
+        root.addSublayer(rippleHost)
+        for ring in ripples { rippleHost.addSublayer(ring.container) }
+        rippleHost.addSublayer(pressRing.container)
         for layer in allLayers(of: root) { layer.contentsScale = scale }
     }
 
@@ -292,7 +302,7 @@ final class HighlightRenderer {
 
         styleLayer.isHidden = !frame.isShown
         guard frame.isShown else { return }
-        let accent = Palette.accent(for: style)
+        let accent = spec.accent
         let pulseColor = style == .keyline ? Palette.light : accent.mixed(with: Palette.light, 0.4)
         pulse.update(
             frame.pulse, origin: origin, color: pulseColor, fillColor: accent, double: false, keylineAlpha: 0.3,
@@ -328,7 +338,7 @@ final class HighlightRenderer {
     private func layoutLens(around center: CGPoint, scale lensScale: CGFloat) {
         guard !dim.isHidden else { return }
         let bounds = root.bounds
-        let half = PointerGeometry.snapped(style.recipe.lens.radius * lensScale, scale: scale)
+        let half = PointerGeometry.snapped(spec.recipe.lens.radius * lensScale, scale: scale)
         let c = PointerGeometry.pixelAligned(center, scale: scale)
         let square = CGRect(x: c.x - half, y: c.y - half, width: 2 * half, height: 2 * half)
         feather.frame = square
@@ -344,7 +354,7 @@ final class HighlightRenderer {
     }
 
     private func renderTail(_ trail: [TrailPoint], origin: CGPoint) {
-        let comet = style.recipe.comet
+        let comet = spec.recipe.comet
         let points = trail.map { point -> TrailPoint in
             var p = point
             p.point = CGPoint(x: point.point.x - origin.x, y: point.point.y - origin.y)
@@ -365,7 +375,7 @@ final class HighlightRenderer {
         tailMask.path = outline.copy(using: &shifted)
         tailGradient.startPoint = unit(head.point, in: box)
         tailGradient.endPoint = unit(end.point, in: box)
-        let accent = Palette.accent(for: style)
+        let accent = spec.accent
         let stops = 6
         tailGradient.colors = (0..<stops).map { index in
             let u = Double(index) / Double(stops - 1)
@@ -455,7 +465,7 @@ final class HighlightRenderer {
     }
 
     private func renderRipples(_ frame: HighlightFrame, origin: CGPoint) {
-        let recipe = style.recipe.ripple
+        let recipe = spec.recipe.ripple
         for (index, ring) in ripples.enumerated() {
             let state = index < frame.ripples.count ? frame.ripples[index] : nil
             update(ring, state, origin: origin, recipe: recipe)
@@ -465,7 +475,7 @@ final class HighlightRenderer {
 
     private func update(_ ring: RingLayer, _ state: RingState?, origin: CGPoint, recipe: RippleRecipe) {
         let button = state?.button ?? .left
-        let accent = Palette.rippleAccent(for: style, button: button)
+        let accent = Palette.rippleAccent(base: spec.accent, button: button)
         let color = recipe.lightRing && button == .left ? Palette.light : accent
         ring.update(
             state, origin: origin, color: color, fillColor: accent, double: button == .right,

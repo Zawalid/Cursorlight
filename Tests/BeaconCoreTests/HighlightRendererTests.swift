@@ -43,7 +43,7 @@ final class HighlightRendererTests: XCTestCase {
         let renderer = HighlightRenderer(style: .aura, scale: 1)
         renderer.attach(to: window.rootLayer)
         let auraLayers = renderer.body.sublayers?.count ?? 0
-        renderer.configure(style: .keyline)
+        renderer.configure(spec: RenderSpec(style: .keyline, look: .standard))
         XCTAssertEqual(renderer.style, .keyline)
         XCTAssertNotEqual(renderer.body.sublayers?.count ?? 0, auraLayers)
         renderer.render(settledFrame(style: .keyline, at: CGPoint(x: 10.3, y: 20.7)), windowFrame: frame, isOwner: true)

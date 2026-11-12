@@ -8,6 +8,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private var styleItems: [(style: HighlightStyle, item: NSMenuItem)] = []
     private var highlightItem: NSMenuItem?
     private var ripplesItem: NSMenuItem?
+    private var laserItem: NSMenuItem?
+    private var accentItems: [(accent: AccentChoice, item: NSMenuItem)] = []
+    private var sizeLookItems: [(value: Double, item: NSMenuItem)] = []
+    private var intensityItems: [(value: Double, item: NSMenuItem)] = []
+    private var dimItems: [(value: Double, item: NSMenuItem)] = []
     var coordinator: AppCoordinator?
 
     func install() {
@@ -73,7 +78,54 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(ripples)
         ripplesItem = ripples
 
+        let laser = NSMenuItem(title: "Laser trail on", action: #selector(toggleLaser), keyEquivalent: "")
+        laser.target = self
+        menu.addItem(laser)
+        laserItem = laser
+
+        addLookItems(to: menu)
         coordinator.highlight.onChange = { [weak self] in self?.refreshChecks() }
+    }
+
+    private static let lookSizes: [(String, Double)] = [("Small", 0.75), ("Normal", 1.0), ("Large", 1.35), ("Extra large", 1.7)]
+    private static let lookIntensities: [(String, Double)] = [("Subtle", 0.5), ("Medium", 0.75), ("Full", 1.0)]
+    private static let lookDims: [(String, Double)] = [("Light", 0.3), ("Medium", 0.5), ("Strong", 0.7)]
+
+    private func addLookItems(to menu: NSMenu) {
+        let accentMenu = NSMenu(title: "Color")
+        accentMenu.delegate = self
+        for accent in AccentChoice.allCases {
+            let item = NSMenuItem(title: accent.displayName, action: #selector(setAccent(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = accent.rawValue
+            accentMenu.addItem(item)
+            accentItems.append((accent, item))
+        }
+        let accentParent = NSMenuItem(title: "Color", action: nil, keyEquivalent: "")
+        accentParent.submenu = accentMenu
+        menu.addItem(accentParent)
+
+        addValueMenu("Highlight size", Self.lookSizes, action: #selector(setLookSize(_:)), to: menu, store: \.sizeLookItems)
+        addValueMenu("Intensity", Self.lookIntensities, action: #selector(setLookIntensity(_:)), to: menu, store: \.intensityItems)
+        addValueMenu("Lens dim", Self.lookDims, action: #selector(setLookDim(_:)), to: menu, store: \.dimItems)
+    }
+
+    private func addValueMenu(
+        _ title: String, _ values: [(String, Double)], action: Selector, to menu: NSMenu,
+        store: ReferenceWritableKeyPath<StatusItemController, [(value: Double, item: NSMenuItem)]>
+    ) {
+        let submenu = NSMenu(title: title)
+        submenu.delegate = self
+        for (name, value) in values {
+            let item = NSMenuItem(title: name, action: action, keyEquivalent: "")
+            item.target = self
+            item.representedObject = NSNumber(value: value)
+            submenu.addItem(item)
+            self[keyPath: store].append((value, item))
+        }
+        let parent = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        parent.submenu = submenu
+        menu.addItem(parent)
     }
 
     private static let sizes: [(title: String, scale: Float)] = [
@@ -114,6 +166,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
         highlightItem?.title = highlight?.isOn == true ? "Turn highlight off" : "Turn highlight on"
         ripplesItem?.state = highlight?.ripplesEnabled == true ? .on : .off
+        laserItem?.title = highlight?.isLaserOn == true ? "Laser trail off" : "Laser trail on"
+        if let current = coordinator?.settings.settings {
+            for (accent, item) in accentItems { item.state = accent == current.accent ? .on : .off }
+            mark(sizeLookItems, current: current.highlightSize)
+            mark(intensityItems, current: current.highlightIntensity)
+            mark(dimItems, current: current.lensDim)
+        }
         let current = coordinator?.cursorSize.currentScale
         for (scale, item) in sizeItems {
             let isCurrent = current.map { abs($0 - scale) < 0.05 } ?? false
@@ -140,6 +199,40 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func toggleRipples() {
         guard let highlight = coordinator?.highlight else { return }
         coordinator?.setClickRipples(!highlight.ripplesEnabled)
+        refreshChecks()
+    }
+
+    private func mark(_ items: [(value: Double, item: NSMenuItem)], current: Double) {
+        let nearest = items.min { abs($0.value - current) < abs($1.value - current) }
+        for entry in items { entry.item.state = entry.item === nearest?.item ? .on : .off }
+    }
+
+    @objc private func toggleLaser() {
+        coordinator?.toggleLaser()
+        refreshChecks()
+    }
+
+    @objc private func setAccent(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let accent = AccentChoice(rawValue: raw) else { return }
+        coordinator?.setAccent(accent)
+        refreshChecks()
+    }
+
+    @objc private func setLookSize(_ sender: NSMenuItem) {
+        guard let value = (sender.representedObject as? NSNumber)?.doubleValue else { return }
+        coordinator?.setHighlightSize(value)
+        refreshChecks()
+    }
+
+    @objc private func setLookIntensity(_ sender: NSMenuItem) {
+        guard let value = (sender.representedObject as? NSNumber)?.doubleValue else { return }
+        coordinator?.setHighlightIntensity(value)
+        refreshChecks()
+    }
+
+    @objc private func setLookDim(_ sender: NSMenuItem) {
+        guard let value = (sender.representedObject as? NSNumber)?.doubleValue else { return }
+        coordinator?.setLensDim(value)
         refreshChecks()
     }
 

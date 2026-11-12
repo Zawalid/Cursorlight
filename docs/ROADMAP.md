@@ -17,17 +17,17 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 | Shake to toggle highlight, stays on until next shake | V1 | done |
 | Click ripples | V1 | done |
 | System cursor size (0.5x to 4x) with crash restore | V1 | done |
-| Highlight colour, size, intensity, dim amount settings | V1 | open |
+| Highlight colour, size, intensity, dim amount settings | V1 | done (menu only; real UI in M5) |
 | Screen dim around Lens (spotlight) as a separate switch | V1 | open |
 | Auto colour that stays visible on light and dark backgrounds | V1.1 | open |
-| High-contrast and colour-blind-safe palettes | V1 | open (cheap) |
+| High-contrast palette (yellow, full strength) | V1 | done; colour-blind-safe check open |
 | Cursor locator on display switch (brief pulse when the cursor jumps displays) | V1.1 | open |
 | Custom cursor arrows (SkyLight research, clean-room) | LATER | open |
 
 ### B. Point
 | Feature | Tier | Status |
 |---|---|---|
-| Laser: comet trail that fades by event time, while a key is held | V1 | open |
+| Laser: comet trail that fades by event time | V1 | done as menu toggle; held-key trigger in M4 |
 | Click pulse tuned per style | V1 | partly done |
 | Magnifier lens following the cursor | V1.1 | open |
 | Numbered pins (1, 2, 3 markers that fade) | V1.1 | open |
@@ -59,7 +59,7 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 ### E. Profiles, apps, displays
 | Feature | Tier | Status |
 |---|---|---|
-| Settings store, persisted, versioned | V1 | next |
+| Settings store, persisted, versioned | V1 | done |
 | Profiles: Stream, Meeting, Recording | V1 | open |
 | Per-app rule: use profile X or turn off | V1 | open |
 | Per-display: all displays or one | V1 | open |

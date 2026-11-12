@@ -103,8 +103,12 @@ public enum Palette {
 
     /// Accent for a click ripple of the given button.
     public static func rippleAccent(for style: HighlightStyle, button: MouseButton) -> RGBA {
-        let base = accent(for: style)
-        return button == .right ? base.hueRotated(by: rightClickHueShift) : base
+        rippleAccent(base: accent(for: style), button: button)
+    }
+
+    /// Same, from an already chosen accent.
+    public static func rippleAccent(base: RGBA, button: MouseButton) -> RGBA {
+        button == .right ? base.hueRotated(by: rightClickHueShift) : base
     }
 }
 

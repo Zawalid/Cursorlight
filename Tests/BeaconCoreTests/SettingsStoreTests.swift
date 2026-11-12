@@ -77,4 +77,14 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.settings.highlightStyle, .keyline)
         XCTAssertTrue(store.settings.clickRipples)
     }
+
+    func testLookSettingsPersistAndClamp() {
+        let store = SettingsStore(defaults: defaults)
+        store.update { $0.accent = .teal; $0.highlightSize = 5; $0.highlightIntensity = 0.6; $0.lensDim = 0.7 }
+        let reloaded = SettingsStore(defaults: defaults)
+        XCTAssertEqual(reloaded.settings.accent, .teal)
+        XCTAssertEqual(reloaded.settings.highlightSize, HighlightLook.sizeRange.upperBound, accuracy: 0.0001)
+        XCTAssertEqual(reloaded.settings.look.intensity, 0.6, accuracy: 0.0001)
+        XCTAssertEqual(reloaded.settings.look.lensDim, 0.7, accuracy: 0.0001)
+    }
 }
