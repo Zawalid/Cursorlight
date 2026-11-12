@@ -22,10 +22,16 @@ public final class SettingsStore {
         }
     }
 
+    /// The profile whose snapshot follows every change to the look and drawing settings. nil: none.
+    public var liveProfileID: String?
+
     public func update(_ change: (inout BeaconSettings) -> Void) {
         var next = settings
         change(&next)
         next = next.sanitized()
+        if let live = liveProfileID, let index = next.profiles.firstIndex(where: { $0.id == live }) {
+            next.profiles[index].snapshot = next.snapshot
+        }
         guard next != settings else { return }
         settings = next
         save()

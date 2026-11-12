@@ -23,6 +23,11 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     /// Seconds a finished stroke stays before it fades.
     public var inkFadeAfter: Double
     public var welcomeSeen: Bool
+    public var profiles: [Profile]
+    /// The profile the user last chose; per-app rules apply on top of it.
+    public var baseProfileID: String
+    public var appRules: [AppRule]
+    public var displayScope: DisplayScope
 
     public static let inkFadeRange: ClosedRange<Double> = 0.8...8
 
@@ -44,7 +49,11 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkCleanup: true,
         triggers: TriggerSettings(),
         inkFadeAfter: 2,
-        welcomeSeen: false
+        welcomeSeen: false,
+        profiles: Profile.presets(),
+        baseProfileID: Profile.streamID,
+        appRules: [],
+        displayScope: .all
     )
 
     public init(
@@ -53,7 +62,11 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkStyle: InkStyle = .marker, inkColor: InkColor = .red, inkCleanup: Bool = true,
         triggers: TriggerSettings = TriggerSettings(),
         inkFadeAfter: Double = 2,
-        welcomeSeen: Bool = false
+        welcomeSeen: Bool = false,
+        profiles: [Profile] = Profile.presets(),
+        baseProfileID: String = Profile.streamID,
+        appRules: [AppRule] = [],
+        displayScope: DisplayScope = .all
     ) {
         self.version = version
         self.highlightStyle = highlightStyle
@@ -69,11 +82,16 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.triggers = triggers
         self.inkFadeAfter = inkFadeAfter
         self.welcomeSeen = welcomeSeen
+        self.profiles = profiles
+        self.baseProfileID = baseProfileID
+        self.appRules = appRules
+        self.displayScope = displayScope
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
         case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, welcomeSeen
+        case profiles, baseProfileID, appRules, displayScope
     }
 
     public init(from decoder: Decoder) throws {
@@ -93,6 +111,19 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         triggers = (try? c.decode(TriggerSettings.self, forKey: .triggers)) ?? d.triggers
         inkFadeAfter = (try? c.decode(Double.self, forKey: .inkFadeAfter)) ?? d.inkFadeAfter
         welcomeSeen = (try? c.decode(Bool.self, forKey: .welcomeSeen)) ?? d.welcomeSeen
+        baseProfileID = (try? c.decode(String.self, forKey: .baseProfileID)) ?? d.baseProfileID
+        appRules = (try? c.decode([AppRule].self, forKey: .appRules)) ?? d.appRules
+        displayScope = (try? c.decode(DisplayScope.self, forKey: .displayScope)) ?? d.displayScope
+        // Settings saved before profiles existed: their current look becomes the Stream profile.
+        if let stored = try? c.decode([Profile].self, forKey: .profiles), !stored.isEmpty {
+            profiles = stored
+        } else {
+            profiles = Profile.presets(stream: ProfileSnapshot(
+                highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
+                highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
+                inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter
+            ))
+        }
     }
 
     /// Returns a copy with every value forced into its valid range.
@@ -103,7 +134,32 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         copy.highlightIntensity = Self.clamp(highlightIntensity, HighlightLook.intensityRange, fallback: 1)
         copy.lensDim = Self.clamp(lensDim, HighlightLook.dimRange, fallback: 0.5)
         copy.inkFadeAfter = Self.clamp(inkFadeAfter, Self.inkFadeRange, fallback: 2)
+        if !copy.profiles.contains(where: { $0.id == copy.baseProfileID }) {
+            copy.baseProfileID = copy.profiles.first?.id ?? Profile.streamID
+        }
         return copy
+    }
+
+    /// The current look and drawing choices as a profile snapshot.
+    public var snapshot: ProfileSnapshot {
+        ProfileSnapshot(
+            highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
+            highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
+            inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter
+        )
+    }
+
+    public mutating func apply(_ s: ProfileSnapshot) {
+        highlightStyle = s.highlightStyle
+        accent = s.accent
+        highlightSize = s.highlightSize
+        highlightIntensity = s.highlightIntensity
+        lensDim = s.lensDim
+        clickRipples = s.clickRipples
+        inkStyle = s.inkStyle
+        inkColor = s.inkColor
+        inkCleanup = s.inkCleanup
+        inkFadeAfter = s.inkFadeAfter
     }
 
     private static func clamp(_ value: Double, _ range: ClosedRange<Double>, fallback: Double) -> Double {

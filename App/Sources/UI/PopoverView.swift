@@ -10,7 +10,27 @@ struct PopoverView: View {
                 BrandMark().frame(width: 24, height: 24)
                 Text(Branding.appName).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.text)
                 Spacer()
-                Pill(text: model.isPaused ? "Paused" : "On", tint: model.isPaused ? Theme.warn : Theme.ok)
+                Pill(text: model.isPaused ? "Paused" : (model.isOffForApp ? "Off here" : "On"), tint: (model.isPaused || model.isOffForApp) ? Theme.warn : Theme.ok)
+            }
+            if model.isOffForApp {
+                Text("Beacon is off for the frontmost app.").font(.system(size: 12)).foregroundStyle(Theme.warn).padding(.top, 12)
+            }
+            Text("PROFILE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.faint).padding(.top, 16).padding(.bottom, 8)
+            HStack(spacing: 8) {
+                ForEach(model.profiles.prefix(4)) { profile in
+                    let active = model.appliedProfileID == profile.id
+                    Button { model.chooseProfile(profile.id) } label: {
+                        VStack(spacing: 2) {
+                            Text(profile.name).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text).lineLimit(1)
+                            Text(profile.snapshot.highlightStyle.displayName).font(.system(size: 10)).foregroundStyle(Theme.dim)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 8)
+                        .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(active ? Theme.accent : Theme.line, lineWidth: active ? 1.5 : 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(active ? .isSelected : [])
+                }
             }
             Text("NOW").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.faint).padding(.top, 16).padding(.bottom, 8)
             HStack(spacing: 8) {

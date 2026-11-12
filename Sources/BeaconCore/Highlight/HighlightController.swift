@@ -68,6 +68,8 @@ public final class HighlightController {
     public private(set) var laserModel: HighlightModel
     /// Called after the on/off state or the style changes, so menus can refresh.
     public var onChange: (() -> Void)?
+    /// Which overlay windows show the highlight (display scope). Change it with `setWindowFilter`.
+    private var windowFilter: @MainActor (OverlayWindow) -> Bool = { _ in true }
 
     private let windows: @MainActor () -> [OverlayWindow]
     private let pointer: @MainActor () -> CGPoint
@@ -149,6 +151,12 @@ public final class HighlightController {
         reconcile()
         redraw()
         wake()
+    }
+
+    /// Limits the highlight to some displays and rebuilds the hosts at once.
+    public func setWindowFilter(_ filter: @escaping @MainActor (OverlayWindow) -> Bool) {
+        windowFilter = filter
+        windowsChanged()
     }
 
     func systemWillSleep() {
@@ -264,7 +272,7 @@ public final class HighlightController {
 
     /// Follows the current overlay windows. Called on start and when the window set changes, never per event.
     private func reconcile() {
-        let current = Dictionary(windows().map { (ObjectIdentifier($0), $0) }, uniquingKeysWith: { first, _ in first })
+        let current = Dictionary(windows().filter { windowFilter($0) }.map { (ObjectIdentifier($0), $0) }, uniquingKeysWith: { first, _ in first })
         let plan = HostPlan.plan(existing: Set(hosts.keys), current: Set(current.keys))
         for id in plan.remove {
             if let host = hosts.removeValue(forKey: id) { remove(host) }

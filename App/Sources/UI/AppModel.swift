@@ -1,6 +1,7 @@
 import AppKit
 import BeaconCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The bridge between the coordinator and the views. Views read settings from here and call its methods; every
 /// change bumps `revision` so SwiftUI redraws. Holds no behavior of its own.
@@ -29,6 +30,44 @@ final class AppModel: ObservableObject {
     var needsInputMonitoring: Bool { coordinator.needsInputMonitoring }
     var failedHotkeys: [HotKeyAction] { coordinator.failedHotkeys }
     var cursorScale: Double { Double(coordinator.cursorSize.currentScale ?? 1) }
+
+    // MARK: Profiles
+
+    var profiles: [Profile] { settings.profiles }
+    var appliedProfileID: String { coordinator.appliedProfileID ?? settings.baseProfileID }
+    var isOffForApp: Bool { coordinator.isOffForApp }
+    var displayScope: DisplayScope { settings.displayScope }
+
+    func chooseProfile(_ id: String) { coordinator.chooseProfile(id); bump() }
+    func addProfile() { coordinator.addProfile(); bump() }
+    func deleteProfile(_ id: String) { coordinator.deleteProfile(id); bump() }
+    func setDisplayScope(_ scope: DisplayScope) { coordinator.setDisplayScope(scope); bump() }
+
+    /// Sets the profile for an app, or nil to switch Beacon off while it is frontmost.
+    func setRule(_ rule: AppRule, profileID: String?) {
+        var updated = rule
+        updated.profileID = profileID
+        coordinator.setAppRule(updated)
+        bump()
+    }
+
+    func removeRule(_ rule: AppRule) { coordinator.removeAppRule(bundleID: rule.bundleID); bump() }
+
+    /// Asks the user for an app and adds a rule for it, starting with the current base profile.
+    func addRuleFromPanel() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Add"
+        panel.message = "Choose an app to give its own profile"
+        guard panel.runModal() == .OK, let url = panel.url, let bundle = Bundle(url: url), let id = bundle.bundleIdentifier else { return }
+        let name = (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+            ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String)
+            ?? url.deletingPathExtension().lastPathComponent
+        coordinator.setAppRule(AppRule(bundleID: id, appName: name, profileID: settings.baseProfileID))
+        bump()
+    }
 
     // MARK: Effects
 

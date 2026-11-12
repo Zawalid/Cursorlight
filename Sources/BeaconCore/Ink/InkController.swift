@@ -24,6 +24,7 @@ public final class InkController {
     /// True while the input windows are up and the drag draws.
     public private(set) var isActive = false
     public var onChange: (() -> Void)?
+    private var windowFilter: @MainActor (OverlayWindow) -> Bool = { _ in true }
 
     private let windows: @MainActor () -> [OverlayWindow]
     private let clock: @MainActor () -> TimeInterval
@@ -77,6 +78,12 @@ public final class InkController {
         guard isRunning else { return }
         reconcile()
         if isActive { rebuildInputs() }
+    }
+
+    /// Limits Ink to some displays and rebuilds the hosts at once.
+    public func setWindowFilter(_ filter: @escaping @MainActor (OverlayWindow) -> Bool) {
+        windowFilter = filter
+        windowsChanged()
     }
 
     // MARK: Commands
@@ -179,7 +186,7 @@ public final class InkController {
     }
 
     private func reconcile() {
-        let current = Dictionary(windows().map { (ObjectIdentifier($0), $0) }, uniquingKeysWith: { first, _ in first })
+        let current = Dictionary(windows().filter { windowFilter($0) }.map { (ObjectIdentifier($0), $0) }, uniquingKeysWith: { first, _ in first })
         let plan = HostPlan.plan(existing: Set(hosts.keys), current: Set(current.keys))
         for id in plan.remove {
             if let host = hosts.removeValue(forKey: id) { remove(host) }

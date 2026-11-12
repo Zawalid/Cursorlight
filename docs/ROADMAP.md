@@ -60,9 +60,9 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 | Feature | Tier | Status |
 |---|---|---|
 | Settings store, persisted, versioned | V1 | done |
-| Profiles: Stream, Meeting, Recording | V1 | open |
-| Per-app rule: use profile X or turn off | V1 | open |
-| Per-display: all displays or one | V1 | open |
+| Profiles: Stream, Meeting, Recording, plus saved custom ones | V1 | done, untested on real desktop |
+| Per-app rule: use profile X or turn off | V1 | done, untested on real desktop |
+| Per-display: all displays or main only | V1 | done, multi-display untested |
 | Import and export a profile as a file | V1.1 | open |
 
 ### F. Share safety

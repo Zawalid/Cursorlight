@@ -11,6 +11,9 @@ final class AppCoordinator {
     private let hotkeys = CarbonHotKeys()
     private let modifiers = ModifierGestureMonitor()
     private var router: TriggerRouter
+    private var switcher: ProfileSwitcher
+    private(set) var appliedProfileID: String?
+    private var workspaceObserver: NSObjectProtocol?
     let settings: SettingsStore
     let highlight: HighlightController
     let ink: InkController
@@ -21,6 +24,8 @@ final class AppCoordinator {
     /// Called after pause state or trigger settings change, so the menu can refresh.
     var onTriggersChange: (() -> Void)?
     private(set) var isPaused = false
+    /// True while a per-app rule has switched Beacon off for the frontmost app.
+    private(set) var isOffForApp = false
 
     init(cursorSize: CursorSizeController, settings: SettingsStore = SettingsStore()) {
         self.cursorSize = cursorSize
@@ -28,6 +33,7 @@ final class AppCoordinator {
         let current = settings.settings
         shake = ShakeRecognizer(sensitivity: current.shakeSensitivity)
         router = TriggerRouter(settings: current.triggers)
+        switcher = ProfileSwitcher(base: current.baseProfileID)
         highlight = HighlightController(
             overlays: overlays,
             style: current.highlightStyle,
@@ -60,6 +66,130 @@ final class AppCoordinator {
         hotkeys.onPress = { [weak self] action in self?.handle(.hotkey(action)) }
         modifiers.onEvent = { [weak self] event in self?.handle(event) }
         applyTriggers()
+        applyDisplayScope()
+        switcher.frontmostChanged(to: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+        workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            let bundle = app?.bundleIdentifier
+            MainActor.assumeIsolated { self?.frontmostAppChanged(to: bundle) }
+        }
+        reevaluateProfile()
+    }
+
+    // MARK: Profiles
+
+    private func frontmostAppChanged(to bundleID: String?) {
+        // Using Beacon's own windows must not switch profiles.
+        guard bundleID != Bundle.main.bundleIdentifier else { return }
+        switcher.frontmostChanged(to: bundleID)
+        reevaluateProfile()
+    }
+
+    /// Applies whatever the switcher selects: a profile, or off for this app.
+    private func reevaluateProfile() {
+        let current = settings.settings
+        let selection = switcher.selection(rules: current.appRules, knownProfiles: Set(current.profiles.map(\.id)))
+        switch selection {
+        case let .profile(id):
+            setOffForApp(false)
+            if id != appliedProfileID { applyProfile(id) }
+        case .off:
+            setOffForApp(true)
+        }
+        onTriggersChange?()
+    }
+
+    private func setOffForApp(_ off: Bool) {
+        guard off != isOffForApp else { return }
+        isOffForApp = off
+        router.isPaused = isPaused || off
+        if off {
+            highlight.setOn(false)
+            highlight.setLaser(false)
+            ink.deactivate()
+        }
+    }
+
+    private func applyProfile(_ id: String) {
+        guard let profile = settings.settings.profiles.first(where: { $0.id == id }) else { return }
+        settings.liveProfileID = nil
+        settings.update { $0.apply(profile.snapshot) }
+        let current = settings.settings
+        highlight.setStyle(current.highlightStyle)
+        highlight.setLook(current.look)
+        highlight.setRipplesEnabled(current.clickRipples)
+        ink.setStyle(current.inkStyle)
+        ink.setColor(current.inkColor)
+        ink.setCleanupEnabled(current.inkCleanup)
+        ink.setFadeAfter(current.inkFadeAfter)
+        settings.liveProfileID = id
+        appliedProfileID = id
+    }
+
+    /// The user picked a profile: it wins until the frontmost app changes.
+    func chooseProfile(_ id: String) {
+        guard settings.settings.profiles.contains(where: { $0.id == id }) else { return }
+        settings.update { $0.baseProfileID = id }
+        switcher.chooseManually(id)
+        reevaluateProfile()
+    }
+
+    /// Saves the current look as a new profile and switches to it.
+    func addProfile() {
+        let existing = settings.settings.profiles
+        var number = 1
+        while existing.contains(where: { $0.name == "Custom \(number)" }) { number += 1 }
+        let id = "custom-\(UUID().uuidString.prefix(8).lowercased())"
+        let profile = Profile(id: id, name: "Custom \(number)", snapshot: settings.settings.snapshot)
+        settings.update { $0.profiles.append(profile) }
+        chooseProfile(id)
+    }
+
+    func deleteProfile(_ id: String) {
+        guard settings.settings.profiles.count > 1 else { return }
+        let wasLive = settings.liveProfileID == id
+        if wasLive { settings.liveProfileID = nil }
+        settings.update { s in
+            s.profiles.removeAll { $0.id == id }
+            for index in s.appRules.indices where s.appRules[index].profileID == id { s.appRules[index].profileID = nil }
+        }
+        let remaining = settings.settings
+        if switcher.base == id { switcher.setBase(remaining.baseProfileID) }
+        if appliedProfileID == id { appliedProfileID = nil }
+        reevaluateProfile()
+    }
+
+    func setAppRule(_ rule: AppRule) {
+        settings.update { s in
+            if let index = s.appRules.firstIndex(where: { $0.bundleID == rule.bundleID }) {
+                s.appRules[index] = rule
+            } else {
+                s.appRules.append(rule)
+            }
+        }
+        reevaluateProfile()
+    }
+
+    func removeAppRule(bundleID: String) {
+        settings.update { $0.appRules.removeAll { $0.bundleID == bundleID } }
+        reevaluateProfile()
+    }
+
+    func setDisplayScope(_ scope: DisplayScope) {
+        settings.update { $0.displayScope = scope }
+        applyDisplayScope()
+        onTriggersChange?()
+    }
+
+    private func applyDisplayScope() {
+        let scope = settings.settings.displayScope
+        let filter: @MainActor (OverlayWindow) -> Bool = { window in
+            scope == .all || window.displayID == CGMainDisplayID()
+        }
+        highlight.setWindowFilter(filter)
+        ink.setWindowFilter(filter)
     }
 
     // MARK: Triggers
@@ -92,7 +222,7 @@ final class AppCoordinator {
 
     func setPaused(_ paused: Bool) {
         isPaused = paused
-        router.isPaused = paused
+        router.isPaused = paused || isOffForApp
         if paused {
             highlight.setOn(false)
             highlight.setLaser(false)
@@ -247,6 +377,8 @@ final class AppCoordinator {
         tracker.stop()
         clicks.onButton = nil
         clicks.stop()
+        if let workspaceObserver { NSWorkspace.shared.notificationCenter.removeObserver(workspaceObserver) }
+        workspaceObserver = nil
         modifiers.stop()
         hotkeys.unregisterAll()
         ink.stop()
