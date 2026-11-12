@@ -3,24 +3,24 @@ import SwiftUI
 
 /// Colors, type and metrics for every screen. The accent comes from Branding; everything else is neutral.
 enum Theme {
-    // Solid warm dark. No glass, no gradients. Surfaces are told apart by tone and hairlines, not by boxes and shadows.
-    // Ember is the only saturated color and appears only on what is selected or on.
-    static let window = Color(red: 0.078, green: 0.075, blue: 0.082)       // #141315
-    static let sidebar = Color(red: 0.059, green: 0.055, blue: 0.063)      // #0F0E10
-    static let card = Color(red: 0.110, green: 0.106, blue: 0.118)         // #1C1B1E
-    static let raised = Color(red: 0.141, green: 0.137, blue: 0.153)       // #242327
-    static let cardHover = Color(red: 0.173, green: 0.169, blue: 0.188)
-    static let stage = Color(red: 0.043, green: 0.043, blue: 0.051)        // #0B0B0D
-    static let well = Color.white.opacity(0.05)
-    static let line = Color.white.opacity(0.08)
-    static let fillSoft = Color.white.opacity(0.06)
-    static let fillMid = Color.white.opacity(0.14)
-    static let text = Color(red: 0.925, green: 0.914, blue: 0.894)         // #ECE9E4
-    static let dim = Color(red: 0.631, green: 0.616, blue: 0.588)          // #A19D96
-    static let faint = Color(red: 0.435, green: 0.420, blue: 0.396)        // #6F6B65
+    // System semantic colors, so the app follows light and dark like any Mac app. The only brand color is Ember, which is
+    // also the app's accent color, so native controls pick it up on their own. The Stage is a screen and stays dark.
+    static let window = Color(nsColor: .windowBackgroundColor)
+    static let sidebar = Color.clear
+    static let card = Color(nsColor: .controlBackgroundColor)
+    static let raised = Color(nsColor: .quaternarySystemFill)
+    static let cardHover = Color(nsColor: .tertiarySystemFill)
+    static let stage = Color(red: 0.055, green: 0.055, blue: 0.063)
+    static let well = Color(nsColor: .quaternarySystemFill)
+    static let line = Color(nsColor: .separatorColor)
+    static let fillSoft = Color(nsColor: .quaternarySystemFill)
+    static let fillMid = Color(nsColor: .tertiarySystemFill)
+    static let text = Color(nsColor: .labelColor)
+    static let dim = Color(nsColor: .secondaryLabelColor)
+    static let faint = Color(nsColor: .tertiaryLabelColor)
     static let accent = Color(rgba: RGBA(hex: Branding.accentHex))
-    static let ok = Color(red: 0.30, green: 0.77, blue: 0.43)
-    static let warn = Color(red: 0.90, green: 0.65, blue: 0.23)
+    static let ok = Color(nsColor: .systemGreen)
+    static let warn = Color(nsColor: .systemOrange)
     static let radius: CGFloat = 16
 
     static func title(_ text: String) -> some View {

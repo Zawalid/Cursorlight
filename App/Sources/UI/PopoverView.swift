@@ -56,7 +56,6 @@ struct PopoverView: View {
         .padding(16)
         .frame(width: 320)
         .background(Theme.window)
-        .preferredColorScheme(.dark)
     }
 
     private func quick(_ title: String, _ effect: EffectKind) -> some View {

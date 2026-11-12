@@ -13,7 +13,7 @@ final class FirstClickHostingView<Content: View>: NSHostingView<Content> {
 final class WindowControllers {
     private let model: AppModel
     private var settings: NSWindow?
-    private var settingsHost: FirstClickHostingView<AnyView>?
+    private var settingsController: NSHostingController<AnyView>?
     private var welcome: NSWindow?
 
     init(model: AppModel) {
@@ -27,19 +27,23 @@ final class WindowControllers {
     }
 
     func showSettings(_ page: SettingsPage) {
-        let root = AnyView(SettingsView(page: page).environmentObject(model))
-        if settings != nil, let host = settingsHost {
-            host.rootView = root
+        let root = AnyView(SettingsView(page: page).environmentObject(model).tint(Theme.accent))
+        if settings != nil, let controller = settingsController {
+            controller.rootView = root
         } else {
-            let window = Self.makeWindow(size: NSSize(width: 1040, height: 720), resizable: true)
+            let window = Self.makeWindow(size: NSSize(width: 1000, height: 700), resizable: true)
             window.title = Branding.appName
-            let host = FirstClickHostingView(rootView: root)
-            Self.install(host, in: window)
-            settingsHost = host
-            window.setContentSize(NSSize(width: 1040, height: 720))
-            window.contentMinSize = NSSize(width: 940, height: 640)
+            window.titlebarAppearsTransparent = false
+            window.titleVisibility = .visible
+            let controller = NSHostingController(rootView: root)
+            // Lets the SwiftUI view's toolbar become the window's real toolbar.
+            controller.sceneBridgingOptions = [.toolbars, .title]
+            window.contentViewController = controller
+            settingsController = controller
+            window.setContentSize(NSSize(width: 1000, height: 700))
+            window.contentMinSize = NSSize(width: 900, height: 600)
             window.center()
-            window.setFrameAutosaveName("BeaconSettings.v5")
+            window.setFrameAutosaveName("BeaconSettings.v6")
             settings = window
         }
         Self.present(settings)
@@ -94,9 +98,7 @@ final class WindowControllers {
         window.isReleasedWhenClosed = false
         // Open on the Space the person is looking at, including a full-screen one, instead of on another Space.
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
-        window.isOpaque = true
-        window.backgroundColor = NSColor(red: 0.078, green: 0.075, blue: 0.082, alpha: 1)
-        window.appearance = NSAppearance(named: .darkAqua)
+        // System appearance and background: the app follows light and dark like any other Mac app.
         return window
     }
 

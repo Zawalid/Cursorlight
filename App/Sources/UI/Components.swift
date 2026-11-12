@@ -83,37 +83,13 @@ struct BeaconSlider: View {
 struct BeaconSegmented<Value: Hashable>: View {
     let options: [(value: Value, title: String)]
     @Binding var selection: Value
-    /// Kept for old call sites; the control sizes itself.
     var fills = false
-    @Namespace private var thumb
-    @State private var hovered: Int?
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(options.indices, id: \.self) { index in
-                let on = options[index].value == selection
-                Button { withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) { selection = options[index].value } } label: {
-                    Text(options[index].title)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(on || hovered == index ? Theme.text : Theme.dim)
-                        .lineLimit(1)
-                        .padding(.horizontal, 12).frame(height: 26)
-                        .background {
-                            if on {
-                                Capsule().fill(Theme.cardHover)
-                                    .overlay(Capsule().stroke(Color.white.opacity(0.12)))
-                                    .matchedGeometryEffect(id: "seg", in: thumb)
-                            }
-                        }
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .onHover { hovered = $0 ? index : (hovered == index ? nil : hovered) }
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
+        Picker("", selection: $selection) {
+            ForEach(options.indices, id: \.self) { Text(options[$0].title).tag(options[$0].value) }
         }
-        .padding(2)
-        .background(Color.white.opacity(0.06), in: Capsule())
+        .pickerStyle(.segmented).labelsHidden().fixedSize()
     }
 }
 

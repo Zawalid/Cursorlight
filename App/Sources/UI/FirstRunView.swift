@@ -42,7 +42,6 @@ struct FirstRunView: View {
         .padding(.horizontal, 38).padding(.vertical, 32)
         .frame(width: 580, height: 520)
         .background(Theme.window)
-        .preferredColorScheme(.dark)
     }
 
     private func advance() {

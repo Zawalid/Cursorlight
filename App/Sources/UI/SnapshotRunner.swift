@@ -19,7 +19,16 @@ enum SnapshotRunner {
         coordinator.setAppRule(AppRule(bundleID: "com.apple.iWork.Keynote", appName: "Keynote", profileID: nil))
         let model = AppModel(coordinator: coordinator, updater: AppUpdater(startingUpdater: false))
         for page in SettingsPage.allCases {
-            renderWindowed(SettingsView(page: page).environmentObject(model), size: CGSize(width: 1040, height: 720), name: "settings-\(page.rawValue)", into: directory)
+            for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
+                renderWindowed(
+                    SettingsView(page: page).environmentObject(model).tint(Theme.accent), size: CGSize(width: 1040, height: 720),
+                    appearance: appearance, name: "settings-\(page.rawValue)-\(name)", into: directory
+                )
+            }
+        }
+        for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
+            renderWindowed(LookPage().environmentObject(model).tint(Theme.accent), size: CGSize(width: 780, height: 720), appearance: appearance, name: "page-look-\(name)", into: directory)
+            renderWindowed(TriggersPage().environmentObject(model).tint(Theme.accent), size: CGSize(width: 780, height: 720), appearance: appearance, name: "page-keys-\(name)", into: directory)
         }
         render(PopoverView().environmentObject(model), name: "popover", into: directory)
         for step in 0..<3 {
@@ -29,11 +38,11 @@ enum SnapshotRunner {
     }
 
     /// Renders in a real but never-shown window, so native controls (switch, slider, menus) draw as they do on screen.
-    private static func renderWindowed<V: View>(_ view: V, size: CGSize, name: String, into directory: String) {
+    private static func renderWindowed<V: View>(_ view: V, size: CGSize, appearance: NSAppearance.Name = .darkAqua, name: String, into directory: String) {
         let host = NSHostingView(rootView: view)
         host.frame = CGRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: host.frame, styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.appearance = NSAppearance(named: appearance)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
         RunLoop.current.run(until: Date().addingTimeInterval(0.5))

@@ -57,3 +57,4 @@ targets:
         # One signed binary: a separate debug dylib signed differently from the app fails to load under hardened runtime.
         ENABLE_DEBUG_DYLIB: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

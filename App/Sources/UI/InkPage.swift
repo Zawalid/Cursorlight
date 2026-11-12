@@ -1,54 +1,6 @@
 import BeaconCore
 import SwiftUI
 
-struct InkPage: View {
-    @EnvironmentObject private var model: AppModel
-    private var settings: BeaconSettings { model.settings }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Ink and laser", subtitle: "Draw on the screen. Strokes fade on their own, and rough shapes straighten themselves.")
-                .padding(.bottom, 20)
-            InkPreview(style: settings.inkStyle, color: settings.inkColor, cleanup: settings.inkCleanup, fade: settings.inkFadeAfter)
-            HStack(spacing: 10) {
-                ForEach(InkStyle.allCases, id: \.self) { style in
-                    ChoiceCard(title: style.displayName, isSelected: settings.inkStyle == style) {
-                        model.setInkStyle(style)
-                    } thumbnail: {
-                        InkSwatchStroke(style: style, color: settings.inkColor)
-                    }
-                }
-            }
-            .padding(.top, 16)
-            SettingsGroup {
-                SettingRow(title: "Pen color", subtitle: "Press 1 to 5 while drawing") {
-                    HStack(spacing: 4) {
-                        ForEach(InkColor.allCases, id: \.self) { color in
-                            SwatchButton(fill: AnyShapeStyle(Color(rgba: color.rgba)), isSelected: settings.inkColor == color, label: color.displayName) {
-                                model.setInkColor(color)
-                            }
-                        }
-                    }
-                }
-                SettingRow(title: "Clean up shapes", subtitle: "Ellipse, rectangle, line, underline, arrow") {
-                    BeaconToggle(isOn: Binding(get: { settings.inkCleanup }, set: { model.setInkCleanup($0) }))
-                }
-                SettingRow(title: "Fade after", subtitle: String(format: "%.1f seconds", settings.inkFadeAfter), showsDivider: false) {
-                    BeaconSlider(value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade($0) }), range: BeaconSettings.inkFadeRange)
-                }
-            }
-            .padding(.top, 18)
-            SettingsGroup {
-                SettingRow(title: "Start drawing", subtitle: "Or use the trigger set on the Triggers page", showsDivider: false) {
-                    Button(model.isOn(.ink) ? "Stop ink" : "Start ink") { model.toggle(.ink) }
-                        .buttonStyle(GhostButtonStyle())
-                }
-            }
-            .padding(.top, 18)
-        }
-    }
-}
-
 /// A looping before-and-after: a rough loop is drawn, snaps into an ellipse, then fades.
 struct InkPreview: View {
     let style: InkStyle
