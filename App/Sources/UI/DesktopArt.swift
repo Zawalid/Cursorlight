@@ -1,3 +1,4 @@
+import AppKit
 import BeaconCore
 import SwiftUI
 
@@ -106,28 +107,33 @@ enum DesktopArt {
     }
 
     private static func dock(_ c: GraphicsContext, active: Int) {
-        let items: [(String, String, String)] = [
-            ("face.smiling", "#6CC7FF", "#1566E6"),
-            ("play.rectangle.fill", "#7DB6FF", "#3A6FE0"),
-            ("chevron.left.forwardslash.chevron.right", "#FFB15A", "#F0603A"),
-            ("safari", "#6CD0FF", "#1E7BEA"),
-            ("envelope.fill", "#5DB8FF", "#2A6FE8"),
-            ("note.text", "#FFE27A", "#F5B82E"),
-            ("music.note", "#FF7A8A", "#E5334F"),
+        // Real app icons, read from this Mac at run time. Where an app is not installed, a drawn tile stands in.
+        let items: [(ids: [String], symbol: String, top: String, bottom: String)] = [
+            (["com.apple.finder"], "face.smiling", "#6CC7FF", "#1566E6"),
+            (["com.apple.iWork.Keynote", "com.apple.freeform"], "play.rectangle.fill", "#7DB6FF", "#3A6FE0"),
+            (["com.apple.dt.Xcode", "com.apple.Terminal"], "chevron.left.forwardslash.chevron.right", "#FFB15A", "#F0603A"),
+            (["com.apple.Safari"], "safari", "#6CD0FF", "#1E7BEA"),
+            (["com.apple.mail"], "envelope.fill", "#5DB8FF", "#2A6FE8"),
+            (["com.apple.Notes"], "note.text", "#FFE27A", "#F5B82E"),
+            (["com.apple.Music"], "music.note", "#FF7A8A", "#E5334F"),
         ]
-        let icon: CGFloat = 56, gap: CGFloat = 14
+        let icon: CGFloat = 58, gap: CGFloat = 12
         let total = CGFloat(items.count) * icon + CGFloat(items.count - 1) * gap + 28
         let pill = R((1280 - total) / 2, 716, total, 76)
         box(c, pill, 24, .white.opacity(0.14))
         line(c, pill, 24, .white.opacity(0.18))
         for (i, item) in items.enumerated() {
             let x = pill.minX + 14 + CGFloat(i) * (icon + gap)
-            let r = R(x, 726, icon, icon)
-            c.fill(
-                Path(roundedRect: r, cornerRadius: 13, style: .continuous),
-                with: .linearGradient(Gradient(colors: [hx(item.1), hx(item.2)]), startPoint: CGPoint(x: r.midX, y: r.minY), endPoint: CGPoint(x: r.midX, y: r.maxY))
-            )
-            glyph(c, item.0, r.midX, r.midY, size: 27, weight: .semibold, color: .white)
+            let r = R(x, 725, icon, icon)
+            if let image = AppIconCache.shared.icon(for: item.ids) {
+                c.draw(c.resolve(Image(nsImage: image)), in: r)
+            } else {
+                c.fill(
+                    Path(roundedRect: r, cornerRadius: 13, style: .continuous),
+                    with: .linearGradient(Gradient(colors: [hx(item.top), hx(item.bottom)]), startPoint: CGPoint(x: r.midX, y: r.minY), endPoint: CGPoint(x: r.midX, y: r.maxY))
+                )
+                glyph(c, item.symbol, r.midX, r.midY, size: 27, weight: .semibold, color: .white)
+            }
             if i == active {
                 c.fill(Path(ellipseIn: R(r.midX - 2.5, 786, 5, 5)), with: .color(.white.opacity(0.85)))
             }
@@ -392,5 +398,37 @@ enum DesktopArt {
             label(w, o.1, table.minX + 66, y + 10, size: 12, color: hx("#8A8EA0"), anchor: .leading)
             label(w, o.2, table.maxX - 22, y, size: 14, weight: .semibold, color: hx("#23252E"), anchor: .trailing)
         }
+    }
+}
+
+/// App icons read from this Mac, so the preview shows the real ones without Beacon shipping a copy of any artwork.
+/// Looked up once per app; an app that is not installed is remembered as missing.
+final class AppIconCache: @unchecked Sendable {
+    static let shared = AppIconCache()
+
+    private let lock = NSLock()
+    private var found: [String: NSImage] = [:]
+    private var missing: Set<String> = []
+
+    /// The icon of the first installed app among `bundleIDs`.
+    func icon(for bundleIDs: [String]) -> NSImage? {
+        for id in bundleIDs {
+            if let image = icon(id) { return image }
+        }
+        return nil
+    }
+
+    private func icon(_ bundleID: String) -> NSImage? {
+        lock.lock()
+        defer { lock.unlock() }
+        if let image = found[bundleID] { return image }
+        if missing.contains(bundleID) { return nil }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            missing.insert(bundleID)
+            return nil
+        }
+        let image = NSWorkspace.shared.icon(forFile: url.path)
+        found[bundleID] = image
+        return image
     }
 }
