@@ -938,51 +938,107 @@ struct DisplaysPage: View {
     private var screens: [NSScreen] { NSScreen.screens }
 
     var body: some View {
+        let info = ShareStatusInfo(model.shareStatus)
         Form {
             Section {
-                HStack(alignment: .bottom, spacing: 14) {
-                    Spacer()
-                    ForEach(Array(screens.enumerated()), id: \.offset) { index, screen in
-                        let aspect = screen.frame.height / max(screen.frame.width, 1)
-                        let shown = model.displayScope == .all || index == 0
-                        VStack(spacing: 8) {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Theme.stage)
-                                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(shown ? Theme.accent : Theme.line, lineWidth: 2))
-                                .frame(width: 110, height: 110 * aspect)
-                            Text(index == 0 ? "\(screen.localizedName) (main)" : screen.localizedName)
-                                .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ForEach(Array(screens.enumerated()), id: \.offset) { index, screen in
+                            DisplayTile(screen: screen, isMain: index == 0, on: model.displayScope == .all || index == 0)
                         }
                     }
-                    Spacer()
+                    .padding(.vertical, 8).padding(.horizontal, 2)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.vertical, 12)
                 Picker("Show effects on", selection: Binding(get: { model.displayScope }, set: { model.setDisplayScope($0) })) {
                     ForEach(DisplayScope.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }
                 .pickerStyle(.segmented)
+                .disabled(screens.count < 2)
             } header: {
                 Text("Displays")
             } footer: {
-                Text("The main display is the one with the menu bar.")
+                Text(screens.count < 2
+                     ? "Connect a second display to choose where effects show. The main display is the one with the menu bar."
+                     : "The main display is the one with the menu bar.")
             }
             Section {
-                let info = ShareStatusInfo(model.shareStatus)
-                Label { Text(info.title) } icon: { Image(systemName: info.symbol).foregroundStyle(info.tint) }
-                Text(info.body).foregroundStyle(Theme.dim)
-                Picker("I am sharing", selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0) })) {
-                    Text("Not set").tag(DeclaredShare?.none)
-                    Text("Nothing").tag(DeclaredShare?.some(.notSharing))
-                    Text("The whole screen").tag(DeclaredShare?.some(.wholeScreen))
-                    Text("One window").tag(DeclaredShare?.some(.singleWindow))
+                HStack(alignment: .top, spacing: 12) {
+                    ShareGlyph(apps: model.conferencingApps, info: info, size: 30)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(info.title).font(.system(size: 13, weight: .semibold))
+                        Text(info.body).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
+                .padding(.vertical, 4)
+                HStack(spacing: 8) {
+                    shareChoice(.notSharing, "Nothing", "rectangle.slash", "Not on a call")
+                    shareChoice(.wholeScreen, "Screen", "display", "Viewers see effects")
+                    shareChoice(.singleWindow, "A window", "macwindow", "Viewers don't")
+                }
+                .padding(.vertical, 2)
             } header: {
                 Text("Sharing")
             } footer: {
-                Text("Beacon cannot tell what you share, so it asks. Viewers only see effects when you share the whole screen.")
+                Text("Beacon can't tell what you share, so it asks. Click your choice again to clear it. It resets when the call app quits.")
             }
         }
         .page()
+    }
+
+    private func shareChoice(_ value: DeclaredShare, _ title: String, _ symbol: String, _ result: String) -> some View {
+        let on = model.declaredShare == value
+        let tint: Color = value == .singleWindow ? Theme.warn : (value == .wholeScreen ? Theme.ok : Color.white.opacity(0.7))
+        return Button { model.declareShare(on ? nil : value) } label: {
+            VStack(spacing: 6) {
+                Image(systemName: symbol).font(.system(size: 18, weight: .regular)).foregroundStyle(on ? tint : Theme.dim)
+                Text(title).font(.system(size: 12, weight: on ? .semibold : .regular)).foregroundStyle(on ? Theme.text : Theme.dim)
+                Text(result).font(.system(size: 10)).foregroundStyle(on ? tint : Theme.faint).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 12)
+            .background(on ? tint.opacity(0.12) : Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? tint.opacity(0.8) : Color.white.opacity(0.08), lineWidth: on ? 1.5 : 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+}
+
+/// One connected display, drawn in proportion with its name and size. A display where effects are off is dimmed.
+struct DisplayTile: View {
+    let screen: NSScreen
+    let isMain: Bool
+    let on: Bool
+
+    var body: some View {
+        let aspect = screen.frame.height / max(screen.frame.width, 1)
+        let width: CGFloat = 132
+        VStack(spacing: 7) {
+            ZStack(alignment: .top) {
+                LinearGradient(colors: [Color(red: 0.07, green: 0.08, blue: 0.2), Color(red: 0.3, green: 0.12, blue: 0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                RadialGradient(colors: [Color(red: 0.91, green: 0.39, blue: 0.24).opacity(0.5), .clear], center: .bottomTrailing, startRadius: 0, endRadius: width * 0.8)
+                VStack(spacing: 0) {
+                    Rectangle().fill(Color.black.opacity(0.35)).frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Color.white.opacity(0.9))
+                        .frame(width: width * 0.5, height: width * aspect * 0.5).padding(.top, 8)
+                }
+            }
+            .frame(width: width, height: width * aspect)
+            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(on ? Theme.accent : Color.white.opacity(0.15), lineWidth: on ? 2 : 1))
+            .shadow(color: on ? Theme.accent.opacity(0.3) : .clear, radius: 7)
+            .saturation(on ? 1 : 0.2).opacity(on ? 1 : 0.55)
+            VStack(spacing: 2) {
+                HStack(spacing: 5) {
+                    Text(screen.localizedName).font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.text).lineLimit(1)
+                    if isMain { Pill(text: "Main", tint: Theme.accent) }
+                }
+                Text("\(Int(screen.frame.width)) x \(Int(screen.frame.height))  \(on ? "effects on" : "effects off")")
+                    .font(.system(size: 10)).foregroundStyle(on ? Theme.dim : Theme.faint)
+            }
+        }
+        .frame(width: width + 20)
     }
 }
 
