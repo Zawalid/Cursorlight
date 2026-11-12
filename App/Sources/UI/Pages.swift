@@ -308,13 +308,14 @@ struct ValueSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     var format: (Double) -> String = { "\(Int(($0 * 100).rounded()))%" }
+    var valueWidth: CGFloat = 42
 
     var body: some View {
         HStack(spacing: 8) {
             Slider(value: $value, in: range).frame(minWidth: 96)
             Text(format(value))
                 .font(.system(size: 12).monospacedDigit()).foregroundStyle(.secondary)
-                .frame(width: 42, alignment: .trailing)
+                .frame(width: valueWidth, alignment: .trailing)
         }
     }
 }
@@ -562,7 +563,7 @@ struct TriggersPage: View {
                 LabeledContent("Sensitivity") {
                     ValueSlider(
                         value: Binding(get: { model.settings.shakeSensitivity / 100 }, set: { model.setShakeSensitivity($0 * 100) }),
-                        range: 0...1, format: { $0 < 0.34 ? "Hard" : ($0 > 0.66 ? "Easy" : "Medium") }
+                        range: 0...1, format: { $0 < 0.34 ? "Hard" : ($0 > 0.66 ? "Easy" : "Medium") }, valueWidth: 60
                     )
                 }
                 .disabled(!triggers.shakeEnabled)
