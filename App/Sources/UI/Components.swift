@@ -167,12 +167,15 @@ struct SwatchButton: View {
     let fill: AnyShapeStyle
     let isSelected: Bool
     let label: String
+    /// Marks the "follow the style" swatch with a dashed ring.
+    var auto = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Circle().fill(fill).frame(width: 17, height: 17)
                 .overlay(Circle().stroke(Theme.fillMid, lineWidth: 1))
+                .overlay { if auto { Circle().inset(by: 3).stroke(Color.white.opacity(0.85), style: StrokeStyle(lineWidth: 1, dash: [2, 2])) } }
                 .padding(3)
                 .overlay(Circle().stroke(isSelected ? Theme.text : .clear, lineWidth: 1.5))
                 .contentShape(Circle())

@@ -63,47 +63,101 @@ struct LookPage: View {
     var body: some View {
         Form {
             Section {
-                TileRow(
-                    items: HighlightStyle.allCases, selection: settings.highlightStyle, title: { $0.displayName },
-                    select: { model.setStyle($0) }
-                ) { StyleThumbnail(style: $0) }
+                StyleRow(selection: settings.highlightStyle, tint: settings.accent.color.map { Color(rgba: $0) }) { model.setStyle($0) }
+                Text(Self.blurb(settings.highlightStyle))
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             } header: {
                 Text("Style")
-            } footer: {
-                Text(Self.blurb(settings.highlightStyle))
             }
-            Section("Appearance") {
-                LabeledContent("Color") {
+            Section {
+                LabeledContent {
                     HStack(spacing: 0) {
                         ForEach(AccentChoice.allCases, id: \.self) { accent in
-                            SwatchButton(fill: Swatches.fill(for: accent), isSelected: settings.accent == accent, label: accent.displayName) {
-                                model.setAccent(accent)
-                            }
+                            SwatchButton(
+                                fill: accent == .styleDefault ? AnyShapeStyle(Color(rgba: Palette.accent(for: settings.highlightStyle))) : Swatches.fill(for: accent),
+                                isSelected: settings.accent == accent,
+                                label: accent == .styleDefault ? "Match the style" : accent.displayName,
+                                auto: accent == .styleDefault
+                            ) { model.setAccent(accent) }
                         }
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Color")
+                        Text(settings.accent == .styleDefault ? "Matches \(settings.highlightStyle.displayName)" : settings.accent.displayName)
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
                 LabeledContent("Size") {
-                    Slider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), in: HighlightLook.sizeRange).frame(minWidth: 110)
+                    ValueSlider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), range: HighlightLook.sizeRange)
                 }
                 if settings.highlightStyle == .lens {
                     LabeledContent("Screen dim") {
-                        Slider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), in: HighlightLook.dimRange).frame(minWidth: 110)
+                        ValueSlider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), range: HighlightLook.dimRange)
                     }
                 } else {
                     LabeledContent("Intensity") {
-                        Slider(value: Binding(get: { settings.highlightIntensity }, set: { model.setIntensity($0) }), in: HighlightLook.intensityRange)
-                            .frame(minWidth: 110).disabled(settings.accent == .highContrast)
+                        ValueSlider(value: Binding(get: { settings.highlightIntensity }, set: { model.setIntensity($0) }), range: HighlightLook.intensityRange)
+                            .disabled(settings.accent == .highContrast)
                     }
                 }
+            } header: {
+                Text("Appearance")
+            } footer: {
+                if let hint = Self.colorHint(settings.accent) { Text(hint) }
             }
-            Section("Behavior") {
-                Toggle("Click ripples", isOn: Binding(get: { settings.clickRipples }, set: { model.setRipples($0) }))
-                Picker("Pointer size", selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })) {
-                    Text("1x").tag(1.0); Text("1.5x").tag(1.5); Text("2x").tag(2.0); Text("3x").tag(3.0)
+            Section {
+                Toggle(isOn: Binding(get: { settings.clickRipples }, set: { model.setRipples($0) })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Click ripples")
+                        Text("A ring spreads from the pointer on every click.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
                 }
+                LabeledContent {
+                    Picker("Pointer size", selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })) {
+                        Text("1x").tag(1.0); Text("1.5x").tag(1.5); Text("2x").tag(2.0); Text("3x").tag(3.0)
+                    }
+                    .pickerStyle(.segmented).labelsHidden().frame(width: 160)
+                } label: {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Pointer size")
+                        Text("Easier to follow").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Behavior")
+            }
+            Section {
+                Button("Reset look") { resetLook() }
+                    .foregroundStyle(isDefault ? Color.secondary : Theme.accent)
+                    .disabled(isDefault)
+            } footer: {
+                Text("Puts color, size, intensity, dim and ripples back to their defaults. The style stays.")
             }
         }
         .page()
+    }
+
+    private var isDefault: Bool {
+        settings.accent == .styleDefault && settings.highlightSize == 1 && settings.highlightIntensity == 1
+            && settings.lensDim == 0.5 && settings.clickRipples
+    }
+
+    private func resetLook() {
+        model.setAccent(.styleDefault)
+        model.setSize(1)
+        model.setIntensity(1)
+        model.setLensDim(0.5)
+        model.setRipples(true)
+    }
+
+    private static func colorHint(_ accent: AccentChoice) -> String? {
+        switch accent {
+        case .white: "White can disappear on light backgrounds. High contrast stays visible on both."
+        case .highContrast: "High contrast always draws at full strength, so intensity is locked."
+        default: nil
+        }
     }
 
     private static func blurb(_ style: HighlightStyle) -> String {
@@ -118,6 +172,64 @@ struct LookPage: View {
 
     private static func nearest(_ scale: Double) -> Double {
         [1.0, 1.5, 2.0, 3.0].min { abs($0 - scale) < abs($1 - scale) } ?? 1
+    }
+}
+
+/// The five highlight styles in one row of square tiles, drawn in the color you picked so each shows what it will look like.
+struct StyleRow: View {
+    let selection: HighlightStyle
+    let tint: Color?
+    let select: (HighlightStyle) -> Void
+    @State private var hovered: HighlightStyle?
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 5), spacing: 8) {
+            ForEach(HighlightStyle.allCases, id: \.self) { style in
+                let on = style == selection
+                let accent = tint ?? Color(rgba: Palette.accent(for: style))
+                Button { select(style) } label: {
+                    VStack(spacing: 6) {
+                        Color.clear
+                            .aspectRatio(1, contentMode: .fit)
+                            .overlay { StyleThumbnail(style: style, color: tint, scale: 0.7) }
+                            .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(on ? accent : Color.white.opacity(hovered == style ? 0.28 : 0.1), lineWidth: on ? 2 : 1)
+                            )
+                            .shadow(color: on ? accent.opacity(0.35) : .clear, radius: 7)
+                        Text(style.displayName)
+                            .font(.system(size: 11, weight: on ? .semibold : .regular))
+                            .foregroundStyle(on ? Theme.text : Theme.dim)
+                            .lineLimit(1).minimumScaleFactor(0.85)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .onHover { hovered = $0 ? style : (hovered == style ? nil : hovered) }
+                .animation(.easeOut(duration: 0.14), value: hovered)
+                .animation(.easeOut(duration: 0.18), value: on)
+                .accessibilityLabel(style.displayName)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+/// A slider with its value written beside it, so "size" and "intensity" mean something.
+struct ValueSlider: View {
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Slider(value: $value, in: range).frame(minWidth: 96)
+            Text("\(Int((value * 100).rounded()))%")
+                .font(.system(size: 12).monospacedDigit()).foregroundStyle(.secondary)
+                .frame(width: 38, alignment: .trailing)
+        }
     }
 }
 

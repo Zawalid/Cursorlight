@@ -69,6 +69,8 @@ struct PreviewCanvas: View {
         let screen = screenRect(in: size)
         let s = effectScale(for: screen)
         let auto: (Double) -> CGPoint = { Autopilot.point(at: $0, scene: scene, in: screen) }
+        // The real mouse only drives the effect while it is over the display; in the margin the autopilot carries on.
+        let pointer = pointer.flatMap { screen.contains($0) ? $0 : nil }
         let raw = pointer ?? auto(time)
         history?.record(raw, at: time)
 
