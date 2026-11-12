@@ -20,19 +20,17 @@ Permission key: **none** keeps the "no Screen Recording, no Accessibility" promi
 - Scene presets (Teaching, Webinar, Tutorial, Pairing, High visibility) and export and import of scene files
 - App category rules (calls, code, browsers, slides, design, video), the "Viewers" preview on the canvas, keystroke display, key sound and hide while typing (all three listen to the keyboard through optional Input Monitoring)
 - `beacon://` links to control Beacon from Stream Deck, Raycast, Alfred, Shortcuts (Open URLs) and scripts
+- Curved arrow, speech bubble stamp and a hold focus ring
 - Presenting tools: text labels, number stamps (also fading pins), check, cross, star, heart, question and exclamation stamps, whiteboard (white or black), cover box, filled translucent box, eraser, arrow, double arrow, bracket, Shift for straight lines, persistent strokes (the fade switch), presenter timer chip
 
 ## Next
 
-Nothing queued. Pick from the lists below. Left over from presenting tools: curved arrow, speech bubble stamp, a click-and-hold focus ring.
+Nothing queued. Pick from the lists below.
 
 ## Presenting tools (high value)
 
 | Idea | Size | Permission | Why |
 |---|---|---|---|
-| Curved arrow | S | none | Straight, double and bracket arrows are done |
-| Speech bubble stamp | S | none | Star, heart, check and cross stamps are done |
-| Click-and-hold focus ring | S | none | Draws the eye to what you hold |
 
 ## Cursor and effect designs
 
