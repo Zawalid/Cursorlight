@@ -18,15 +18,17 @@ struct InkPreview: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.stage)
-        .overlay(alignment: .bottomLeading) {
+        .overlay(alignment: .bottom) {
             Text(cleanup ? "A rough loop morphs into a clean ellipse" : "Cleanup off: strokes stay as drawn")
-                .font(.system(size: 11)).foregroundStyle(Color.white.opacity(0.55)).padding(16)
+                .font(.system(size: 11)).foregroundStyle(Color.white.opacity(0.55)).padding(.bottom, 24)
         }
     }
 
     private func draw(_ context: inout GraphicsContext, size: CGSize, t: Double, cycle: Double) {
-        let center = CGPoint(x: size.width / 2, y: size.height / 2 - 6)
-        let rx = size.width * 0.17, ry = size.height * 0.27
+        let screen = PreviewCanvas.screenRect(in: size)
+        PreviewCanvas.drawDesktop(&context, rect: screen)
+        let center = CGPoint(x: screen.minX + screen.width * 0.33, y: screen.minY + screen.height * 0.52)
+        let rx = screen.width * 0.17, ry = screen.height * 0.2
         let count = 64
         let clean: [CGPoint] = (0..<count).map { i in
             let a = 2 * Double.pi * Double(i) / Double(count - 1) - 1.2

@@ -140,6 +140,8 @@ struct PreviewCanvas: View {
 
     /// A small desktop inside `rect`: wallpaper, a menu bar, a light document window, a dark panel and a dock. Everything
     /// sits inside the frame, so the scene reads at any size and every style is seen on light and dark.
+    static func drawDesktop(_ context: inout GraphicsContext, rect: CGRect) { drawWindow(&context, rect: rect) }
+
     private static func drawWindow(_ context: inout GraphicsContext, rect: CGRect) {
         let ox = rect.minX, oy = rect.minY, w = rect.width, h = rect.height
         let k = w / 880

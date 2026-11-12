@@ -50,7 +50,7 @@ private extension View {
     }
 
     func page() -> some View {
-        self.formStyle(.grouped).scrollContentBackground(.hidden).background(Theme.window)
+        self.formStyle(.grouped).scrollContentBackground(.hidden)
     }
 }
 
@@ -316,6 +316,7 @@ struct DisplaysPage: View {
                 Label { Text(info.title) } icon: { Image(systemName: info.symbol).foregroundStyle(info.tint) }
                 Text(info.body).foregroundStyle(Theme.dim)
                 Picker("I am sharing", selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0) })) {
+                    Text("Not set").tag(DeclaredShare?.none)
                     Text("Nothing").tag(DeclaredShare?.some(.notSharing))
                     Text("The whole screen").tag(DeclaredShare?.some(.wholeScreen))
                     Text("One window").tag(DeclaredShare?.some(.singleWindow))
