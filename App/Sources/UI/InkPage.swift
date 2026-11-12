@@ -7,28 +7,38 @@ struct InkPreview: View {
     let color: InkColor
     let cleanup: Bool
     let fade: Double
+    @AppStorage(PreviewScene.storageKey) private var sceneRaw = PreviewScene.slides.rawValue
+
+    private var scene: PreviewScene { PreviewScene(rawValue: sceneRaw) ?? .slides }
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            Canvas { context, size in
-                let cycle = 4.2
-                let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: cycle)
-                draw(&context, size: size, t: t, cycle: cycle)
+        ZStack {
+            DesktopLayer(scene: scene)
+            TimelineView(.animation) { timeline in
+                Canvas { context, size in
+                    let cycle = 4.2
+                    let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: cycle)
+                    draw(&context, size: size, t: t, cycle: cycle)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.stage)
-        .overlay(alignment: .bottom) {
+        .overlay(alignment: .top) {
             Text(cleanup ? "A rough loop morphs into a clean ellipse" : "Cleanup off: strokes stay as drawn")
-                .font(.system(size: 11)).foregroundStyle(Color.white.opacity(0.55)).padding(.bottom, 24)
+                .font(.system(size: 11)).foregroundStyle(Color.white.opacity(0.55)).padding(.top, 24)
         }
     }
 
     private func draw(_ context: inout GraphicsContext, size: CGSize, t: Double, cycle: Double) {
         let screen = PreviewCanvas.screenRect(in: size)
-        PreviewCanvas.drawDesktop(&context, rect: screen)
-        let center = CGPoint(x: screen.minX + screen.width * 0.33, y: screen.minY + screen.height * 0.52)
-        let rx = screen.width * 0.17, ry = screen.height * 0.2
+        let target = scene.inkTarget
+        let center = CGPoint(
+            x: screen.minX + screen.width * target.midX / DesktopArt.size.width,
+            y: screen.minY + screen.height * target.midY / DesktopArt.size.height
+        )
+        let rx = screen.width * target.width / 2 / DesktopArt.size.width
+        let ry = screen.height * target.height / 2 / DesktopArt.size.height
         let count = 64
         let clean: [CGPoint] = (0..<count).map { i in
             let a = 2 * Double.pi * Double(i) / Double(count - 1) - 1.2

@@ -9,9 +9,12 @@ struct PreviewCanvas: View {
     var height: CGFloat = 210
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            Canvas { context, size in
-                Self.draw(&context, size: size, time: timeline.date.timeIntervalSinceReferenceDate, style: style, look: look)
+        ZStack {
+            DesktopLayer(scene: .slides)
+            TimelineView(.animation) { timeline in
+                Canvas { context, size in
+                    Self.draw(&context, size: size, time: timeline.date.timeIntervalSinceReferenceDate, style: style, look: look)
+                }
             }
         }
         .frame(height: height)
@@ -28,13 +31,6 @@ struct PreviewCanvas: View {
             .font(.system(size: 11)).padding(12)
         }
         .accessibilityLabel("\(style.displayName) preview")
-    }
-
-    static func position(at t: Double, in rect: CGRect) -> CGPoint {
-        CGPoint(
-            x: rect.minX + rect.width * (0.5 + 0.27 * sin(t / 1.7) + 0.07 * sin(t / 0.53)),
-            y: rect.minY + rect.height * (0.46 + 0.19 * sin(t / 1.15 + 1) + 0.05 * sin(t / 0.41))
-        )
     }
 
     /// The miniature screen inside the canvas: 16 by 10, centered, with room around it.
@@ -59,30 +55,45 @@ struct PreviewCanvas: View {
         }
     }
 
+    /// How much smaller the effect is drawn than on a real screen, so it keeps its real proportion to the content.
+    static func effectScale(for screen: CGRect) -> CGFloat {
+        min(max(screen.width / 1440, 0.55), 1)
+    }
+
+    /// The effect on top of the display. The display itself is `DesktopLayer`.
     static func draw(
         _ context: inout GraphicsContext, size: CGSize, time: Double, style: HighlightStyle, look: HighlightLook,
-        pointer: CGPoint? = nil, history: PointerHistory? = nil
+        pointer: CGPoint? = nil, history: PointerHistory? = nil, scene: PreviewScene = .slides,
+        clicks: [PreviewClick] = [], ripples: Bool = true
     ) {
         let screen = screenRect(in: size)
-        drawWindow(&context, rect: screen)
-        let p = pointer ?? position(at: time, in: screen)
-        history?.record(p, at: time)
+        let s = effectScale(for: screen)
+        let auto: (Double) -> CGPoint = { Autopilot.point(at: $0, scene: scene, in: screen) }
+        let raw = pointer ?? auto(time)
+        history?.record(raw, at: time)
+
+        var fx = context
+        fx.clip(to: Path(roundedRect: screen, cornerRadius: 12))
+        fx.scaleBy(x: s, y: s)
+        let unscale: (CGPoint) -> CGPoint = { CGPoint(x: $0.x / s, y: $0.y / s) }
+        let p = unscale(raw)
         let recipe = style.recipe.applying(look)
         let accent = Color(rgba: look.accentColor(for: style))
         let light = Color(rgba: Palette.light)
-        context.opacity = Double(look.intensity)
+        fx.opacity = Double(look.intensity)
 
         switch style {
         case .aura:
             let r = recipe.aura.radius
             let breath = 1 + 0.03 * sin(time * 2 * .pi / recipe.aura.breathPeriod)
-            glow(&context, at: p, radius: r * recipe.aura.outer.radiusFactor * breath, color: accent, alpha: 0.10)
-            glow(&context, at: p, radius: r * 1.15 * breath, color: accent, alpha: 0.26)
-            glow(&context, at: p, radius: r * recipe.aura.core.radiusFactor * 1.4, color: Color(rgba: look.accentColor(for: style).mixed(with: Palette.light, 0.75)), alpha: 0.6)
+            glow(&fx, at: p, radius: r * recipe.aura.outer.radiusFactor * breath, color: accent, alpha: 0.10)
+            glow(&fx, at: p, radius: r * 1.15 * breath, color: accent, alpha: 0.26)
+            glow(&fx, at: p, radius: r * recipe.aura.core.radiusFactor * 1.4, color: Color(rgba: look.accentColor(for: style).mixed(with: Palette.light, 0.75)), alpha: 0.6)
         case .lens:
             let r = recipe.lens.radius * 0.8
-            context.drawLayer { layer in
-                layer.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black.opacity(recipe.lens.dim)))
+            let cover = CGRect(x: 0, y: 0, width: size.width / s, height: size.height / s)
+            fx.drawLayer { layer in
+                layer.fill(Path(cover), with: .color(.black.opacity(recipe.lens.dim)))
                 layer.blendMode = .destinationOut
                 let hole = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
                 layer.fill(hole, with: .radialGradient(
@@ -93,37 +104,60 @@ struct PreviewCanvas: View {
         case .comet:
             let steps = 18
             for k in stride(from: steps, through: 1, by: -1) {
-                let q = history?.position(at: time - Double(k) * 0.022) ?? position(at: time - Double(k) * 0.022, in: screen)
+                let when = time - Double(k) * 0.022
+                let q = unscale(history?.position(at: when) ?? auto(when))
                 let a = 1 - Double(k) / Double(steps)
                 let d = recipe.comet.headDiameter * (0.25 + 0.75 * a)
-                context.fill(Path(ellipseIn: CGRect(x: q.x - d / 2, y: q.y - d / 2, width: d, height: d)), with: .color(accent.opacity(0.75 * a * a)))
+                fx.fill(Path(ellipseIn: CGRect(x: q.x - d / 2, y: q.y - d / 2, width: d, height: d)), with: .color(accent.opacity(0.75 * a * a)))
             }
-            glow(&context, at: p, radius: recipe.comet.headHaloDiameter, color: accent, alpha: 0.5)
+            glow(&fx, at: p, radius: recipe.comet.headHaloDiameter, color: accent, alpha: 0.5)
             let d = recipe.comet.headDiameter
             let head = Path(ellipseIn: CGRect(x: p.x - d / 2, y: p.y - d / 2, width: d, height: d))
-            context.fill(head, with: .color(light))
-            context.stroke(head, with: .color(accent), lineWidth: 2)
+            fx.fill(head, with: .color(light))
+            fx.stroke(head, with: .color(accent), lineWidth: 2)
         case .keyline:
             let r = recipe.keyline.radius
             let ring = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
-            context.stroke(ring, with: .color(.black.opacity(0.35)), lineWidth: 5)
-            context.stroke(ring, with: .color(light), lineWidth: 3)
+            fx.stroke(ring, with: .color(.black.opacity(0.35)), lineWidth: 5)
+            fx.stroke(ring, with: .color(light), lineWidth: 3)
             let dot = recipe.keyline.dotDiameter
-            context.fill(Path(ellipseIn: CGRect(x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot)), with: .color(light))
+            fx.fill(Path(ellipseIn: CGRect(x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot)), with: .color(light))
         case .sonar:
             for i in 0..<3 {
                 let phase = ((time + Double(i) * 0.25).truncatingRemainder(dividingBy: 2.2)) / 2.2
                 let r = recipe.sonar.startRadius * (1 - phase) + recipe.sonar.endRadius * phase
                 let ring = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
-                context.stroke(ring, with: .color(accent.opacity(0.7 * sin(phase * .pi))), lineWidth: 2)
+                fx.stroke(ring, with: .color(accent.opacity(0.7 * sin(phase * .pi))), lineWidth: 2)
             }
-            glow(&context, at: p, radius: recipe.sonar.dotRadius, color: accent, alpha: 0.5)
+            glow(&fx, at: p, radius: recipe.sonar.dotRadius, color: accent, alpha: 0.5)
             let c = recipe.sonar.dotCoreRadius
-            context.fill(Path(ellipseIn: CGRect(x: p.x - c, y: p.y - c, width: 2 * c, height: 2 * c)), with: .color(light))
+            fx.fill(Path(ellipseIn: CGRect(x: p.x - c, y: p.y - c, width: 2 * c, height: 2 * c)), with: .color(light))
         }
-        context.opacity = 1
+        fx.opacity = 1
+
+        if ripples {
+            var all = clicks
+            if pointer == nil, let age = Autopilot.clickAge(at: time, scene: scene) {
+                all.append(PreviewClick(point: auto(time - age), time: time - age))
+            }
+            for click in all {
+                let age = time - click.time
+                guard age >= 0, age < Autopilot.rippleLength else { continue }
+                let base = look.accentColor(for: style)
+                let tint = Color(rgba: Palette.rippleAccent(base: base, button: click.right ? .right : .left))
+                drawRipple(&fx, at: unscale(click.point), phase: age / Autopilot.rippleLength, color: tint)
+            }
+        }
         // With the real mouse on the preview, the real cursor is already there.
-        if pointer == nil { drawArrow(&context, at: p) }
+        if pointer == nil { drawArrow(&fx, at: p) }
+    }
+
+    private static func drawRipple(_ context: inout GraphicsContext, at p: CGPoint, phase: Double, color: Color) {
+        let e = 1 - pow(1 - phase, 3)
+        let r = 8 + 46 * e
+        let fade = 1 - phase
+        context.fill(Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r)), with: .color(color.opacity(0.22 * fade)))
+        context.stroke(Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r)), with: .color(color.opacity(0.85 * fade)), lineWidth: 1 + 3 * fade)
     }
 
     private static func glow(_ context: inout GraphicsContext, at p: CGPoint, radius: CGFloat, color: Color, alpha: Double) {
@@ -136,65 +170,6 @@ struct PreviewCanvas: View {
             ]),
             center: p, startRadius: 0, endRadius: radius
         ))
-    }
-
-    /// A small desktop inside `rect`: wallpaper, a menu bar, a light document window, a dark panel and a dock. Everything
-    /// sits inside the frame, so the scene reads at any size and every style is seen on light and dark.
-    static func drawDesktop(_ context: inout GraphicsContext, rect: CGRect) { drawWindow(&context, rect: rect) }
-
-    private static func drawWindow(_ context: inout GraphicsContext, rect: CGRect) {
-        let ox = rect.minX, oy = rect.minY, w = rect.width, h = rect.height
-        let k = w / 880
-        context.drawLayer { layer in
-            layer.clip(to: Path(roundedRect: rect, cornerRadius: 12))
-            layer.fill(
-                Path(rect),
-                with: .linearGradient(
-                    Gradient(colors: [Color(red: 0.17, green: 0.165, blue: 0.18), Color(red: 0.075, green: 0.072, blue: 0.082)]),
-                    startPoint: CGPoint(x: ox, y: oy), endPoint: CGPoint(x: ox + w, y: oy + h)
-                )
-            )
-            // Menu bar
-            layer.fill(Path(CGRect(x: ox, y: oy, width: w, height: 16 * k)), with: .color(Color.white.opacity(0.08)))
-            for i in 0..<3 {
-                layer.fill(Path(roundedRect: CGRect(x: ox + (14 + CGFloat(i) * 26) * k, y: oy + 6 * k, width: 18 * k, height: 4 * k), cornerRadius: 2), with: .color(Color.white.opacity(0.3)))
-            }
-            layer.fill(Path(roundedRect: CGRect(x: ox + w - 52 * k, y: oy + 6 * k, width: 38 * k, height: 4 * k), cornerRadius: 2), with: .color(Color.white.opacity(0.3)))
-
-            let top = oy + 34 * k, bottom = oy + h - 46 * k
-            // Light document window
-            let doc = CGRect(x: ox + w * 0.07, y: top, width: w * 0.5, height: bottom - top)
-            layer.fill(Path(roundedRect: doc, cornerRadius: 9 * k), with: .color(Color(white: 0.95)))
-            layer.fill(Path(roundedRect: CGRect(x: doc.minX, y: doc.minY, width: doc.width, height: 22 * k), cornerRadius: 9 * k), with: .color(Color(white: 0.89)))
-            for i in 0..<3 {
-                layer.fill(Path(ellipseIn: CGRect(x: doc.minX + (10 + CGFloat(i) * 13) * k, y: doc.minY + 8 * k, width: 6 * k, height: 6 * k)), with: .color(Color(white: 0.72)))
-            }
-            let rows = max(Int((doc.height - 100 * k) / (24 * k)), 2)
-            let widths = [0.62, 0.8, 0.46, 0.7, 0.55]
-            for i in 0..<rows {
-                let bar = CGRect(x: doc.minX + 22 * k, y: doc.minY + 42 * k + CGFloat(i) * 24 * k, width: doc.width * widths[i % widths.count], height: 9 * k)
-                layer.fill(Path(roundedRect: bar, cornerRadius: 4.5 * k), with: .color(Color(white: 0.8)))
-            }
-            layer.fill(Path(roundedRect: CGRect(x: doc.minX + 22 * k, y: doc.maxY - 42 * k, width: doc.width * 0.24, height: 24 * k), cornerRadius: 7 * k), with: .color(Color(red: 0.30, green: 0.64, blue: 1)))
-
-            // Dark panel
-            let panel = CGRect(x: ox + w * 0.62, y: top + 18 * k, width: w * 0.31, height: bottom - top - 18 * k)
-            layer.fill(Path(roundedRect: panel, cornerRadius: 9 * k), with: .color(Color(white: 0.13)))
-            layer.fill(Path(roundedRect: CGRect(x: panel.minX, y: panel.minY, width: panel.width, height: 22 * k), cornerRadius: 9 * k), with: .color(Color(white: 0.18)))
-            let panelRows = max(Int((panel.height - 44 * k) / (26 * k)), 2)
-            for i in 0..<panelRows {
-                let row = CGRect(x: panel.minX + 16 * k, y: panel.minY + 42 * k + CGFloat(i) * 26 * k, width: panel.width * (i % 2 == 0 ? 0.7 : 0.5), height: 10 * k)
-                layer.fill(Path(roundedRect: row, cornerRadius: 5 * k), with: .color(Color(white: 0.27)))
-            }
-
-            // Dock
-            let dock = CGRect(x: ox + w * 0.5 - w * 0.17, y: oy + h - 36 * k, width: w * 0.34, height: 26 * k)
-            layer.fill(Path(roundedRect: dock, cornerRadius: 13 * k), with: .color(Color.white.opacity(0.12)))
-            for i in 0..<6 {
-                layer.fill(Path(roundedRect: CGRect(x: dock.minX + 12 * k + CGFloat(i) * (dock.width - 24 * k) / 6, y: dock.minY + 5 * k, width: 16 * k, height: 16 * k), cornerRadius: 4.5 * k), with: .color(Color.white.opacity(0.28)))
-            }
-        }
-        context.stroke(Path(roundedRect: rect, cornerRadius: 12), with: .color(Color.white.opacity(0.12)), lineWidth: 1)
     }
 
     private static func drawArrow(_ context: inout GraphicsContext, at p: CGPoint) {

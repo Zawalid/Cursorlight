@@ -37,6 +37,7 @@ struct SettingsView: View {
         }
         .overlay(alignment: .topTrailing) { ShareChip().padding(.top, 14).padding(.trailing, 16) }
         .overlay(alignment: .bottomLeading) { OnChip().padding(16) }
+        .overlay(alignment: .bottom) { SceneSwitcher().padding(.bottom, 20) }
     }
 }
 
@@ -67,6 +68,7 @@ struct Inspector: View {
                 }
             }
         }
+        .ignoresSafeArea(.container, edges: .top)
     }
 }
 
@@ -114,7 +116,7 @@ struct InspectorTabs: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .padding(.horizontal, 10).padding(.top, 6).padding(.bottom, 8)
+        .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 8)
     }
 }
 
