@@ -756,6 +756,24 @@ struct TriggersPage: View {
                 Text("Needs Input Monitoring to see keys in other apps. Password fields are never shown: the system hides those keys from every app.")
             }
             Section {
+                Toggle(isOn: Binding(get: { model.settings.allowLinks }, set: { model.setAllowLinks($0) })) {
+                    caption("Allow beacon:// links", "Let Stream Deck, Raycast, Alfred, Shortcuts and scripts control Beacon.")
+                }
+                Menu("Copy a link…") {
+                    ForEach(BeaconLink.examples, id: \.link) { example in
+                        Button(example.title) {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(example.link, forType: .string)
+                        }
+                    }
+                }
+                .disabled(!model.settings.allowLinks)
+            } header: {
+                Text("Automation")
+            } footer: {
+                Text("Paste a link into a Stream Deck Open Website button, a Raycast or Alfred command, or the Shortcuts app's Open URLs action. In Terminal: open \"beacon://highlight/toggle\". Links only switch Beacon's own effects.")
+            }
+            Section {
                 Button("Restore defaults") { model.updateTriggers { $0 = TriggerSettings() } }
                     .foregroundStyle(triggers == TriggerSettings() ? Color.secondary : Theme.accent)
                     .disabled(triggers == TriggerSettings())

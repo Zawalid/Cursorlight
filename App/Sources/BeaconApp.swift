@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.keystrokes = KeystrokeController(coordinator: coordinator, model: model)
             model.toggleTimer = { [weak timer] in timer?.toggle() }
             coordinator.onToggleTimer = { [weak timer] in timer?.toggle() }
+            coordinator.onTimerLink = { [weak timer] command in timer?.run(command) }
             statusItemController.install(model: model)
             if environment.opensSettingsAtLaunch {
                 windows.showSettings(environment.launchPage.flatMap(SettingsPage.init(rawValue:)) ?? .highlight)
@@ -94,6 +95,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         windows?.showSettings(.highlight)
         return true
+    }
+
+    /// `beacon://` links from Stream Deck, Raycast, Shortcuts, scripts and the Terminal.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            if let command = BeaconLink.parse(url) { coordinator?.runLink(command) }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {

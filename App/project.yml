@@ -44,6 +44,10 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSUIElement: true
+        CFBundleURLTypes:
+          - CFBundleURLName: app.beacon.mac
+            CFBundleURLSchemes:
+              - beacon
         LSMinimumSystemVersion: "14.6"
         SUFeedURL: https://github.com/Zawalid/Beacon/releases/latest/download/appcast.xml
         # Public half of the EdDSA key from generate_keys. While it starts with REPLACE the updater never starts.

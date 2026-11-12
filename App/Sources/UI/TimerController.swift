@@ -40,6 +40,18 @@ final class TimerController: ObservableObject {
     // MARK: Timer controls
 
     func start(_ mode: PresenterTimer.Mode) { timer.start(mode, at: now) }
+
+    /// The timer parts of a `beacon://` link.
+    func run(_ command: BeaconLinkCommand) {
+        switch command {
+        case .timerToggle: toggle()
+        case let .timerStart(minutes):
+            show()
+            start(.countdown(TimeInterval((minutes ?? 10) * 60)))
+        case .timerStop: reset()
+        default: break
+        }
+    }
     func pause() { timer.pause(at: now) }
     func resume() { timer.resume(at: now) }
     func reset() { timer.reset() }

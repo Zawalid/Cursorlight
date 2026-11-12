@@ -30,6 +30,8 @@ final class AppCoordinator {
     var onSizeChange: (() -> Void)?
     /// Called after pause state or trigger settings change, so the menu can refresh.
     var onTriggersChange: (() -> Void)?
+    /// Set by the app delegate; runs the timer parts of a link.
+    var onTimerLink: ((BeaconLinkCommand) -> Void)?
     /// Set by the app delegate; shows or hides the timer chip.
     var onToggleTimer: (() -> Void)?
     /// Called when the share status changes.
@@ -386,6 +388,46 @@ final class AppCoordinator {
     func clearInk() { ink.clearAll() }
 
     /// Switches to the next scene in the list, wrapping around.
+    private func resolve(_ choice: BeaconLinkCommand.Switch, current: Bool) -> Bool {
+        switch choice {
+        case .on: true
+        case .off: false
+        case .toggle: !current
+        }
+    }
+
+    /// Runs what a `beacon://` link asked for, if links are allowed.
+    func runLink(_ command: BeaconLinkCommand) {
+        guard settings.settings.allowLinks else { return }
+        switch command {
+        case let .highlight(choice): highlight.setOn(resolve(choice, current: highlight.isOn))
+        case let .laser(choice): highlight.setLaser(resolve(choice, current: highlight.isLaserOn))
+        case let .ink(choice):
+            if resolve(choice, current: ink.isActive) { if !ink.isActive { ink.activate(takesKey: true) } } else { ink.deactivate() }
+        case let .spotlight(choice):
+            let want = resolve(choice, current: spotlight.isOn)
+            if want, !spotlight.isOn { spotlight.cycle() } else if !want { spotlight.clear() }
+        case let .pause(choice): setPaused(resolve(choice, current: isPaused))
+        case let .toolbar(choice): setToolbar { $0.enabled = resolve(choice, current: $0.enabled) }
+        case .timerToggle, .timerStop, .timerStart: onTimerLink?(command)
+        case let .whiteboard(board):
+            if board == .none { if ink.board != .none { ink.deactivate() } } else { ink.activateBoard(board) }
+        case .clearInk: ink.clearAll()
+        case .undoInk: ink.undo()
+        case .nextScene: cycleScene()
+        case let .scene(name):
+            if let match = settings.settings.profiles.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) { chooseProfile(match.id) }
+        case let .penColor(color): setInkColor(color)
+        case let .penTool(tool): ink.setTool(tool)
+        }
+        onTriggersChange?()
+    }
+
+    func setAllowLinks(_ allow: Bool) {
+        settings.update { $0.allowLinks = allow }
+        onTriggersChange?()
+    }
+
     func cycleScene() {
         let ids = settings.settings.profiles.map(\.id)
         guard ids.count > 1 else { return }
