@@ -48,22 +48,14 @@ extension EnvironmentValues {
     }
 }
 
-/// The right column: icon tabs on top, one area's controls below.
+/// The right column: a row of tabs on top, one area's controls below.
 struct Inspector: View {
     @Binding var page: SettingsPage
-    private let tabs: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays, .about]
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Area", selection: $page) {
-                ForEach(tabs) { item in
-                    Label(item.title, systemImage: item.symbol).labelStyle(.iconOnly).tag(item).help(item.title)
-                }
-            }
-            .pickerStyle(.segmented).labelsHidden()
-            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 4)
-            Text(page.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.dim)
-                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.top, 6)
+            InspectorTabs(page: $page)
+            Divider().opacity(0.6)
             Group {
                 switch page {
                 case .highlight: LookPage()
@@ -75,6 +67,54 @@ struct Inspector: View {
                 }
             }
         }
+    }
+}
+
+/// Six tabs, each an icon over a label. The selected one has a soft plate that slides to it and an Ember icon; hovering a
+/// tab lightens it. Every tab fills its whole slot, so there are no dead gaps between them.
+struct InspectorTabs: View {
+    @Binding var page: SettingsPage
+    @Namespace private var plate
+    @State private var hovered: SettingsPage?
+    private let tabs: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays, .about]
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(tabs) { item in
+                let on = page == item
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) { page = item }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: item.symbol)
+                            .font(.system(size: 16, weight: on ? .semibold : .regular))
+                            .foregroundStyle(on ? Theme.accent : (hovered == item ? Theme.text : Theme.dim))
+                            .frame(height: 20)
+                        Text(item.title)
+                            .font(.system(size: 10.5, weight: on ? .semibold : .medium))
+                            .foregroundStyle(on ? Theme.text : (hovered == item ? Theme.text : Theme.dim))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity).frame(height: 50)
+                    .background {
+                        if on {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.white.opacity(0.09))
+                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.08)))
+                                .matchedGeometryEffect(id: "plate", in: plate)
+                        } else if hovered == item {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(0.05))
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .onHover { hovered = $0 ? item : (hovered == item ? nil : hovered) }
+                .accessibilityLabel(item.title)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 10).padding(.top, 38).padding(.bottom, 10)
     }
 }
 
