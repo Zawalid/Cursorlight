@@ -61,7 +61,7 @@ public final class ModifierGestureMonitor {
     private static let mask: NSEvent.EventTypeMask = [.flagsChanged, .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]
 
     /// The parts of an event the recognizer needs, copied so they can cross to the main actor.
-    private struct Snapshot: Sendable {
+    struct Snapshot: Sendable {
         let type: NSEvent.EventType
         let keyCode: UInt16
         let flags: UInt
@@ -69,7 +69,8 @@ public final class ModifierGestureMonitor {
 
         init(_ event: NSEvent) {
             type = event.type
-            keyCode = event.keyCode
+            // keyCode exists only on key events; reading it on a mouse event raises an exception, which dropped every click.
+            keyCode = [.flagsChanged, .keyDown, .keyUp].contains(event.type) ? event.keyCode : 0
             flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue & ModifierKey.allFlags
             time = event.timestamp
         }

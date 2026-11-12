@@ -55,32 +55,43 @@ final class AppCoordinator {
     }
 
     func start() {
-        overlays.start()
-        highlight.start()
-        ink.start()
-        tracker.onMove = { [weak self] position, time in
-            self?.pointerMoved(to: position, at: time)
+        // Diagnostic: BEACON_DISABLE=overlays,monitors,triggers,extras (or all) switches parts off to find which one breaks clicks.
+        let off = Set((ProcessInfo.processInfo.environment["BEACON_DISABLE"] ?? "").split(separator: ",").map(String.init))
+        let all = off.contains("all")
+        if !(all || off.contains("overlays")) {
+            overlays.start()
+            highlight.start()
+            ink.start()
         }
-        tracker.start()
-        clicks.onButton = { [weak self] button, isDown, position in
-            self?.highlight.mouseButton(button, isDown: isDown, at: position)
+        if !(all || off.contains("monitors")) {
+            tracker.onMove = { [weak self] position, time in
+                self?.pointerMoved(to: position, at: time)
+            }
+            tracker.start()
+            clicks.onButton = { [weak self] button, isDown, position in
+                self?.highlight.mouseButton(button, isDown: isDown, at: position)
+            }
+            clicks.start()
         }
-        clicks.start()
-        hotkeys.onPress = { [weak self] action in self?.handle(.hotkey(action)) }
-        modifiers.onEvent = { [weak self] event in self?.handle(event) }
-        applyTriggers()
-        applyDisplayScope()
-        shareSafe.onChange = { [weak self] in self?.onShareChange?() }
-        shareSafe.start()
-        switcher.frontmostChanged(to: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
-        workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-        ) { [weak self] note in
-            let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            let bundle = app?.bundleIdentifier
-            MainActor.assumeIsolated { self?.frontmostAppChanged(to: bundle) }
+        if !(all || off.contains("triggers")) {
+            hotkeys.onPress = { [weak self] action in self?.handle(.hotkey(action)) }
+            modifiers.onEvent = { [weak self] event in self?.handle(event) }
+            applyTriggers()
         }
-        reevaluateProfile()
+        if !(all || off.contains("extras")) {
+            applyDisplayScope()
+            shareSafe.onChange = { [weak self] in self?.onShareChange?() }
+            shareSafe.start()
+            switcher.frontmostChanged(to: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+            workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+            ) { [weak self] note in
+                let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+                let bundle = app?.bundleIdentifier
+                MainActor.assumeIsolated { self?.frontmostAppChanged(to: bundle) }
+            }
+            reevaluateProfile()
+        }
     }
 
     // MARK: Profiles
