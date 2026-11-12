@@ -2,6 +2,8 @@
 
 Written 2026-11-12. Supersedes the task order in `docs/superpowers/plans/2026-11-08-beacon-v1.md` (that file stays as the detailed task text for Ink, triggers, profiles, Share-safe and packaging). Name and branding are placeholders.
 
+The feature menu for what to build next lives in `docs/BACKLOG.md`.
+
 Tiers: **V1** ships in the first paid release. **V1.1** is the first update. **LATER** is parked on purpose. **CUT** is rejected for now.
 Status: done / next / open.
 
