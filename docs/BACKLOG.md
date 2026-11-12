@@ -15,28 +15,20 @@ Permission key: **none** keeps the "no Screen Recording, no Accessibility" promi
 - Display scope, real Mac preview with three scenes
 - Floating bar: tools, quick colors, scene menu, drag, collapse, hide from screen sharing, hover chips
 - Settings window: canvas and inspector, six pages
+- Spotlight region: drag a lit region, shape, dim, soft edge, click-through
+- Presenting tools: text labels, number stamps (also fading pins), check, cross, star, heart, question and exclamation stamps, whiteboard (white or black), cover box, filled translucent box, eraser, arrow, double arrow, bracket, Shift for straight lines, persistent strokes (the fade switch), presenter timer chip
 
 ## Next
 
-1. **Spotlight rectangle** (M, none). Drag a region, everything else dims, the region stays clickable. Details in the design notes at the end.
+Nothing queued. Pick from the lists below. Left over from presenting tools: curved arrow, speech bubble stamp, a click-and-hold focus ring.
 
 ## Presenting tools (high value)
 
 | Idea | Size | Permission | Why |
 |---|---|---|---|
-| Text labels: click, type, it stays or fades | M | none | The most asked-for annotation after arrows |
-| Number stamps: 1, 2, 3 step markers, check, cross | S | none | Walkthroughs and bug reports |
-| Whiteboard mode: blank white or black board to draw on | S | none | Explain without a slide |
-| Redact box: an opaque cover over something | S | none | Hide a secret live; cosmetic, not a real blur |
-| Filled translucent box (highlighter box) | S | none | Faster than a pen for emphasis |
-| Eraser | S | none | Fix one stroke without clearing all |
-| Straight lines with Shift | S | none | Common drawing habit |
-| Persistent drawing mode and clear on a second press | S | none | Strokes that stay until you say so, with an obvious way out |
-| Pointer arrows: curved arrow, double arrow, bracket | S | none | More ways to point |
-| More snapped shapes: star, heart, check mark, cross, speech bubble | M | none | Needs careful recognition work |
-| Countdown and presenter timer chip | S | none | Keeps a talk on time |
+| Curved arrow | S | none | Straight, double and bracket arrows are done |
+| Speech bubble stamp | S | none | Star, heart, check and cross stamps are done |
 | Click-and-hold focus ring | S | none | Draws the eye to what you hold |
-| Numbered pins that fade | S | none | Quick "look here, then here" |
 
 ## Cursor and effect designs
 
