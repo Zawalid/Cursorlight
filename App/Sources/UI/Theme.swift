@@ -3,25 +3,24 @@ import SwiftUI
 
 /// Colors, type and metrics for every screen. The accent comes from Branding; everything else is neutral.
 enum Theme {
-    // Light, quiet and warm. The window is the system material with a faint wash; surfaces are near-white cards with a
-    // hairline edge and no shadow; text is warm ink; Ember appears only on what is selected or on. The Stage is dark
-    // because it is a screen.
-    static let window = Color.clear
-    static let sidebar = Color.clear
-    static let card = Color.white.opacity(0.80)
-    static let raised = Color.white.opacity(0.92)
-    static let cardHover = Color.white.opacity(0.96)
-    static let stage = Color(red: 0.059, green: 0.063, blue: 0.078)
-    static let well = Color.black.opacity(0.05)
-    static let line = Color.black.opacity(0.07)
-    static let fillSoft = Color.black.opacity(0.05)
-    static let fillMid = Color.black.opacity(0.12)
-    static let text = Color(red: 0.110, green: 0.106, blue: 0.098)
-    static let dim = Color(red: 0.373, green: 0.357, blue: 0.333)
-    static let faint = Color(red: 0.557, green: 0.541, blue: 0.514)
+    // Solid warm dark. No glass, no gradients. Surfaces are told apart by tone and hairlines, not by boxes and shadows.
+    // Ember is the only saturated color and appears only on what is selected or on.
+    static let window = Color(red: 0.078, green: 0.075, blue: 0.082)       // #141315
+    static let sidebar = Color(red: 0.059, green: 0.055, blue: 0.063)      // #0F0E10
+    static let card = Color(red: 0.110, green: 0.106, blue: 0.118)         // #1C1B1E
+    static let raised = Color(red: 0.141, green: 0.137, blue: 0.153)       // #242327
+    static let cardHover = Color(red: 0.173, green: 0.169, blue: 0.188)
+    static let stage = Color(red: 0.043, green: 0.043, blue: 0.051)        // #0B0B0D
+    static let well = Color.white.opacity(0.05)
+    static let line = Color.white.opacity(0.08)
+    static let fillSoft = Color.white.opacity(0.06)
+    static let fillMid = Color.white.opacity(0.14)
+    static let text = Color(red: 0.925, green: 0.914, blue: 0.894)         // #ECE9E4
+    static let dim = Color(red: 0.631, green: 0.616, blue: 0.588)          // #A19D96
+    static let faint = Color(red: 0.435, green: 0.420, blue: 0.396)        // #6F6B65
     static let accent = Color(rgba: RGBA(hex: Branding.accentHex))
-    static let ok = Color(red: 0.11, green: 0.56, blue: 0.27)
-    static let warn = Color(red: 0.74, green: 0.42, blue: 0.03)
+    static let ok = Color(red: 0.30, green: 0.77, blue: 0.43)
+    static let warn = Color(red: 0.90, green: 0.65, blue: 0.23)
     static let radius: CGFloat = 16
 
     static func title(_ text: String) -> some View {

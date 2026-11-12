@@ -137,7 +137,7 @@ struct PreviewCanvas: View {
         context.fill(
             Path(CGRect(origin: .zero, size: size)),
             with: .linearGradient(
-                Gradient(colors: [Color(red: 0.16, green: 0.17, blue: 0.24), Color(red: 0.07, green: 0.07, blue: 0.10)]),
+                Gradient(colors: [Color(red: 0.15, green: 0.145, blue: 0.16), Color(red: 0.065, green: 0.063, blue: 0.072)]),
                 startPoint: .zero, endPoint: CGPoint(x: w, y: h)
             )
         )

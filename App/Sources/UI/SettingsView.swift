@@ -8,22 +8,22 @@ struct SettingsView: View {
     var scrolls = true
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            WindowBackground()
+        HStack(spacing: 0) {
+            Sidebar(page: $page)
+            Rectangle().fill(Theme.line).frame(width: 1)
             content
-            Dock(page: $page).padding(.bottom, 16)
         }
-        .frame(minWidth: 920, minHeight: 660)
-        .preferredColorScheme(.light)
+        .frame(minWidth: 940, minHeight: 620)
+        .background(Theme.window)
+        .ignoresSafeArea()
+        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
     private var content: some View {
         if page == .highlight {
             LookPage()
-                .padding(.horizontal, 22)
-                .padding(.top, 6)
-                .padding(.bottom, 78)
+                .padding(.horizontal, 32).padding(.top, 44).padding(.bottom, 28)
         } else {
             pageContainer {
                 Group {
@@ -36,7 +36,8 @@ struct SettingsView: View {
                     case .highlight: EmptyView()
                     }
                 }
-                .padding(.horizontal, 28).padding(.top, 12).padding(.bottom, 100)
+                .frame(maxWidth: 760, alignment: .topLeading)
+                .padding(.horizontal, 32).padding(.top, 44).padding(.bottom, 32)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
@@ -52,90 +53,166 @@ struct SettingsView: View {
     }
 }
 
-/// The system translucent material with a faint warm wash at one corner and a faint cool one at the other, so the window
-/// has depth without any shadow.
-struct WindowBackground: View {
-    var body: some View {
-        ZStack {
-            WindowGlass()
-            RadialGradient(colors: [Theme.accent.opacity(0.07), .clear], center: .topLeading, startRadius: 0, endRadius: 620)
-            RadialGradient(colors: [Color(red: 0.35, green: 0.5, blue: 0.95).opacity(0.06), .clear], center: .bottomTrailing, startRadius: 0, endRadius: 700)
-        }
-        .ignoresSafeArea()
-    }
-}
-
-struct WindowGlass: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .underWindowBackground
-        view.blendingMode = .behindWindow
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
-}
-
-/// A floating pill that moves between the five sections. Each item fills its whole slot: no dead gaps, and a hover state.
-struct Dock: View {
+/// The left column: the scene, the sections, and the two things that belong to every page, whether Beacon is on and whether
+/// viewers can see it.
+struct Sidebar: View {
+    @EnvironmentObject private var model: AppModel
     @Binding var page: SettingsPage
-    @Namespace private var thumb
     @State private var hovered: SettingsPage?
-    private let items: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays]
+    private let sections: [SettingsPage] = [.highlight, .ink, .triggers, .profiles, .displays]
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(items) { item in
-                let on = page == item
-                Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) { page = item } } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: item.symbol).font(.system(size: 12, weight: .medium))
-                        Text(item.title).font(.system(size: 12, weight: .medium))
-                    }
-                    .foregroundStyle(on || hovered == item ? Theme.text : Theme.dim)
-                    .padding(.horizontal, 16).frame(height: 34)
-                    .background {
-                        if on {
-                            Capsule().fill(Color.white.opacity(0.95)).matchedGeometryEffect(id: "dock", in: thumb)
-                        } else if hovered == item {
-                            Capsule().fill(Color.black.opacity(0.07))
-                        }
-                    }
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .onHover { hovered = $0 ? item : (hovered == item ? nil : hovered) }
-                .accessibilityAddTraits(on ? .isSelected : [])
+        VStack(alignment: .leading, spacing: 0) {
+            SceneMenu().padding(.top, 46)
+            Text("SETTINGS")
+                .font(.system(size: 10, weight: .semibold)).tracking(0.8).foregroundStyle(Theme.faint)
+                .padding(.top, 22).padding(.bottom, 6).padding(.leading, 10)
+            ForEach(sections) { item in row(item) }
+            Spacer(minLength: 12)
+            row(.about)
+            StatusBlock().padding(.top, 10)
+        }
+        .padding(.horizontal, 12).padding(.bottom, 14)
+        .frame(width: 228)
+        .frame(maxHeight: .infinity)
+        .background(Theme.sidebar)
+    }
+
+    private func row(_ item: SettingsPage) -> some View {
+        let on = page == item
+        return Button { page = item } label: {
+            HStack(spacing: 10) {
+                Image(systemName: item.symbol).font(.system(size: 13)).frame(width: 18)
+                    .foregroundStyle(on ? Theme.accent : Theme.dim)
+                Text(item.title).font(.system(size: 13, weight: on ? .semibold : .regular))
+                Spacer()
             }
-            Divider().frame(height: 18).padding(.horizontal, 6)
-            Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) { page = .about } } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(page == .about ? Theme.text : Theme.dim)
-                    .frame(width: 34, height: 34)
-                    .background(page == .about ? Color.white.opacity(0.95) : (hovered == .about ? Color.black.opacity(0.07) : .clear), in: Capsule())
-                    .contentShape(Capsule())
+            .foregroundStyle(on ? Theme.text : (hovered == item ? Theme.text : Theme.dim))
+            .padding(.horizontal, 10).frame(height: 34)
+            .background(on ? Theme.raised : (hovered == item ? Color.white.opacity(0.05) : .clear), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 ? item : (hovered == item ? nil : hovered) }
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+}
+
+/// The current scene as one menu at the top of the sidebar.
+struct SceneMenu: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var open = false
+    @State private var renaming = false
+    @State private var draft = ""
+
+    private var current: Profile? { model.profiles.first { $0.id == model.appliedProfileID } }
+
+    var body: some View {
+        Button { open.toggle() } label: {
+            HStack(spacing: 10) {
+                BrandMark().frame(width: 26, height: 26)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Scene").font(.system(size: 10)).foregroundStyle(Theme.faint)
+                    Text(current?.name ?? "Stream").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+                }
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.faint)
+            }
+            .padding(.horizontal, 10).frame(height: 46)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.line))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $open, arrowEdge: .trailing) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("SCENES").font(.system(size: 10, weight: .semibold)).tracking(0.6).foregroundStyle(.tertiary).padding(.bottom, 4)
+                ForEach(model.profiles) { profile in
+                    Button { model.chooseProfile(profile.id); open = false } label: {
+                        HStack {
+                            Text(profile.name)
+                            Spacer(minLength: 20)
+                            if profile.id == model.appliedProfileID { Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold)) }
+                        }
+                        .padding(.vertical, 5).padding(.horizontal, 8).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                Divider().padding(.vertical, 4)
+                if renaming {
+                    TextField("Name", text: $draft)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            if let id = current?.id { model.renameProfile(id, to: draft) }
+                            renaming = false
+                        }
+                } else {
+                    item("New scene from this look") { model.addProfile(); open = false }
+                    item("Rename \(current?.name ?? "scene")") { draft = current?.name ?? ""; renaming = true }
+                    if model.profiles.count > 1, let id = current?.id {
+                        item("Delete \(current?.name ?? "scene")") { model.deleteProfile(id); open = false }
+                    }
+                }
+            }
+            .font(.system(size: 13))
+            .padding(12).frame(width: 240)
+        }
+    }
+
+    private func item(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 5).padding(.horizontal, 8).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Whether the highlight is on, with a switch, and what viewers can see. At the bottom of the sidebar on every page.
+struct StatusBlock: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var open = false
+
+    var body: some View {
+        let on = model.isOn(.highlight)
+        let info = ShareStatusInfo(model.shareStatus)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Circle().fill(on ? Theme.accent : Theme.faint).frame(width: 7, height: 7)
+                    .shadow(color: on ? Theme.accent.opacity(0.9) : .clear, radius: 4)
+                Text(on ? "Highlight on" : "Highlight off").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.text)
+                Spacer()
+                Toggle("", isOn: Binding(get: { on }, set: { _ in model.toggle(.highlight) }))
+                    .toggleStyle(.switch).labelsHidden().controlSize(.small).tint(Theme.accent)
+            }
+            .padding(.horizontal, 10).frame(height: 38)
+            Rectangle().fill(Theme.line).frame(height: 1)
+            Button { open.toggle() } label: {
+                HStack(spacing: 8) {
+                    Circle().fill(info.chipTint).frame(width: 7, height: 7)
+                    Text(info.pill).font(.system(size: 12)).foregroundStyle(Theme.dim).lineLimit(1)
+                    Spacer()
+                }
+                .padding(.horizontal, 10).frame(height: 34).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .onHover { hovered = $0 ? .about : (hovered == .about ? nil : hovered) }
-            .help("About, updates and launch at login")
+            .popover(isPresented: $open, arrowEdge: .trailing) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(info.title).font(.system(size: 13, weight: .semibold))
+                    Text(info.body).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Divider()
+                    Text("I am sharing").font(.system(size: 11)).foregroundStyle(.tertiary)
+                    Picker("", selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0); open = false })) {
+                        Text("Nothing").tag(DeclaredShare?.some(.notSharing))
+                        Text("Screen").tag(DeclaredShare?.some(.wholeScreen))
+                        Text("A window").tag(DeclaredShare?.some(.singleWindow))
+                    }
+                    .pickerStyle(.segmented).labelsHidden()
+                }
+                .padding(14).frame(width: 280)
+            }
         }
-        .padding(4)
-        .modifier(DockGlass())
-    }
-}
-
-/// Real Liquid Glass where the system has it, a plain material before that.
-struct DockGlass: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            content.glassEffect(.regular, in: Capsule())
-        } else {
-            content
-                .background(.regularMaterial, in: Capsule())
-                .overlay(Capsule().stroke(Theme.line, lineWidth: 0.5))
-        }
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.line))
     }
 }
 

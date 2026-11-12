@@ -31,15 +31,15 @@ final class WindowControllers {
         if settings != nil, let host = settingsHost {
             host.rootView = root
         } else {
-            let window = Self.makeWindow(size: NSSize(width: 1000, height: 720), resizable: true)
+            let window = Self.makeWindow(size: NSSize(width: 1040, height: 720), resizable: true)
             window.title = Branding.appName
             let host = FirstClickHostingView(rootView: root)
             Self.install(host, in: window)
             settingsHost = host
-            window.setContentSize(NSSize(width: 1000, height: 720))
-            window.contentMinSize = NSSize(width: 920, height: 660)
+            window.setContentSize(NSSize(width: 1040, height: 720))
+            window.contentMinSize = NSSize(width: 940, height: 640)
             window.center()
-            window.setFrameAutosaveName("BeaconSettings.v4")
+            window.setFrameAutosaveName("BeaconSettings.v5")
             settings = window
         }
         Self.present(settings)
@@ -68,20 +68,10 @@ final class WindowControllers {
         if !open { NSApp.setActivationPolicy(.accessory) }
     }
 
-    /// Puts the SwiftUI view on a translucent material, so the window is glass and the wallpaper tints it.
+    /// Puts the SwiftUI view in the window. Solid, no translucency.
     static func install(_ host: NSView, in window: NSWindow) {
-        let glass = NSVisualEffectView()
-        glass.material = .underWindowBackground
-        glass.blendingMode = .behindWindow
-        glass.state = .active
-        window.contentView = glass
         if let host = host as? NSHostingView<AnyView> { host.sizingOptions = [] }
-        host.translatesAutoresizingMaskIntoConstraints = false
-        glass.addSubview(host)
-        NSLayoutConstraint.activate([
-            host.leadingAnchor.constraint(equalTo: glass.leadingAnchor), host.trailingAnchor.constraint(equalTo: glass.trailingAnchor),
-            host.topAnchor.constraint(equalTo: glass.topAnchor), host.bottomAnchor.constraint(equalTo: glass.bottomAnchor),
-        ])
+        window.contentView = host
     }
 
     static func present(_ window: NSWindow?) {
@@ -104,9 +94,9 @@ final class WindowControllers {
         window.isReleasedWhenClosed = false
         // Open on the Space the person is looking at, including a full-screen one, instead of on another Space.
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.appearance = NSAppearance(named: .aqua)
+        window.isOpaque = true
+        window.backgroundColor = NSColor(red: 0.078, green: 0.075, blue: 0.082, alpha: 1)
+        window.appearance = NSAppearance(named: .darkAqua)
         return window
     }
 

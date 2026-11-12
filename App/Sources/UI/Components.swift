@@ -26,15 +26,13 @@ struct SectionLabel: View {
     }
 }
 
-/// A rounded card holding rows separated by hairlines. Flat: a near-white fill and a hairline edge, no shadow.
+/// Rows separated by hairlines, with a hairline above the first. No box around them: the page is the surface.
 struct SettingsGroup<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
         VStack(spacing: 0) { content }
-            .padding(.horizontal, 16)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.line))
+            .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
     }
 }
 
@@ -55,7 +53,7 @@ struct SettingRow<Trailing: View>: View {
             Spacer(minLength: 12)
             trailing
         }
-        .frame(minHeight: 44)
+        .frame(minHeight: 46)
         .padding(.vertical, subtitle == nil ? 0 : 6)
         .overlay(alignment: .bottom) {
             if showsDivider { Rectangle().fill(Theme.line).frame(height: 1) }
@@ -102,8 +100,8 @@ struct BeaconSegmented<Value: Hashable>: View {
                         .padding(.horizontal, 12).frame(height: 26)
                         .background {
                             if on {
-                                Capsule().fill(Color.white.opacity(0.98))
-                                    .overlay(Capsule().stroke(Theme.line))
+                                Capsule().fill(Theme.cardHover)
+                                    .overlay(Capsule().stroke(Color.white.opacity(0.12)))
                                     .matchedGeometryEffect(id: "seg", in: thumb)
                             }
                         }
@@ -115,7 +113,7 @@ struct BeaconSegmented<Value: Hashable>: View {
             }
         }
         .padding(2)
-        .background(Color.black.opacity(0.06), in: Capsule())
+        .background(Color.white.opacity(0.06), in: Capsule())
     }
 }
 
@@ -140,11 +138,11 @@ struct Keycap: View {
     var body: some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(dark ? Color.white.opacity(0.9) : Theme.text)
+            .foregroundStyle(Theme.text)
             .frame(minWidth: 22, minHeight: 22)
             .padding(.horizontal, 5)
-            .background(dark ? Color.white.opacity(0.14) : Color.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(dark ? Color.white.opacity(0.18) : Theme.line))
+            .background(Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Color.white.opacity(0.16)))
     }
 }
 
@@ -226,6 +224,6 @@ struct GhostButtonStyle: ButtonStyle {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(Theme.text)
             .padding(.horizontal, 14).padding(.vertical, 7)
-            .background(Color.black.opacity(configuration.isPressed ? 0.12 : 0.06), in: Capsule())
+            .background(Color.white.opacity(configuration.isPressed ? 0.16 : 0.09), in: Capsule())
     }
 }
