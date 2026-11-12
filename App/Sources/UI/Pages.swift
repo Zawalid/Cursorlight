@@ -949,11 +949,16 @@ struct DisplaysPage: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.vertical, 8)
-                Picker("Show effects on", selection: Binding(get: { model.displayScope }, set: { model.setDisplayScope($0) })) {
-                    ForEach(DisplayScope.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                if screens.count < 2 {
+                    LabeledContent("Show effects on") {
+                        Text("This display").foregroundStyle(.secondary)
+                    }
+                } else {
+                    Picker("Show effects on", selection: Binding(get: { model.displayScope }, set: { model.setDisplayScope($0) })) {
+                        ForEach(DisplayScope.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
-                .disabled(screens.count < 2)
             } header: {
                 Text("Displays")
             } footer: {
