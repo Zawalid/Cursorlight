@@ -16,6 +16,7 @@ Permission key: **none** keeps the "no Screen Recording, no Accessibility" promi
 - Floating bar: tools, quick colors, scene menu, drag, collapse, hide from screen sharing, hover chips
 - Settings window: canvas and inspector, six pages
 - Spotlight region: drag a lit region, shape, dim, soft edge, click-through
+- Cursor and effect designs: click effects (ripple, double ring, burst, pulse) with an optional click sound, Crosshair style, Follow Reduce Motion, locator ring when the pointer jumps displays
 - Presenting tools: text labels, number stamps (also fading pins), check, cross, star, heart, question and exclamation stamps, whiteboard (white or black), cover box, filled translucent box, eraser, arrow, double arrow, bracket, Shift for straight lines, persistent strokes (the fade switch), presenter timer chip
 
 ## Next
@@ -34,15 +35,12 @@ Nothing queued. Pick from the lists below. Left over from presenting tools: curv
 
 | Idea | Size | Permission | Why |
 |---|---|---|---|
-| Custom cursor skins: arrow variants, crosshair, ring, big colored cursor | L | none (private API behind a fallback) | The original "polished cursor skins" goal |
-| More click effects: burst, double ring, pulse, optional sound | S | none | Variety, and sound helps recordings |
+| Custom cursor skins: arrow variants, ring, big colored cursor | L | private API | Blocked for now: replacing the arrow had no effect on macOS 26; a clean-room spike is the next lead |
 | Always-on subtle ring around the cursor | S | none | A calm "find my cursor" |
-| More highlight styles: crosshair, spotlight follow, aurora, pixel, halo | M | none | Cheap to add once the style recipe is stable |
-| Cursor locator pulse when the pointer jumps displays | S | none | Multi-display presenters lose it |
+| More highlight styles: aurora, pixel, halo (crosshair is done) | M | none | Each style touches the model, renderer, preview and thumbnails |
 | Auto color that stays visible on light and dark | M | none | One look that always reads |
 | Color-blind-safe palette check | S | none | Accessibility |
-| Reduce motion mode | S | none | Honors the system setting |
-| Hide the cursor when idle | S | none | Clean recordings |
+| Hide the cursor when idle | S | private API | Blocked: the cursor-hide trick does not hold on macOS 26 (see docs/research/2026-11-08-cursor-approaches.md) |
 | Pressure and speed based pen width | M | none | Nicer strokes with a tablet |
 
 ## Control and automation
