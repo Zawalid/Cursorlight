@@ -70,14 +70,16 @@ struct InkPreview: View {
         let tint = Color(rgba: color.rgba)
         let scale = CGFloat(widthScale)
         let round = StrokeStyle(lineWidth: style.width * scale, lineCap: .round, lineJoin: .round)
-        if style != .highlighter {
+        if style.hasKeyline {
             context.stroke(path, with: .color(.black.opacity(0.22 * alpha)), style: StrokeStyle(lineWidth: style.width * scale + 2, lineCap: .round, lineJoin: .round))
         }
         if let glow = style.glow {
             context.stroke(path, with: .color(tint.opacity(Double(glow.alpha) * alpha)), style: StrokeStyle(lineWidth: glow.width * scale, lineCap: .round, lineJoin: .round))
         }
         let core = style.lightCore ? Color(rgba: color.rgba.mixed(with: Palette.light, 0.75)) : tint
-        context.stroke(path, with: .color(core.opacity(Double(style.alpha) * alpha)), style: round)
+        var coreStyle = round
+        if let dash = style.dash { coreStyle.dash = dash.map { $0 * style.width * scale } }
+        context.stroke(path, with: .color(core.opacity(Double(style.alpha) * alpha)), style: coreStyle)
     }
 }
 

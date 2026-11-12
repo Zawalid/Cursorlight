@@ -11,6 +11,18 @@ public enum RecognizedShape: Equatable, Sendable {
     case line(from: CGPoint, to: CGPoint)
     case none
 
+    /// Which switch in `InkShapeSet` governs this shape.
+    public var kind: InkShapeSet? {
+        switch self {
+        case .ellipse: .ellipse
+        case .rectangle: .rectangle
+        case .arrow: .arrow
+        case .underline: .underline
+        case .line: .line
+        case .none: nil
+        }
+    }
+
     /// The shape as a polyline with exactly `count` points, ordered to start where the raw stroke started and wind
     /// the same way, so a raw stroke can morph into it point by point. nil for `.none`.
     public func polyline(count: Int, matching raw: [CGPoint]) -> [CGPoint]? {

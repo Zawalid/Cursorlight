@@ -107,18 +107,33 @@ struct BeaconMenu<Value: Hashable>: View {
     }
 }
 
+/// A keycap with a lit top edge and a dark lip underneath, so it reads as a key and not a label.
 struct Keycap: View {
     let text: String
     var dark = false
+    var large = false
+    var tint: Color?
 
     var body: some View {
+        let size: CGFloat = large ? 30 : 24
+        let radius: CGFloat = large ? 8 : 7
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(.system(size: large ? 14 : 12, weight: .semibold, design: .rounded))
             .foregroundStyle(Theme.text)
-            .frame(minWidth: 22, minHeight: 22)
-            .padding(.horizontal, 5)
-            .background(Color.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Color.white.opacity(0.16)))
+            .frame(minWidth: size, minHeight: size)
+            .padding(.horizontal, text.count > 1 ? 6 : 2)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color.black.opacity(0.45)).offset(y: 2)
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(LinearGradient(colors: [Color.white.opacity(0.17), Color.white.opacity(0.08)], startPoint: .top, endPoint: .bottom))
+                }
+            )
+            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(Color.white.opacity(0.16), lineWidth: 1))
+            .overlay(alignment: .bottom) {
+                if let tint { Capsule().fill(tint).frame(width: size * 0.55, height: 2.5).padding(.bottom, 3) }
+            }
+            .padding(.bottom, 2)
     }
 }
 

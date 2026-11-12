@@ -343,7 +343,7 @@ struct InkPage: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Color")
-                        Text("\(settings.inkColor.displayName). Press 1 to 5 while drawing.").font(.system(size: 11)).foregroundStyle(.secondary)
+                        Text(settings.inkColor.displayName).font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
                 LabeledContent("Thickness") {
@@ -354,24 +354,33 @@ struct InkPage: View {
                 Toggle(isOn: Binding(get: { settings.inkCleanup }, set: { model.setInkCleanup($0) })) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Clean up shapes")
-                        Text("Circles, boxes, lines, underlines and arrows straighten when you let go.").font(.system(size: 11)).foregroundStyle(.secondary)
+                        Text("Rough shapes straighten when you let go.").font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
-                LabeledContent("Fade after") {
-                    ValueSlider(
-                        value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade(($0 * 10).rounded() / 10) }),
-                        range: BeaconSettings.inkFadeRange, format: { String(format: "%.1f s", $0) }
-                    )
+                if settings.inkCleanup {
+                    ShapeChips(shapes: settings.inkShapes) { model.setInkShapes($0) }
+                }
+                Toggle(isOn: Binding(get: { settings.inkFades }, set: { model.setInkFades($0) })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Fade out")
+                        Text(settings.inkFades ? "Strokes disappear on their own." : "Strokes stay until you clear them with C.")
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                if settings.inkFades {
+                    LabeledContent("Fade after") {
+                        ValueSlider(
+                            value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade(($0 * 10).rounded() / 10) }),
+                            range: BeaconSettings.inkFadeRange, format: { String(format: "%.1f s", $0) }
+                        )
+                    }
                 }
             } header: {
                 Text("Behavior")
             }
             Section {
-                ForEach(Self.drawingKeys, id: \.0) { meaning, keys in
-                    LabeledContent(meaning) {
-                        HStack(spacing: 3) { ForEach(keys, id: \.self) { Keycap(text: $0) } }
-                    }
-                }
+                DrawingKeys(selected: settings.inkColor)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10))
             } header: {
                 Text("While drawing")
             } footer: {
@@ -389,12 +398,9 @@ struct InkPage: View {
         .page()
     }
 
-    private static let drawingKeys: [(String, [String])] = [
-        ("Undo", ["⌘", "Z"]), ("Clear everything", ["C"]), ("Change color", ["1", "–", "5"]), ("Stop drawing", ["esc"]),
-    ]
-
     private var isDefault: Bool {
-        settings.inkStyle == .marker && settings.inkColor == .red && settings.inkWidth == 1 && settings.inkCleanup && settings.inkFadeAfter == 2
+        settings.inkStyle == .marker && settings.inkColor == .red && settings.inkWidth == 1 && settings.inkCleanup
+            && settings.inkFadeAfter == 2 && settings.inkShapes == .all && settings.inkFades
     }
 
     private func resetPen() {
@@ -403,6 +409,82 @@ struct InkPage: View {
         model.setInkWidth(1)
         model.setInkCleanup(true)
         model.setInkFade(2)
+        model.setInkShapes(.all)
+        model.setInkFades(true)
+    }
+}
+
+/// Which shapes cleanup may snap to, as toggle chips.
+struct ShapeChips: View {
+    let shapes: InkShapeSet
+    let change: (InkShapeSet) -> Void
+
+    private static let items: [(InkShapeSet, String, String)] = [
+        (.ellipse, "Circle", "circle"), (.rectangle, "Box", "rectangle"), (.line, "Line", "line.diagonal"),
+        (.underline, "Underline", "minus"), (.arrow, "Arrow", "arrow.up.right"),
+    ]
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 8)], spacing: 8) {
+            ForEach(Self.items, id: \.0.rawValue) { shape, title, symbol in
+                let on = shapes.contains(shape)
+                Button {
+                    var next = shapes
+                    if on { next.remove(shape) } else { next.insert(shape) }
+                    change(next)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                        Text(title).font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(on ? Color.white : Theme.dim)
+                    .frame(maxWidth: .infinity).frame(height: 28)
+                    .background(on ? Theme.accent.opacity(0.9) : Color.white.opacity(0.07), in: Capsule())
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// The keys that work while drawing, as keycaps with a caption, and the eight color keys in their own colors.
+struct DrawingKeys: View {
+    let selected: InkColor
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                card("Undo", ["⌘", "Z"])
+                card("Clear all", ["C"])
+                card("Stop", ["esc"])
+            }
+            VStack(spacing: 8) {
+                HStack(spacing: 5) {
+                    ForEach(Array(InkColor.allCases.enumerated()), id: \.element) { index, color in
+                        Keycap(text: "\(index + 1)", tint: Color(rgba: color.rgba))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .stroke(Color(rgba: color.rgba), lineWidth: color == selected ? 1.5 : 0)
+                            )
+                    }
+                }
+                Text("Switch color").font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 10)
+            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+    }
+
+    private func card(_ title: String, _ keys: [String]) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 3) { ForEach(keys, id: \.self) { Keycap(text: $0) } }
+            Text(title).font(.system(size: 11)).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 10)
+        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
@@ -415,15 +497,15 @@ struct PenRow: View {
     @State private var hovered: InkStyle?
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3), spacing: 10) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 5), spacing: 8) {
             ForEach(InkStyle.allCases, id: \.self) { style in
                 let on = style == selection
                 let tint = Color(rgba: color.rgba)
                 Button { select(style) } label: {
                     VStack(spacing: 6) {
                         InkSwatchStroke(style: style, color: color, width: width)
-                            .padding(.horizontal, 6)
-                            .frame(height: 52).frame(maxWidth: .infinity)
+                            .padding(.horizontal, 5)
+                            .frame(height: 50).frame(maxWidth: .infinity)
                             .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .overlay(
@@ -434,6 +516,7 @@ struct PenRow: View {
                         Text(style.displayName)
                             .font(.system(size: 11, weight: on ? .semibold : .regular))
                             .foregroundStyle(on ? Theme.text : Theme.dim)
+                            .lineLimit(1).minimumScaleFactor(0.75)
                     }
                     .contentShape(Rectangle())
                 }

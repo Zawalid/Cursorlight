@@ -132,6 +132,8 @@ final class AppModel: ObservableObject {
     func setInkStyle(_ style: InkStyle) { coordinator.setInkStyle(style); bump() }
     func setInkColor(_ color: InkColor) { coordinator.setInkColor(color); bump() }
     func setInkCleanup(_ on: Bool) { coordinator.setInkCleanup(on); bump() }
+    func setInkShapes(_ shapes: InkShapeSet) { coordinator.setInkShapes(shapes); bump() }
+    func setInkFades(_ fades: Bool) { coordinator.setInkFades(fades); bump() }
     func setInkWidth(_ scale: Double) { coordinator.setInkWidth(scale); bump() }
     func setInkFade(_ seconds: Double) { coordinator.setInkFadeAfter(seconds); bump() }
 

@@ -187,3 +187,57 @@ final class PenWidthTests: XCTestCase {
         XCTAssertEqual(settings.sanitized().inkWidth, BeaconSettings.inkWidthRange.upperBound)
     }
 }
+
+final class InkChoicesTests: XCTestCase {
+    private func circle() -> [CGPoint] {
+        (0..<64).map { i in
+            let a = 2 * Double.pi * Double(i) / 63
+            return CGPoint(x: 200 + 80 * cos(a), y: 200 + 80 * sin(a))
+        }
+    }
+
+    private func draw(_ model: inout InkModel, _ points: [CGPoint]) {
+        model.begin(at: points[0], style: .marker, color: .red)
+        for p in points.dropFirst() { model.append(p) }
+        model.end(at: 1)
+    }
+
+    func testDisabledShapeIsNotCleanedUp() {
+        var on = InkModel()
+        draw(&on, circle())
+        XCTAssertNotNil(on.strokes.last?.morphTo)
+        var off = InkModel()
+        off.enabledShapes = [.rectangle, .arrow]
+        draw(&off, circle())
+        XCTAssertNil(off.strokes.last?.morphTo, "circles are switched off, so the raw stroke stays")
+    }
+
+    func testStrokesStayWhenFadeIsOff() {
+        var model = InkModel()
+        model.fades = false
+        draw(&model, circle())
+        let frame = model.step(time: 1000)
+        XCTAssertEqual(frame.strokes.first?.alpha, 1)
+        var fading = InkModel()
+        draw(&fading, circle())
+        XCTAssertTrue(fading.step(time: 1000).strokes.isEmpty)
+    }
+
+    func testMoreColorsAndStyles() {
+        XCTAssertEqual(InkColor.allCases.count, 8)
+        XCTAssertEqual(Set(InkColor.allCases.map(\.rawValue)).count, 8)
+        XCTAssertNotNil(InkStyle.dashed.dash)
+        XCTAssertFalse(InkStyle.dashed.hasKeyline)
+        XCTAssertLessThan(InkStyle.pencil.width, InkStyle.marker.width)
+    }
+
+    func testShapeSetRoundTrips() throws {
+        var settings = BeaconSettings.defaults
+        settings.inkShapes = [.ellipse, .arrow]
+        settings.inkFades = false
+        let decoded = try JSONDecoder().decode(BeaconSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.inkShapes, [.ellipse, .arrow])
+        XCTAssertFalse(decoded.inkFades)
+        XCTAssertEqual(decoded.snapshot.inkShapes, [.ellipse, .arrow])
+    }
+}

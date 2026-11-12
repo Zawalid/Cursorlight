@@ -63,7 +63,7 @@ final class InkRenderer {
         entry.keyline.strokeColor = Palette.keyline.with(alpha: 0.22).cgColor
         let scale = stroke.widthScale
         entry.keyline.lineWidth = style.width * scale + 2
-        entry.keyline.isHidden = style == .highlighter
+        entry.keyline.isHidden = !style.hasKeyline
         if let glow = style.glow {
             entry.glow.strokeColor = color.with(alpha: Double(glow.alpha)).cgColor
             entry.glow.lineWidth = glow.width * scale
@@ -73,6 +73,7 @@ final class InkRenderer {
         let coreColor = style.lightCore ? color.mixed(with: Palette.light, 0.75) : color
         entry.core.strokeColor = coreColor.with(alpha: Double(style.alpha)).cgColor
         entry.core.lineWidth = style.width * scale
+        if let dash = style.dash { entry.core.lineDashPattern = dash.map { NSNumber(value: Double($0 * style.width * scale)) } }
         root.addSublayer(entry.container)
         layers[stroke.id] = entry
         return entry

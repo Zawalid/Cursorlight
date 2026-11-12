@@ -42,6 +42,10 @@ public struct InkModel: Equatable, Sendable {
     public var fadeDuration: TimeInterval
     public var morphDuration: TimeInterval
     public var cleanupEnabled: Bool
+    /// Which shapes a stroke may snap to when cleanup is on.
+    public var enabledShapes: InkShapeSet = .all
+    /// Off keeps strokes on screen until they are cleared.
+    public var fades = true
     private let recognizer = ShapeRecognizer()
     private(set) var strokes: [Stroke] = []
     private var nextID = 0
@@ -81,6 +85,7 @@ public struct InkModel: Equatable, Sendable {
         guard cleanupEnabled else { return }
         let raw = strokes[index].points
         let shape = recognizer.recognize(raw)
+        guard let kind = shape.kind, enabledShapes.contains(kind) else { return }
         let count = Self.morphPointCount
         if let target = shape.polyline(count: count, matching: raw) {
             strokes[index].morphFrom = Polyline.resample(raw, count: count)
@@ -115,7 +120,7 @@ public struct InkModel: Equatable, Sendable {
 
     private func alpha(of stroke: Stroke, at time: TimeInterval) -> CGFloat {
         var result: CGFloat = 1
-        if let end = stroke.endTime {
+        if fades, let end = stroke.endTime {
             let fadeStart = end + fadeAfter
             if time >= fadeStart { result = CGFloat(max(0, 1 - (time - fadeStart) / fadeDuration)) }
         }

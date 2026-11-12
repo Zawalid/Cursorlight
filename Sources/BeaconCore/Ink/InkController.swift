@@ -127,6 +127,14 @@ public final class InkController {
         model.fadeAfter = seconds
     }
 
+    public func setShapes(_ shapes: InkShapeSet) {
+        model.enabledShapes = shapes
+    }
+
+    public func setFades(_ fades: Bool) {
+        model.fades = fades
+    }
+
     public func setCleanupEnabled(_ enabled: Bool) {
         model.cleanupEnabled = enabled
     }

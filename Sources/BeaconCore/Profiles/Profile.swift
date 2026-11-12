@@ -13,6 +13,8 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
     public var inkCleanup: Bool
     public var inkFadeAfter: Double
     public var inkWidth: Double
+    public var inkShapes: InkShapeSet
+    public var inkFades: Bool
     public var options: HighlightOptions
 
     public init(
@@ -20,6 +22,8 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         highlightIntensity: Double = 1, lensDim: Double = 0.5, clickRipples: Bool = true, inkStyle: InkStyle = .marker,
         inkColor: InkColor = .red, inkCleanup: Bool = true, inkFadeAfter: Double = 2,
         inkWidth: Double = 1,
+        inkShapes: InkShapeSet = .all,
+        inkFades: Bool = true,
         options: HighlightOptions = HighlightOptions()
     ) {
         self.highlightStyle = highlightStyle
@@ -33,12 +37,14 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         self.inkCleanup = inkCleanup
         self.inkFadeAfter = inkFadeAfter
         self.inkWidth = inkWidth
+        self.inkShapes = inkShapes
+        self.inkFades = inkFades
         self.options = options
     }
 
     private enum CodingKeys: String, CodingKey {
         case highlightStyle, accent, highlightSize, highlightIntensity, lensDim, clickRipples
-        case inkStyle, inkColor, inkCleanup, inkFadeAfter, inkWidth, options
+        case inkStyle, inkColor, inkCleanup, inkFadeAfter, inkWidth, inkShapes, inkFades, options
     }
 
     /// Tolerant: a missing field takes its default.
@@ -56,6 +62,8 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         inkCleanup = (try? c.decode(Bool.self, forKey: .inkCleanup)) ?? d.inkCleanup
         inkFadeAfter = (try? c.decode(Double.self, forKey: .inkFadeAfter)) ?? d.inkFadeAfter
         inkWidth = (try? c.decode(Double.self, forKey: .inkWidth)) ?? d.inkWidth
+        inkShapes = (try? c.decode(InkShapeSet.self, forKey: .inkShapes)) ?? d.inkShapes
+        inkFades = (try? c.decode(Bool.self, forKey: .inkFades)) ?? d.inkFades
         options = ((try? c.decode(HighlightOptions.self, forKey: .options)) ?? d.options).sanitized()
     }
 }

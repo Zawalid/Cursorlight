@@ -49,19 +49,20 @@ struct MiniKey: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 11.5, weight: .semibold))
-            .foregroundStyle(pressed ? Color.white : Color.white.opacity(0.9))
+            .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+            .foregroundStyle(pressed ? Color.white : Color.white.opacity(0.92))
             .frame(minWidth: 20, minHeight: 20)
             .padding(.horizontal, 3)
             .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(pressed ? Theme.accent : Color.white.opacity(0.11))
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.black.opacity(pressed ? 0 : 0.5)).offset(y: 1.5)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(pressed ? AnyShapeStyle(Theme.accent) : AnyShapeStyle(LinearGradient(colors: [Color.white.opacity(0.18), Color.white.opacity(0.09)], startPoint: .top, endPoint: .bottom)))
+                }
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(Color.white.opacity(pressed ? 0.0 : 0.16), lineWidth: 1)
-            )
-            .offset(y: pressed ? 1 : 0)
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Color.white.opacity(pressed ? 0 : 0.16), lineWidth: 1))
+            .offset(y: pressed ? 1.5 : 0)
+            .padding(.bottom, 1.5)
             .animation(.easeOut(duration: 0.08), value: pressed)
     }
 }
