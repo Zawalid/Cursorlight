@@ -359,7 +359,7 @@ struct InkPage: View {
                     }
                 }
                 if settings.inkCleanup {
-                    ShapeChips(shapes: settings.inkShapes) { model.setInkShapes($0) }
+                    ShapeTiles(shapes: settings.inkShapes, color: settings.inkColor) { model.setInkShapes($0) }
                 }
                 Toggle(isOn: Binding(get: { settings.inkFades }, set: { model.setInkFades($0) })) {
                     VStack(alignment: .leading, spacing: 1) {
@@ -380,7 +380,7 @@ struct InkPage: View {
                 Text("Behavior")
             }
             Section {
-                DrawingKeys(selected: settings.inkColor)
+                DrawingKeys(selected: settings.inkColor) { model.setInkColor($0) }
                     .listRowInsets(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10))
             } header: {
                 Text("While drawing")
@@ -415,35 +415,51 @@ struct InkPage: View {
     }
 }
 
-/// Which shapes cleanup may snap to, as toggle chips.
-struct ShapeChips: View {
+/// Which shapes cleanup may snap to: one tile per shape, drawn in the pen color. A tile that is on has a ring; one that is
+/// off is dimmed.
+struct ShapeTiles: View {
     let shapes: InkShapeSet
+    let color: InkColor
     let change: (InkShapeSet) -> Void
+    @State private var hovered: Int?
 
-    private static let items: [(InkShapeSet, String, String)] = [
-        (.ellipse, "Circle", "circle"), (.rectangle, "Box", "rectangle"), (.line, "Line", "line.diagonal"),
-        (.underline, "Underline", "minus"), (.arrow, "Arrow", "arrow.up.right"),
+    private static let items: [(InkShapeSet, String)] = [
+        (.ellipse, "Circle"), (.rectangle, "Box"), (.triangle, "Triangle"), (.diamond, "Diamond"),
+        (.line, "Line"), (.underline, "Underline"), (.arrow, "Arrow"),
     ]
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 8)], spacing: 8) {
-            ForEach(Self.items, id: \.0.rawValue) { shape, title, symbol in
+        let tint = Color(rgba: color.rgba)
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 4), spacing: 10) {
+            ForEach(Self.items, id: \.0.rawValue) { shape, title in
                 let on = shapes.contains(shape)
                 Button {
                     var next = shapes
                     if on { next.remove(shape) } else { next.insert(shape) }
                     change(next)
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
-                        Text(title).font(.system(size: 12, weight: .medium))
+                    VStack(spacing: 5) {
+                        ShapeGlyph(shape: shape)
+                            .stroke(on ? tint : Color.white.opacity(0.28), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+                            .padding(13)
+                            .frame(maxWidth: .infinity).aspectRatio(1.15, contentMode: .fit)
+                            .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(on ? tint.opacity(0.9) : Color.white.opacity(hovered == shape.rawValue ? 0.25 : 0.09), lineWidth: on ? 1.5 : 1)
+                            )
+                            .shadow(color: on ? tint.opacity(0.28) : .clear, radius: 6)
+                        Text(title)
+                            .font(.system(size: 10.5, weight: on ? .semibold : .regular))
+                            .foregroundStyle(on ? Theme.text : Theme.faint)
+                            .lineLimit(1).minimumScaleFactor(0.8)
                     }
-                    .foregroundStyle(on ? Color.white : Theme.dim)
-                    .frame(maxWidth: .infinity).frame(height: 28)
-                    .background(on ? Theme.accent.opacity(0.9) : Color.white.opacity(0.07), in: Capsule())
-                    .contentShape(Capsule())
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .onHover { hovered = $0 ? shape.rawValue : (hovered == shape.rawValue ? nil : hovered) }
+                .animation(.easeOut(duration: 0.14), value: on)
+                .accessibilityLabel(title)
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
@@ -451,9 +467,40 @@ struct ShapeChips: View {
     }
 }
 
+/// The outline of one shape, drawn to fill its rectangle.
+struct ShapeGlyph: Shape {
+    let shape: InkShapeSet
+
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        switch shape {
+        case .ellipse:
+            p.addEllipse(in: r)
+        case .rectangle:
+            p.addRoundedRect(in: r.insetBy(dx: 0, dy: r.height * 0.1), cornerSize: CGSize(width: 2, height: 2))
+        case .triangle:
+            p.move(to: CGPoint(x: r.midX, y: r.minY)); p.addLine(to: CGPoint(x: r.maxX, y: r.maxY))
+            p.addLine(to: CGPoint(x: r.minX, y: r.maxY)); p.closeSubpath()
+        case .diamond:
+            p.move(to: CGPoint(x: r.midX, y: r.minY)); p.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+            p.addLine(to: CGPoint(x: r.midX, y: r.maxY)); p.addLine(to: CGPoint(x: r.minX, y: r.midY)); p.closeSubpath()
+        case .line:
+            p.move(to: CGPoint(x: r.minX, y: r.maxY)); p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        case .underline:
+            p.move(to: CGPoint(x: r.minX, y: r.midY)); p.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        default:
+            p.move(to: CGPoint(x: r.minX, y: r.maxY)); p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+            p.move(to: CGPoint(x: r.maxX - r.width * 0.34, y: r.minY)); p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+            p.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.34))
+        }
+        return p
+    }
+}
+
 /// The keys that work while drawing, as keycaps with a caption, and the eight color keys in their own colors.
 struct DrawingKeys: View {
     let selected: InkColor
+    let select: (InkColor) -> Void
 
     var body: some View {
         VStack(spacing: 8) {
@@ -462,20 +509,7 @@ struct DrawingKeys: View {
                 card("Clear all", ["C"])
                 card("Stop", ["esc"])
             }
-            VStack(spacing: 8) {
-                HStack(spacing: 5) {
-                    ForEach(Array(InkColor.allCases.enumerated()), id: \.element) { index, color in
-                        Keycap(text: "\(index + 1)", tint: Color(rgba: color.rgba))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .stroke(Color(rgba: color.rgba), lineWidth: color == selected ? 1.5 : 0)
-                            )
-                    }
-                }
-                Text("Switch color").font(.system(size: 11)).foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity).padding(.vertical, 10)
-            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            ColorKeys(selected: selected, select: select)
         }
     }
 
@@ -850,5 +884,70 @@ struct AboutPage: View {
             }
         }
         .page()
+    }
+}
+
+/// The eight color keys: each key is the color itself with its number on it, so the mapping needs no legend. Click one
+/// to pick it; while drawing, press its number.
+struct ColorKeys: View {
+    let selected: InkColor
+    let select: (InkColor) -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                ForEach(Array(InkColor.allCases.enumerated()), id: \.element) { index, color in
+                    key(index + 1, color)
+                }
+            }
+            HStack(spacing: 5) {
+                Text("Press").foregroundStyle(.secondary)
+                Keycap(text: "1")
+                Text("to").foregroundStyle(.secondary)
+                Keycap(text: "8")
+                Text("while drawing. Now:").foregroundStyle(.secondary)
+                Text(selected.displayName).fontWeight(.semibold).foregroundStyle(Color(rgba: selected.rgba))
+            }
+            .font(.system(size: 11))
+            .scaleEffect(0.88)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 12)
+        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func key(_ number: Int, _ color: InkColor) -> some View {
+        let on = color == selected
+        let fill = Color(rgba: color.rgba)
+        return Button { select(color) } label: {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(Self.inkOn(color))
+                .frame(width: 28, height: 28)
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.black.opacity(0.45)).offset(y: 2)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(LinearGradient(colors: [fill, fill.opacity(0.82)], startPoint: .top, endPoint: .bottom))
+                        RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    }
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Color.white, lineWidth: on ? 2 : 0).padding(-4)
+                )
+                .offset(y: on ? -1 : 0)
+                .padding(.bottom, 2)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.12), value: on)
+        .accessibilityLabel("\(color.displayName), key \(number)")
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    /// Dark digits on light colors, white on dark ones.
+    private static func inkOn(_ color: InkColor) -> Color {
+        switch color {
+        case .yellow, .white, .orange, .green, .pink: Color.black.opacity(0.78)
+        case .red, .blue, .purple: Color.white
+        }
     }
 }

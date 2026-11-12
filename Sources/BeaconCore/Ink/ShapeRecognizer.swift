@@ -9,6 +9,8 @@ public enum RecognizedShape: Equatable, Sendable {
     /// A horizontal line; both ends share one y.
     case underline(from: CGPoint, to: CGPoint)
     case line(from: CGPoint, to: CGPoint)
+    case triangle([CGPoint])
+    case diamond(CGRect)
     case none
 
     /// Which switch in `InkShapeSet` governs this shape.
@@ -19,6 +21,8 @@ public enum RecognizedShape: Equatable, Sendable {
         case .arrow: .arrow
         case .underline: .underline
         case .line: .line
+        case .triangle: .triangle
+        case .diamond: .diamond
         case .none: nil
         }
     }
@@ -30,6 +34,13 @@ public enum RecognizedShape: Equatable, Sendable {
         switch self {
         case .none:
             return nil
+        case let .triangle(vertices):
+            return Self.closedRing(vertices, matching: raw, count: n)
+        case let .diamond(rect):
+            return Self.closedRing([
+                CGPoint(x: rect.midX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.midY),
+                CGPoint(x: rect.midX, y: rect.maxY), CGPoint(x: rect.minX, y: rect.midY),
+            ], matching: raw, count: n)
         case let .line(a, b), let .underline(a, b):
             return Polyline.resample([a, b], count: n)
         case let .arrow(from, to):
@@ -71,7 +82,36 @@ public enum RecognizedShape: Equatable, Sendable {
     }
 }
 
+extension RecognizedShape {
+    /// A closed polygon as `count` points that start near the raw stroke's start and wind the same way.
+    static func closedRing(_ vertices: [CGPoint], matching raw: [CGPoint], count n: Int) -> [CGPoint] {
+        var v = vertices
+        if Polyline.signedArea(raw) * Polyline.signedArea(v) < 0 { v.reverse() }
+        if let first = raw.first, let k = v.indices.min(by: {
+            hypot(v[$0].x - first.x, v[$0].y - first.y) < hypot(v[$1].x - first.x, v[$1].y - first.y)
+        }) { v = Array(v[k...] + v[..<k]) }
+        v.append(v[0])
+        return Polyline.resample(v, count: n)
+    }
+}
+
 enum Polyline {
+    /// Douglas-Peucker: the fewest points that keep the line within `tolerance` of the original.
+    static func simplify(_ points: [CGPoint], tolerance: CGFloat) -> [CGPoint] {
+        guard points.count > 2, let a = points.first, let b = points.last else { return points }
+        var worst = 0, worstDistance: CGFloat = 0
+        let dx = b.x - a.x, dy = b.y - a.y
+        let length = max(hypot(dx, dy), 0.0001)
+        for i in 1..<(points.count - 1) {
+            let d = abs(dy * (points[i].x - a.x) - dx * (points[i].y - a.y)) / length
+            if d > worstDistance { worstDistance = d; worst = i }
+        }
+        guard worstDistance > tolerance else { return [a, b] }
+        let left = simplify(Array(points[...worst]), tolerance: tolerance)
+        let right = simplify(Array(points[worst...]), tolerance: tolerance)
+        return left + right.dropFirst()
+    }
+
     static func length(_ points: [CGPoint]) -> CGFloat {
         zip(points, points.dropFirst()).reduce(0) { $0 + hypot($1.1.x - $1.0.x, $1.1.y - $1.0.y) }
     }
@@ -162,8 +202,34 @@ public struct ShapeRecognizer: Equatable, Sendable {
         rectError /= CGFloat(points.count)
         guard bins.count >= 10 else { return .none }
         if rectError <= 0.05, rectError < ellipseError * 0.5 { return .rectangle(box) }
+        if let corners = polygonCorners(points, box: box) {
+            if corners.count == 3 { return .triangle(corners) }
+            if isDiamond(corners, in: box) { return .diamond(box) }
+        }
         if ellipseError <= 0.16 { return .ellipse(box) }
         return .none
+    }
+
+    /// The corners of a closed stroke when it is a plain polygon with three or four corners, otherwise nil.
+    private func polygonCorners(_ points: [CGPoint], box: CGRect) -> [CGPoint]? {
+        let tolerance = 0.07 * max(box.width, box.height)
+        guard let far = points.indices.max(by: { hypot(points[$0].x - points[0].x, points[$0].y - points[0].y) < hypot(points[$1].x - points[0].x, points[$1].y - points[0].y) }), far > 2, far < points.count - 2 else { return nil }
+        let firstHalf = Polyline.simplify(Array(points[0...far]), tolerance: tolerance)
+        let secondHalf = Polyline.simplify(Array(points[far...]) + [points[0]], tolerance: tolerance)
+        var corners = firstHalf + secondHalf.dropFirst().dropLast()
+        // A corner right on the join is the stroke's own start, not a second corner.
+        corners = corners.enumerated().filter { index, p in
+            let next = corners[(index + 1) % corners.count]
+            return hypot(p.x - next.x, p.y - next.y) > tolerance
+        }.map(\.element)
+        return (3...4).contains(corners.count) ? corners : nil
+    }
+
+    private func isDiamond(_ corners: [CGPoint], in box: CGRect) -> Bool {
+        guard corners.count == 4 else { return false }
+        let mids = [CGPoint(x: box.midX, y: box.minY), CGPoint(x: box.maxX, y: box.midY), CGPoint(x: box.midX, y: box.maxY), CGPoint(x: box.minX, y: box.midY)]
+        let slack = 0.22 * max(box.width, box.height)
+        return mids.allSatisfy { m in corners.contains { hypot($0.x - m.x, $0.y - m.y) <= slack } }
     }
 
     private func straightShape(from a: CGPoint, to b: CGPoint, points: [CGPoint]) -> RecognizedShape {

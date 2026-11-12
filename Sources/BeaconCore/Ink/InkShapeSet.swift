@@ -10,7 +10,9 @@ public struct InkShapeSet: OptionSet, Codable, Equatable, Sendable {
     public static let line = InkShapeSet(rawValue: 4)
     public static let underline = InkShapeSet(rawValue: 8)
     public static let arrow = InkShapeSet(rawValue: 16)
-    public static let all: InkShapeSet = [.ellipse, .rectangle, .line, .underline, .arrow]
+    public static let triangle = InkShapeSet(rawValue: 32)
+    public static let diamond = InkShapeSet(rawValue: 64)
+    public static let all: InkShapeSet = [.ellipse, .rectangle, .line, .underline, .arrow, .triangle, .diamond]
 
     public init(from decoder: Decoder) throws {
         let value = try? decoder.singleValueContainer().decode(Int.self)

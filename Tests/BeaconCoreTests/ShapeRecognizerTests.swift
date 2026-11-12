@@ -119,3 +119,42 @@ final class ShapeRecognizerTests: XCTestCase {
         XCTAssertNil(RecognizedShape.none.polyline(count: 48, matching: []))
     }
 }
+
+final class PolygonShapeTests: XCTestCase {
+    private func ring(_ corners: [CGPoint], perSide: Int = 20, jitter: Double = 1.5) -> [CGPoint] {
+        var points: [CGPoint] = []
+        for i in 0..<corners.count {
+            let a = corners[i], b = corners[(i + 1) % corners.count]
+            for k in 0..<perSide {
+                let t = CGFloat(k) / CGFloat(perSide)
+                let wobble = CGFloat(jitter * sin(Double(points.count) * 1.3))
+                points.append(CGPoint(x: a.x + (b.x - a.x) * t + wobble, y: a.y + (b.y - a.y) * t - wobble))
+            }
+        }
+        points.append(corners[0])
+        return points
+    }
+
+    func testTriangleIsRecognized() {
+        let shape = ShapeRecognizer().recognize(ring([CGPoint(x: 200, y: 100), CGPoint(x: 300, y: 260), CGPoint(x: 100, y: 260)]))
+        guard case let .triangle(corners) = shape else { return XCTFail("got \(shape)") }
+        XCTAssertEqual(corners.count, 3)
+        XCTAssertEqual(shape.kind, .triangle)
+    }
+
+    func testDiamondIsRecognized() {
+        let shape = ShapeRecognizer().recognize(ring([CGPoint(x: 200, y: 100), CGPoint(x: 300, y: 200), CGPoint(x: 200, y: 300), CGPoint(x: 100, y: 200)]))
+        XCTAssertEqual(shape.kind, .diamond, "got \(shape)")
+    }
+
+    func testRectangleStillWinsOverDiamond() {
+        let shape = ShapeRecognizer().recognize(ring([CGPoint(x: 100, y: 100), CGPoint(x: 300, y: 100), CGPoint(x: 300, y: 250), CGPoint(x: 100, y: 250)]))
+        XCTAssertEqual(shape.kind, .rectangle, "got \(shape)")
+    }
+
+    func testPolygonMorphHasTheRequestedPointCount() {
+        let raw = ring([CGPoint(x: 200, y: 100), CGPoint(x: 300, y: 260), CGPoint(x: 100, y: 260)])
+        let shape = ShapeRecognizer().recognize(raw)
+        XCTAssertEqual(shape.polyline(count: InkModel.morphPointCount, matching: raw)?.count, InkModel.morphPointCount)
+    }
+}
