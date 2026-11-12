@@ -18,6 +18,7 @@ Permission key: **none** keeps the "no Screen Recording, no Accessibility" promi
 - Spotlight region: drag a lit region, shape, dim, soft edge, click-through
 - Cursor and effect designs: click effects (ripple, double ring, burst, pulse) with an optional click sound, Crosshair style, Follow Reduce Motion, locator ring when the pointer jumps displays
 - Scene presets (Teaching, Webinar, Tutorial, Pairing, High visibility) and export and import of scene files
+- App category rules (calls, code, browsers, slides, design, video), the "Viewers" preview on the canvas, keystroke display, key sound and hide while typing (all three listen to the keyboard through optional Input Monitoring)
 - Presenting tools: text labels, number stamps (also fading pins), check, cross, star, heart, question and exclamation stamps, whiteboard (white or black), cover box, filled translucent box, eraser, arrow, double arrow, bracket, Shift for straight lines, persistent strokes (the fade switch), presenter timer chip
 
 ## Next
@@ -62,19 +63,14 @@ Nothing queued. Pick from the lists below. Left over from presenting tools: curv
 
 | Idea | Size | Permission | Why |
 |---|---|---|---|
-| Scene gallery with preview | M | none | Browse and pick visually |
+| Scene gallery with live previews (the presets menu has thumbnails) | M | none | Browse and pick visually |
 | Per-display scenes | M | none | A different look on each screen |
-| Auto scene by app category (video call, editor, browser) | S | none | Fewer rules to write |
-| "Viewers see" preview: shows what an audience gets, including a window share hiding effects | M | none | Makes share-safe visible |
 | Better share detection (private SkyLight calls, behind a fallback) | L | none | Replaces the manual declaration if it proves reliable |
 
 ## Needs Input Monitoring (optional)
 
 | Idea | Size | Why |
 |---|---|---|
-| Keystroke display like KeyCastr | M | Tutorials and demos |
-| Click and key sounds | S | Recordings |
-| Type-to-hide: hide the highlight while typing | S | Less clutter |
 
 ## Parked (breaks "no Screen Recording")
 
