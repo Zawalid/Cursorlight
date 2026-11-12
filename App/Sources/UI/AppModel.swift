@@ -20,6 +20,7 @@ final class AppModel: ObservableObject {
         self.updater = updater
         coordinator.highlight.onChange = { [weak self] in self?.bump() }
         coordinator.ink.onChange = { [weak self] in self?.bump() }
+        coordinator.spotlight.onChange = { [weak self] in self?.bump() }
         coordinator.onSizeChange = { [weak self] in self?.bump() }
         coordinator.onTriggersChange = { [weak self] in self?.bump() }
         coordinator.onShareChange = { [weak self] in self?.bump() }
@@ -157,7 +158,10 @@ final class AppModel: ObservableObject {
     func setToolbar(_ edit: (inout ToolbarSettings) -> Void) { coordinator.setToolbar(edit); bump() }
     func undoInk() { coordinator.undoInk() }
     func clearInk() { coordinator.clearInk() }
-    var anyEffectRunning: Bool { coordinator.highlight.isOn || coordinator.highlight.isLaserOn || coordinator.ink.isActive }
+    var anyEffectRunning: Bool { coordinator.highlight.isOn || coordinator.highlight.isLaserOn || coordinator.ink.isActive || coordinator.spotlight.isOn }
+    var spotlightState: SpotlightController.State { coordinator.spotlight.state }
+    func cycleSpotlight() { coordinator.spotlight.cycle(); bump() }
+    func editSpotlight() { coordinator.spotlight.edit(); bump() }
 
     func resetAllSettings() { coordinator.resetAllSettings(); bump() }
 

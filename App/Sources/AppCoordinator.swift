@@ -17,6 +17,7 @@ final class AppCoordinator {
     let settings: SettingsStore
     let highlight: HighlightController
     let ink: InkController
+    let spotlight: SpotlightController
     let cursorSize: CursorSizeController
     let shareSafe = ShareSafeMonitor()
 
@@ -55,10 +56,13 @@ final class AppCoordinator {
         ink.setCustomColor(current.inkCustom.map { RGBA(hex: $0) })
         ink.setShapes(current.inkShapes)
         ink.setFades(current.inkFades)
+        spotlight = SpotlightController(overlays: overlays)
+        spotlight.setStyle(current.look.options.spotlight)
         // The overlay manager has one hook; both controllers follow window changes through it.
         overlays.onWindowsChanged = { [weak self] in
             self?.highlight.windowsChanged()
             self?.ink.windowsChanged()
+            self?.spotlight.windowsChanged()
         }
     }
 
@@ -70,6 +74,7 @@ final class AppCoordinator {
             overlays.start()
             highlight.start()
             ink.start()
+            spotlight.start()
         }
         if !(all || off.contains("monitors")) {
             tracker.onMove = { [weak self] position, time in
@@ -181,6 +186,7 @@ final class AppCoordinator {
             highlight.setOn(false)
             highlight.setLaser(false)
             ink.deactivate()
+            spotlight.clear()
         }
     }
 
@@ -191,6 +197,7 @@ final class AppCoordinator {
         let current = settings.settings
         highlight.setStyle(current.highlightStyle)
         highlight.setLook(current.look)
+        spotlight.setStyle(current.look.options.spotlight)
         highlight.setRipplesEnabled(current.clickRipples)
         ink.setStyle(current.inkStyle)
         ink.setColor(current.inkColor)
@@ -293,6 +300,7 @@ final class AppCoordinator {
         }
         highlight.setWindowFilter(filter)
         ink.setWindowFilter(filter)
+        spotlight.setWindowFilter(filter)
     }
 
     // MARK: Triggers
@@ -326,6 +334,8 @@ final class AppCoordinator {
             ink.clearAll()
         case .toggleToolbar:
             setToolbar { $0.enabled.toggle() }
+        case .spotlight:
+            spotlight.cycle()
         }
     }
 
@@ -354,6 +364,7 @@ final class AppCoordinator {
             highlight.setOn(false)
             highlight.setLaser(false)
             ink.deactivate()
+            spotlight.clear()
         }
         onTriggersChange?()
     }
@@ -466,6 +477,7 @@ final class AppCoordinator {
 
     private func applyLook() {
         highlight.setLook(settings.settings.look)
+        spotlight.setStyle(settings.settings.look.options.spotlight)
     }
 
     func toggleInk() {

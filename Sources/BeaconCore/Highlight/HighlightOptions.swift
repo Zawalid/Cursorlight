@@ -23,6 +23,18 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
     public var fadeAfterStill = 0.0
     /// The color used when the accent is "Custom", as `#RRGGBB`.
     public var customAccent = "#FF6A3D"
+    /// Spotlight region: shape, darkness outside, soft edge width and corner radius.
+    public var spotlightShape: SpotlightShape = .rounded
+    public var spotlightDim = 0.6
+    public var spotlightSoftness = 0.0
+    public var spotlightCorner = 14.0
+    public static let dimRange: ClosedRange<Double> = 0.2...0.9
+    public static let edgeRange: ClosedRange<Double> = 0...40
+    public static let cornerRange: ClosedRange<Double> = 0...60
+
+    public var spotlight: SpotlightStyle {
+        SpotlightStyle(shape: spotlightShape, dim: spotlightDim, softness: spotlightSoftness, corner: spotlightCorner)
+    }
 
     public init() {}
 
@@ -30,6 +42,7 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case auraBreathing, cometTail, keylineWidth, sonarRings, lensSoftness, fadeAfterStill, customAccent
+        case spotlightShape, spotlightDim, spotlightSoftness, spotlightCorner
     }
 
     public init(from decoder: Decoder) throws {
@@ -42,6 +55,10 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
         lensSoftness = (try? c.decode(Double.self, forKey: .lensSoftness)) ?? d.lensSoftness
         fadeAfterStill = (try? c.decode(Double.self, forKey: .fadeAfterStill)) ?? d.fadeAfterStill
         customAccent = (try? c.decode(String.self, forKey: .customAccent)) ?? d.customAccent
+        spotlightShape = (try? c.decode(SpotlightShape.self, forKey: .spotlightShape)) ?? d.spotlightShape
+        spotlightDim = (try? c.decode(Double.self, forKey: .spotlightDim)) ?? d.spotlightDim
+        spotlightSoftness = (try? c.decode(Double.self, forKey: .spotlightSoftness)) ?? d.spotlightSoftness
+        spotlightCorner = (try? c.decode(Double.self, forKey: .spotlightCorner)) ?? d.spotlightCorner
         self = sanitized()
     }
 
@@ -52,6 +69,9 @@ public struct HighlightOptions: Codable, Equatable, Sendable {
         copy.keylineWidth = Self.clamp(keylineWidth, Self.lineRange, fallback: 1)
         copy.lensSoftness = Self.clamp(lensSoftness, Self.softnessRange, fallback: 0.23)
         if !RGBA.isValidHex(copy.customAccent) { copy.customAccent = HighlightOptions().customAccent }
+        copy.spotlightDim = Self.clamp(spotlightDim, Self.dimRange, fallback: 0.6)
+        copy.spotlightSoftness = Self.clamp(spotlightSoftness, Self.edgeRange, fallback: 0)
+        copy.spotlightCorner = Self.clamp(spotlightCorner, Self.cornerRange, fallback: 14)
         copy.sonarRings = min(max(sonarRings, Self.ringsRange.lowerBound), Self.ringsRange.upperBound)
         if !fadeAfterStill.isFinite || fadeAfterStill < Self.fadeRange.lowerBound {
             copy.fadeAfterStill = 0

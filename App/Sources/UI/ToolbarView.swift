@@ -22,12 +22,13 @@ struct ToolbarView: View {
                 ToolButton(symbol: "viewfinder.circle", label: "Highlight", on: model.isOn(.highlight)) { model.toggle(.highlight) }.barTip("highlight", $hovered)
                 ToolButton(symbol: "cursorarrow.rays", label: "Laser", on: model.isOn(.laser)) { model.toggle(.laser) }.barTip("laser", $hovered)
                 ToolButton(symbol: "pencil.tip", label: "Draw", on: model.isOn(.ink)) { model.toggle(.ink) }.barTip("ink", $hovered)
+                ToolButton(symbol: "rectangle.dashed", label: "Spotlight", on: model.spotlightState != .idle) { model.cycleSpotlight() }.barTip("spotlight", $hovered)
                 ToolButton(symbol: model.isPaused ? "play.fill" : "pause.fill", label: model.isPaused ? "Resume" : "Pause", on: model.isPaused) {
                     model.setPaused(!model.isPaused)
                 }
                 .barTip("pause", $hovered)
                 separator
-                if model.isOn(.ink) { inkControls } else { highlightControls }
+                if model.isOn(.ink) { inkControls } else if model.spotlightState != .idle { spotlightControls } else { highlightControls }
                 separator
                 SceneMenu(selection: model.appliedProfileID, allowsOff: false) { id in if let id { model.chooseProfile(id) } }
                     .tint(Color.white.opacity(0.85)).barTip("scene", $hovered)
@@ -106,6 +107,22 @@ struct ToolbarView: View {
                 if model.settings.accent == .custom {
                     Dot(fill: Color(rgba: RGBA(hex: model.settings.highlightOptions.customAccent)), selected: true, auto: false, label: "Custom color") {}
                 }
+            }
+        }
+    }
+
+    private var spotlightControls: some View {
+        HStack(spacing: 6) {
+            Text(model.spotlightState == .editing ? "Drag a region. Press Return when done." : "Spotlight on")
+                .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.white.opacity(0.8))
+            Menu {
+                ForEach(SpotlightShape.allCases, id: \.self) { shape in
+                    Button(shape.displayName) { model.setOptions { $0.spotlightShape = shape } }
+                }
+            } label: { Text(model.settings.highlightOptions.spotlightShape.displayName).font(.system(size: 12, weight: .medium)) }
+                .menuStyle(.borderlessButton).fixedSize().tint(Color.white.opacity(0.85)).barTip("spotShape", $hovered)
+            if model.spotlightState == .shown {
+                IconButton(symbol: "pencil", label: "Adjust the region") { model.editSpotlight() }.barTip("spotEdit", $hovered)
             }
         }
     }
@@ -254,6 +271,9 @@ private enum BarTips {
         case "highlight": return BarTip(title: "Highlight", detail: "A glow that follows your pointer.", keys: keys(.highlight))
         case "laser": return BarTip(title: "Laser", detail: "A bright trail, so viewers can follow fast movement.", keys: keys(.laser))
         case "ink": return BarTip(title: "Draw", detail: "Drag anywhere on screen. Rough shapes straighten.", keys: keys(.ink))
+        case "spotlight": return BarTip(title: "Spotlight", detail: "Drag a region; everything else dims. Click again to keep it, again to turn it off.", keys: keys(.spotlight))
+        case "spotShape": return BarTip(title: "Spotlight shape", detail: "Rectangle, rounded or ellipse.")
+        case "spotEdit": return BarTip(title: "Adjust the region", detail: "Move it, or drag a handle to resize.")
         case "pause": return BarTip(title: model.isPaused ? "Resume" : "Pause", detail: model.isPaused ? "Turns the effects back on." : "Turns every effect off until you resume.", keys: keys(.pause))
         case "style": return BarTip(title: "Highlight style", detail: "Aura, Lens, Comet, Keyline or Sonar.")
         case "color": return BarTip(title: "Highlight color", detail: "Changes the color of the highlight and laser.")

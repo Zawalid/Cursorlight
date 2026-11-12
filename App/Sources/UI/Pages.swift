@@ -59,6 +59,7 @@ private extension View {
 struct LookPage: View {
     @EnvironmentObject private var model: AppModel
     private var settings: BeaconSettings { model.settings }
+    private var options: HighlightOptions { settings.highlightOptions }
 
     var body: some View {
         Form {
@@ -149,6 +150,35 @@ struct LookPage: View {
                 }
             } header: {
                 Text("Behavior")
+            }
+            Section {
+                SpotlightShapeRow(selection: options.spotlightShape) { v in model.setOptions { $0.spotlightShape = v } }
+                LabeledContent("Dim") {
+                    ValueSlider(value: Binding(get: { options.spotlightDim }, set: { v in model.setOptions { $0.spotlightDim = v } }), range: HighlightOptions.dimRange)
+                }
+                if options.spotlightShape == .rounded {
+                    LabeledContent("Corners") {
+                        ValueSlider(
+                            value: Binding(get: { options.spotlightCorner }, set: { v in model.setOptions { $0.spotlightCorner = v.rounded() } }),
+                            range: HighlightOptions.cornerRange, format: { "\(Int($0)) pt" }
+                        )
+                    }
+                }
+                LabeledContent("Soft edge") {
+                    ValueSlider(
+                        value: Binding(get: { options.spotlightSoftness }, set: { v in model.setOptions { $0.spotlightSoftness = v.rounded() } }),
+                        range: HighlightOptions.edgeRange, format: { $0 < 1 ? "Sharp" : "\(Int($0)) pt" }
+                    )
+                }
+                Button(model.spotlightState == .idle ? "Try it" : "Turn off") { model.cycleSpotlight() }
+            } header: {
+                Text("Spotlight")
+            } footer: {
+                if let key = model.settings.triggers.hotkey(for: .spotlight) {
+                    Text("Press \(key.displayString), drag a region and everything else dims. Press it again to keep the region, and once more to turn it off. Clicks still reach what is inside.")
+                } else {
+                    Text("Set a shortcut in Keys, then drag a region and everything else dims. Clicks still reach what is inside.")
+                }
             }
             Section {
                 Toggle(isOn: Binding(get: { settings.hideRules.fullScreenApps }, set: { v in model.setHideRules { $0.fullScreenApps = v } })) {
@@ -1238,6 +1268,46 @@ struct ColorKeys: View {
         switch color {
         case .yellow, .white, .orange, .green, .pink: Color.black.opacity(0.78)
         case .red, .blue, .purple: Color.white
+        }
+    }
+}
+
+/// The three spotlight shapes as small drawn tiles.
+struct SpotlightShapeRow: View {
+    let selection: SpotlightShape
+    let select: (SpotlightShape) -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(SpotlightShape.allCases, id: \.self) { shape in
+                let on = shape == selection
+                Button { select(shape) } label: {
+                    VStack(spacing: 5) {
+                        ZStack {
+                            Color.black.opacity(0.55)
+                            outline(shape).fill(Color.white.opacity(0.9))
+                                .frame(width: 34, height: 22)
+                        }
+                        .frame(maxWidth: .infinity).frame(height: 40)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(on ? Theme.accent : Color.white.opacity(0.1), lineWidth: on ? 2 : 1))
+                        Text(shape.displayName).font(.system(size: 10.5, weight: on ? .semibold : .regular)).foregroundStyle(on ? Theme.text : Theme.faint)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(shape.displayName)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func outline(_ shape: SpotlightShape) -> AnyShape {
+        switch shape {
+        case .rectangle: AnyShape(Rectangle())
+        case .rounded: AnyShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        case .ellipse: AnyShape(Ellipse())
         }
     }
 }
