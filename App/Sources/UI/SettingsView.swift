@@ -114,7 +114,7 @@ struct InspectorTabs: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .padding(.horizontal, 10).padding(.top, 38).padding(.bottom, 10)
+        .padding(.horizontal, 10).padding(.top, 6).padding(.bottom, 8)
     }
 }
 
