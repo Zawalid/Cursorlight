@@ -21,6 +21,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windows: WindowControllers?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if ClickSelfTest.isRequested {
+            ClickSelfTest.run()
+            NSApp.terminate(nil)
+            return
+        }
         if let directory = SnapshotRunner.directory {
             SnapshotRunner.run(into: directory)
             NSApp.terminate(nil)
@@ -38,7 +43,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.model = model
             self.windows = windows
             statusItemController.install(model: model)
-            if !coordinator.settings.settings.welcomeSeen && !environment.isAgentMode {
+            if environment.opensSettingsAtLaunch {
+                windows.showSettings(.highlight)
+            } else if !coordinator.settings.settings.welcomeSeen && !environment.isAgentMode {
                 windows.showWelcome()
             }
         } else {

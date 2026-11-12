@@ -5,10 +5,13 @@ import Foundation
 struct AppEnvironment: Sendable {
     let isAgentMode: Bool
     let isDemo: Bool
+    /// BEACON_OPEN=settings opens the settings window at launch (for looking at the app).
+    let opensSettingsAtLaunch: Bool
 
     init(environment: [String: String] = ProcessInfo.processInfo.environment) {
         isAgentMode = environment["BEACON_AGENT"] == "1"
         isDemo = environment["BEACON_DEMO"] == "1"
+        opensSettingsAtLaunch = environment["BEACON_OPEN"] == "settings"
     }
 
     var allowsLaunchAtLogin: Bool { !isAgentMode }
