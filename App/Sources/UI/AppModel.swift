@@ -120,6 +120,9 @@ final class AppModel: ObservableObject {
     func setSize(_ value: Double) { coordinator.setHighlightSize(value); bump() }
     func setIntensity(_ value: Double) { coordinator.setHighlightIntensity(value); bump() }
     func setLensDim(_ value: Double) { coordinator.setLensDim(value); bump() }
+    func setOptions(_ edit: (inout HighlightOptions) -> Void) { coordinator.setHighlightOptions(edit); bump() }
+    func setHideRules(_ edit: (inout HideRules) -> Void) { coordinator.setHideRules(edit); bump() }
+    var hideReason: HideReason? { coordinator.hideReason }
     func setRipples(_ on: Bool) { coordinator.setClickRipples(on); bump() }
     func setCursorScale(_ scale: Double) { coordinator.setCursorScale(Float(scale)) }
     func setShakeSensitivity(_ value: Double) { coordinator.setShakeSensitivity(value); bump() }

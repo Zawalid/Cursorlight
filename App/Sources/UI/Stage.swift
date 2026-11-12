@@ -12,6 +12,7 @@ struct Stage: View {
     @State private var hover: CGPoint?
     @State private var history = PreviewCanvas.PointerHistory()
     @State private var clicks: [PreviewClick] = []
+    @State private var lastHoverMove: Double?
 
     private var scene: PreviewScene { PreviewScene(rawValue: sceneRaw) ?? .slides }
 
@@ -22,7 +23,7 @@ struct Stage: View {
                 Canvas { context, size in
                     PreviewCanvas.draw(
                         &context, size: size, time: timeline.date.timeIntervalSinceReferenceDate, style: style, look: look,
-                        pointer: hover, history: history, scene: scene, clicks: clicks, ripples: model.settings.clickRipples
+                        pointer: hover, history: history, scene: scene, clicks: clicks, ripples: model.settings.clickRipples, lastHoverMove: lastHoverMove
                     )
                 }
             }
@@ -30,7 +31,9 @@ struct Stage: View {
         .background(Theme.stage)
         .onContinuousHover { phase in
             switch phase {
-            case let .active(point): hover = point
+            case let .active(point):
+                hover = point
+                lastHoverMove = Date().timeIntervalSinceReferenceDate
             case .ended: hover = nil
             }
         }

@@ -64,7 +64,7 @@ struct PreviewCanvas: View {
     static func draw(
         _ context: inout GraphicsContext, size: CGSize, time: Double, style: HighlightStyle, look: HighlightLook,
         pointer: CGPoint? = nil, history: PointerHistory? = nil, scene: PreviewScene = .slides,
-        clicks: [PreviewClick] = [], ripples: Bool = true
+        clicks: [PreviewClick] = [], ripples: Bool = true, lastHoverMove: Double? = nil
     ) {
         let screen = screenRect(in: size)
         let s = effectScale(for: screen)
@@ -82,12 +82,20 @@ struct PreviewCanvas: View {
         let recipe = style.recipe.applying(look)
         let accent = Color(rgba: look.accentColor(for: style))
         let light = Color(rgba: Palette.light)
-        fx.opacity = Double(look.intensity)
+        // Fade when still: the real mouse uses the real timer; the autopilot rests briefly, so its timer is shortened.
+        var idle = 1.0
+        let after = look.options.fadeAfterStill
+        if after > 0 {
+            let still = pointer != nil ? time - (lastHoverMove ?? time) : Autopilot.stillTime(at: time, scene: scene)
+            let threshold = pointer != nil ? after : min(after, 0.9)
+            idle = max(0, min(1, 1 - (still - threshold) / 0.8))
+        }
+        fx.opacity = Double(look.intensity) * idle
 
         switch style {
         case .aura:
             let r = recipe.aura.radius
-            let breath = 1 + 0.03 * sin(time * 2 * .pi / recipe.aura.breathPeriod)
+            let breath = recipe.aura.breathCycles > 0 ? 1 + 0.03 * sin(time * 2 * .pi / recipe.aura.breathPeriod) : 1
             glow(&fx, at: p, radius: r * recipe.aura.outer.radiusFactor * breath, color: accent, alpha: 0.10)
             glow(&fx, at: p, radius: r * 1.15 * breath, color: accent, alpha: 0.26)
             glow(&fx, at: p, radius: r * recipe.aura.core.radiusFactor * 1.4, color: Color(rgba: look.accentColor(for: style).mixed(with: Palette.light, 0.75)), alpha: 0.6)
@@ -99,12 +107,12 @@ struct PreviewCanvas: View {
                 layer.blendMode = .destinationOut
                 let hole = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
                 layer.fill(hole, with: .radialGradient(
-                    Gradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.77), .init(color: .clear, location: 1)]),
+                    Gradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 1 - Double(recipe.lens.feather)), .init(color: .clear, location: 1)]),
                     center: p, startRadius: 0, endRadius: r
                 ))
             }
         case .comet:
-            let steps = 18
+            let steps = max(6, min(Int((18 * recipe.comet.lifetime / 0.4).rounded()), 40))
             for k in stride(from: steps, through: 1, by: -1) {
                 let when = time - Double(k) * 0.022
                 let q = unscale(history?.position(at: when) ?? auto(when))
@@ -120,12 +128,12 @@ struct PreviewCanvas: View {
         case .keyline:
             let r = recipe.keyline.radius
             let ring = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
-            fx.stroke(ring, with: .color(.black.opacity(0.35)), lineWidth: 5)
-            fx.stroke(ring, with: .color(light), lineWidth: 3)
+            fx.stroke(ring, with: .color(.black.opacity(0.35)), lineWidth: recipe.keyline.lightWidth + 2)
+            fx.stroke(ring, with: .color(light), lineWidth: recipe.keyline.lightWidth)
             let dot = recipe.keyline.dotDiameter
             fx.fill(Path(ellipseIn: CGRect(x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot)), with: .color(light))
         case .sonar:
-            for i in 0..<3 {
+            for i in 0..<recipe.sonar.ringCount {
                 let phase = ((time + Double(i) * 0.25).truncatingRemainder(dividingBy: 2.2)) / 2.2
                 let r = recipe.sonar.startRadius * (1 - phase) + recipe.sonar.endRadius * phase
                 let ring = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))

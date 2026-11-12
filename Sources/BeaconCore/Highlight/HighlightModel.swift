@@ -79,6 +79,13 @@ public struct HighlightModel: Equatable, Sendable {
     private var breathStart: TimeInterval?
     private var breathWeight: Double = 0
     private var pointer: CGPoint
+    /// Fade when still: when the pointer last moved, the visible share 0...1 and where it is heading.
+    private var lastMoveTime: TimeInterval?
+    private var lastSeenPointer: CGPoint?
+    private var idleLevel = 1.0
+    private var idleTarget = 1.0
+    static let idleFadeOut: TimeInterval = 0.8
+    static let idleFadeIn: TimeInterval = 0.12
 
     public init(
         style: HighlightStyle, ripplesEnabled: Bool = true, pointer: CGPoint = .zero,
@@ -99,7 +106,7 @@ public struct HighlightModel: Equatable, Sendable {
     }
 
     private static func makeRecipe(_ style: HighlightStyle, look: HighlightLook, laser: Bool) -> StyleRecipe {
-        (laser ? StyleRecipe.laser : style.recipe).applying(look)
+        (laser ? StyleRecipe.laser : style.recipe).applying(look, includesStyleOptions: !laser)
     }
 
     /// Applies new appearance settings in place: sizes change at once, nothing restarts.
@@ -147,6 +154,10 @@ public struct HighlightModel: Equatable, Sendable {
             restSince = nil
             breathStart = nil
             breathWeight = 0
+            lastMoveTime = time
+            lastSeenPointer = pointer
+            idleLevel = 1
+            idleTarget = 1
             toggle.turnOn(at: time)
         } else {
             toggle.turnOff(at: time)
@@ -154,6 +165,7 @@ public struct HighlightModel: Equatable, Sendable {
     }
 
     public mutating func mouseDown(_ button: MouseButton, at time: TimeInterval) {
+        lastMoveTime = time
         if ripplesEnabled { press = Press(start: time, button: button) }
         pressSpring.target = Double(pressTarget)
     }
@@ -179,6 +191,7 @@ public struct HighlightModel: Equatable, Sendable {
     public var needsFrames: Bool {
         if toggle.isAnimating || !ripples.isEmpty || press != nil || !pressSpring.isSettled { return true }
         guard toggle.isOn else { return false }
+        if abs(idleLevel - idleTarget) > 0.001 || (idleFadeAfter > 0 && idleTarget == 1) { return true }
         if !follower.isSettled || !trail.isEmpty { return true }
         if let start = toggle.appearStart, let pulse = recipe.pulse, lastTime.map({ $0 - start < pulse.duration }) ?? true {
             return true
@@ -201,6 +214,7 @@ public struct HighlightModel: Equatable, Sendable {
         }
         lastTime = time
         toggle.advance(to: time)
+        updateIdle(pointer: pointer, time: time, dt: dt)
 
         follower.target = pointer
         follower.step(dt: dt)
@@ -230,6 +244,27 @@ public struct HighlightModel: Equatable, Sendable {
         return frame(at: time)
     }
 
+    /// Seconds of stillness before the fade starts; 0 when the option is off or for the laser.
+    private var idleFadeAfter: Double { isLaser ? 0 : look.options.fadeAfterStill }
+
+    private mutating func updateIdle(pointer: CGPoint, time: TimeInterval, dt: TimeInterval) {
+        if let seen = lastSeenPointer, hypot(pointer.x - seen.x, pointer.y - seen.y) > 0.5 {
+            lastMoveTime = time
+        } else if lastMoveTime == nil {
+            lastMoveTime = time
+        }
+        lastSeenPointer = pointer
+        let after = idleFadeAfter
+        let still = after > 0 && toggle.isOn && time - (lastMoveTime ?? time) >= after
+        idleTarget = still ? 0 : 1
+        let rate = 1 / (still ? Self.idleFadeOut : Self.idleFadeIn)
+        if idleTarget > idleLevel {
+            idleLevel = min(idleTarget, idleLevel + rate * dt)
+        } else {
+            idleLevel = max(idleTarget, idleLevel - rate * dt)
+        }
+    }
+
     private var pressDuration: TimeInterval {
         style == .keyline ? recipe.keyline.pressDuration : recipe.lens.pressDuration
     }
@@ -254,7 +289,7 @@ public struct HighlightModel: Equatable, Sendable {
         frame.press = press.map { curve.press(elapsed: time - $0.start, center: pointer, button: $0.button) }
         guard toggle.isVisible else { return frame }
 
-        let level = CGFloat(toggle.level(at: time))
+        let rawLevel = CGFloat(toggle.level(at: time))
         let progress = toggle.progress(at: time)
         let appearElapsed = toggle.appearStart.map { time - $0 }
         let leaving: Double? = {
@@ -262,6 +297,7 @@ public struct HighlightModel: Equatable, Sendable {
             return nil
         }()
 
+        let level = rawLevel * CGFloat(idleLevel)
         frame.isShown = true
         frame.level = level
         frame.velocity = follower.velocity

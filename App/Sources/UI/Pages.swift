@@ -70,6 +70,7 @@ struct LookPage: View {
             } header: {
                 Text("Style")
             }
+            styleOptions
             Section {
                 LabeledContent {
                     HStack(spacing: 0) {
@@ -114,6 +115,23 @@ struct LookPage: View {
                         Text("A ring spreads from the pointer on every click.").font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
+                Toggle(isOn: Binding(
+                    get: { settings.highlightOptions.fadesWhenStill },
+                    set: { on in model.setOptions { $0.fadeAfterStill = on ? 3 : 0 } }
+                )) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Fade when still")
+                        Text("Hides the highlight when you stop, and brings it back when you move.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                if settings.highlightOptions.fadesWhenStill {
+                    LabeledContent("After") {
+                        ValueSlider(
+                            value: Binding(get: { settings.highlightOptions.fadeAfterStill }, set: { v in model.setOptions { $0.fadeAfterStill = (v * 2).rounded() / 2 } }),
+                            range: HighlightOptions.fadeRange, format: { "\(String(format: "%g", ($0 * 2).rounded() / 2)) s" }
+                        )
+                    }
+                }
                 LabeledContent {
                     Picker("Pointer size", selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })) {
                         Text("1x").tag(1.0); Text("1.5x").tag(1.5); Text("2x").tag(2.0); Text("3x").tag(3.0)
@@ -129,6 +147,28 @@ struct LookPage: View {
                 Text("Behavior")
             }
             Section {
+                Toggle(isOn: Binding(get: { settings.hideRules.fullScreenApps }, set: { v in model.setHideRules { $0.fullScreenApps = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Full-screen apps")
+                        Text("Leave off if you present full-screen slides.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+                Toggle(isOn: Binding(get: { settings.hideRules.videoPlayers }, set: { v in model.setHideRules { $0.videoPlayers = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Video players")
+                        Text("QuickTime, TV, VLC, IINA and similar.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Hide automatically")
+            } footer: {
+                if let reason = model.hideReason {
+                    Text("Hidden right now: \(reason.displayName.lowercased()) in front. For other apps, use the Apps tab.")
+                } else {
+                    Text("Effects stay out of the way in these cases. For other apps, use the Apps tab.")
+                }
+            }
+            Section {
                 Button("Reset look") { resetLook() }
                     .foregroundStyle(isDefault ? Color.secondary : Theme.accent)
                     .disabled(isDefault)
@@ -141,7 +181,7 @@ struct LookPage: View {
 
     private var isDefault: Bool {
         settings.accent == .styleDefault && settings.highlightSize == 1 && settings.highlightIntensity == 1
-            && settings.lensDim == 0.5 && settings.clickRipples
+            && settings.lensDim == 0.5 && settings.clickRipples && settings.highlightOptions == HighlightOptions()
     }
 
     private func resetLook() {
@@ -150,6 +190,51 @@ struct LookPage: View {
         model.setIntensity(1)
         model.setLensDim(0.5)
         model.setRipples(true)
+        model.setOptions { $0 = HighlightOptions() }
+    }
+
+    /// The one or two settings that belong to the chosen style alone.
+    @ViewBuilder
+    private var styleOptions: some View {
+        let options = settings.highlightOptions
+        switch settings.highlightStyle {
+        case .aura:
+            Section("Aura") {
+                Toggle(isOn: Binding(get: { options.auraBreathing }, set: { v in model.setOptions { $0.auraBreathing = v } })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Breathe when still")
+                        Text("A slow swell while the pointer rests.").font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        case .lens:
+            Section("Lens") {
+                LabeledContent("Soft edge") {
+                    ValueSlider(value: Binding(get: { options.lensSoftness }, set: { v in model.setOptions { $0.lensSoftness = v } }), range: HighlightOptions.softnessRange)
+                }
+            }
+        case .comet:
+            Section("Comet") {
+                LabeledContent("Tail length") {
+                    ValueSlider(value: Binding(get: { options.cometTail }, set: { v in model.setOptions { $0.cometTail = v } }), range: HighlightOptions.tailRange)
+                }
+            }
+        case .keyline:
+            Section("Keyline") {
+                LabeledContent("Ring thickness") {
+                    ValueSlider(value: Binding(get: { options.keylineWidth }, set: { v in model.setOptions { $0.keylineWidth = v } }), range: HighlightOptions.lineRange)
+                }
+            }
+        case .sonar:
+            Section("Sonar") {
+                LabeledContent("Rings") {
+                    Picker("Rings", selection: Binding(get: { options.sonarRings }, set: { v in model.setOptions { $0.sonarRings = v } })) {
+                        ForEach(Array(HighlightOptions.ringsRange), id: \.self) { Text("\($0)").tag($0) }
+                    }
+                    .pickerStyle(.segmented).labelsHidden().frame(width: 150)
+                }
+            }
+        }
     }
 
     private static func colorHint(_ accent: AccentChoice) -> String? {
@@ -222,13 +307,14 @@ struct StyleRow: View {
 struct ValueSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
+    var format: (Double) -> String = { "\(Int(($0 * 100).rounded()))%" }
 
     var body: some View {
         HStack(spacing: 8) {
             Slider(value: $value, in: range).frame(minWidth: 96)
-            Text("\(Int((value * 100).rounded()))%")
+            Text(format(value))
                 .font(.system(size: 12).monospacedDigit()).foregroundStyle(.secondary)
-                .frame(width: 38, alignment: .trailing)
+                .frame(width: 42, alignment: .trailing)
         }
     }
 }

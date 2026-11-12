@@ -13,7 +13,7 @@ struct PopoverView: View {
                 Pill(text: model.isPaused ? "Paused" : (model.isOffForApp ? "Off here" : "On"), tint: (model.isPaused || model.isOffForApp) ? Theme.warn : Theme.ok)
             }
             if model.isOffForApp {
-                Text("Beacon is off for the frontmost app.").font(.system(size: 12)).foregroundStyle(Theme.warn).padding(.top, 12)
+                Text(model.hideReason.map { "Hidden: \($0.displayName.lowercased()) in front." } ?? "Beacon is off for the frontmost app.").font(.system(size: 12)).foregroundStyle(Theme.warn).padding(.top, 12)
             }
             Text("PROFILE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.faint).padding(.top, 16).padding(.bottom, 8)
             HStack(spacing: 8) {

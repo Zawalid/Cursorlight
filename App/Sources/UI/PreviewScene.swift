@@ -142,6 +142,12 @@ enum Autopilot {
         return CGPoint(x: rect.minX + rect.width * x / DesktopArt.size.width, y: rect.minY + rect.height * y / DesktopArt.size.height)
     }
 
+    /// How long the autopilot pointer has rested, in seconds. 0 while it travels.
+    static func stillTime(at time: Double, scene: PreviewScene) -> Double {
+        let (_, local) = segment(at: time, count: scene.waypoints.count)
+        return max(0, local - travel)
+    }
+
     /// Seconds since the pointer last clicked, while the ripple is still visible. nil otherwise.
     static func clickAge(at time: Double, scene: PreviewScene) -> Double? {
         let points = scene.waypoints

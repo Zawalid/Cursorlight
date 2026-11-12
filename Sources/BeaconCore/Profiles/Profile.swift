@@ -12,11 +12,13 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
     public var inkColor: InkColor
     public var inkCleanup: Bool
     public var inkFadeAfter: Double
+    public var options: HighlightOptions
 
     public init(
         highlightStyle: HighlightStyle = .aura, accent: AccentChoice = .styleDefault, highlightSize: Double = 1,
         highlightIntensity: Double = 1, lensDim: Double = 0.5, clickRipples: Bool = true, inkStyle: InkStyle = .marker,
-        inkColor: InkColor = .red, inkCleanup: Bool = true, inkFadeAfter: Double = 2
+        inkColor: InkColor = .red, inkCleanup: Bool = true, inkFadeAfter: Double = 2,
+        options: HighlightOptions = HighlightOptions()
     ) {
         self.highlightStyle = highlightStyle
         self.accent = accent
@@ -28,11 +30,12 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         self.inkColor = inkColor
         self.inkCleanup = inkCleanup
         self.inkFadeAfter = inkFadeAfter
+        self.options = options
     }
 
     private enum CodingKeys: String, CodingKey {
         case highlightStyle, accent, highlightSize, highlightIntensity, lensDim, clickRipples
-        case inkStyle, inkColor, inkCleanup, inkFadeAfter
+        case inkStyle, inkColor, inkCleanup, inkFadeAfter, options
     }
 
     /// Tolerant: a missing field takes its default.
@@ -49,6 +52,7 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         inkColor = (try? c.decode(InkColor.self, forKey: .inkColor)) ?? d.inkColor
         inkCleanup = (try? c.decode(Bool.self, forKey: .inkCleanup)) ?? d.inkCleanup
         inkFadeAfter = (try? c.decode(Double.self, forKey: .inkFadeAfter)) ?? d.inkFadeAfter
+        options = ((try? c.decode(HighlightOptions.self, forKey: .options)) ?? d.options).sanitized()
     }
 }
 

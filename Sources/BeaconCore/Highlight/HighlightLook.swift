@@ -48,8 +48,14 @@ public struct HighlightLook: Equatable, Sendable {
     public let intensity: CGFloat
     /// Strength of the Lens dim.
     public let lensDim: CGFloat
+    /// One option per style, and fading when still.
+    public let options: HighlightOptions
 
-    public init(accent: AccentChoice = .styleDefault, size: Double = 1, intensity: Double = 1, lensDim: Double = 0.5) {
+    public init(
+        accent: AccentChoice = .styleDefault, size: Double = 1, intensity: Double = 1, lensDim: Double = 0.5,
+        options: HighlightOptions = HighlightOptions()
+    ) {
+        self.options = options.sanitized()
         self.accent = accent
         self.size = CGFloat(Self.clamp(size, Self.sizeRange, fallback: 1))
         // High contrast always draws at full strength.
@@ -69,9 +75,19 @@ public struct HighlightLook: Equatable, Sendable {
 
 extension StyleRecipe {
     /// A copy with sizes and the Lens dim taken from `look`. Timing and alphas are untouched.
-    public func applying(_ look: HighlightLook) -> StyleRecipe {
+    public func applying(_ look: HighlightLook, includesStyleOptions: Bool = true) -> StyleRecipe {
         var r = self
         let k = look.size
+        if includesStyleOptions {
+            let o = look.options
+            if !o.auraBreathing { r.aura.breathCycles = 0 }
+            r.comet.lifetime *= o.cometTail
+            r.comet.maxPoints = min(Int((Double(r.comet.maxPoints) * o.cometTail).rounded()), 120)
+            r.keyline.lightWidth *= CGFloat(o.keylineWidth)
+            r.keyline.darkWidth *= CGFloat(o.keylineWidth)
+            r.sonar.ringCount = o.sonarRings
+            r.lens.feather = CGFloat(o.lensSoftness)
+        }
         r.aura.radius *= k
         r.aura.core.blur *= k
         r.aura.mid.blur *= k
@@ -136,7 +152,7 @@ struct RenderSpec: Equatable {
     /// The laser: comet drawing with the laser recipe and a laser color.
     init(laserLook look: HighlightLook) {
         style = .comet
-        recipe = StyleRecipe.laser.applying(look)
+        recipe = StyleRecipe.laser.applying(look, includesStyleOptions: false)
         accent = look.accent.color ?? Palette.laserDefault
         intensity = look.intensity
     }

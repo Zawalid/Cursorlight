@@ -27,8 +27,12 @@ final class AppCoordinator {
     /// Called when the share status changes.
     var onShareChange: (() -> Void)?
     private(set) var isPaused = false
-    /// True while a per-app rule has switched Beacon off for the frontmost app.
+    /// True while Beacon is off for the frontmost app: a per-app rule, or a hide rule such as full screen.
     private(set) var isOffForApp = false
+    private var profileOff = false
+    /// Why a hide rule has switched Beacon off right now, if one has.
+    private(set) var hideReason: HideReason?
+    private var spaceObserver: NSObjectProtocol?
 
     init(cursorSize: CursorSizeController, settings: SettingsStore = SettingsStore()) {
         self.cursorSize = cursorSize
@@ -90,7 +94,15 @@ final class AppCoordinator {
                 let bundle = app?.bundleIdentifier
                 MainActor.assumeIsolated { self?.frontmostAppChanged(to: bundle) }
             }
+            spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                // Entering full screen animates; look again once the window has settled.
+                MainActor.assumeIsolated { self?.updateHideReason() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { MainActor.assumeIsolated { self?.updateHideReason() } }
+            }
             reevaluateProfile()
+            updateHideReason()
         }
     }
 
@@ -101,6 +113,8 @@ final class AppCoordinator {
         guard bundleID != Bundle.main.bundleIdentifier else { return }
         switcher.frontmostChanged(to: bundleID)
         reevaluateProfile()
+        updateHideReason()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.updateHideReason() }
     }
 
     /// Applies whatever the switcher selects: a profile, or off for this app.
@@ -109,12 +123,50 @@ final class AppCoordinator {
         let selection = switcher.selection(rules: current.appRules, knownProfiles: Set(current.profiles.map(\.id)))
         switch selection {
         case let .profile(id):
-            setOffForApp(false)
+            profileOff = false
             if id != appliedProfileID { applyProfile(id) }
         case .off:
-            setOffForApp(true)
+            profileOff = true
         }
+        refreshOff()
         onTriggersChange?()
+    }
+
+    /// Recomputes the hide rules for the frontmost app: full screen and video players.
+    func updateHideReason() {
+        let rules = settings.settings.hideRules
+        let front = NSWorkspace.shared.frontmostApplication
+        var reason: HideReason?
+        // Beacon's own windows never hide effects: that is where they are set up.
+        if let front, front.bundleIdentifier != Bundle.main.bundleIdentifier, rules.isActive {
+            reason = rules.reason(
+                frontBundleID: front.bundleIdentifier,
+                frontIsFullScreen: rules.fullScreenApps && Self.isFullScreen(pid: front.processIdentifier)
+            )
+        }
+        guard reason != hideReason else { return }
+        hideReason = reason
+        refreshOff()
+        onTriggersChange?()
+    }
+
+    private static func isFullScreen(pid: pid_t) -> Bool {
+        let list = (CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]]) ?? []
+        let windows: [WindowSnapshot] = list.compactMap { entry in
+            guard let owner = entry[kCGWindowOwnerPID as String] as? Int32,
+                  let layer = entry[kCGWindowLayer as String] as? Int,
+                  let dict = entry[kCGWindowBounds as String] as? NSDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: dict) else { return nil }
+            return WindowSnapshot(ownerPID: owner, layer: layer, bounds: bounds)
+        }
+        let displays: [CGRect] = NSScreen.screens.compactMap { screen in
+            (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber).map { CGDisplayBounds($0.uint32Value) }
+        }
+        return FullScreenDetector.isFullScreen(pid: pid, windows: windows, displays: displays)
+    }
+
+    private func refreshOff() {
+        setOffForApp(profileOff || hideReason != nil)
     }
 
     private func setOffForApp(_ off: Bool) {
@@ -339,6 +391,16 @@ final class AppCoordinator {
     func setHighlightIntensity(_ intensity: Double) {
         settings.update { $0.highlightIntensity = intensity }
         applyLook()
+    }
+
+    func setHighlightOptions(_ edit: (inout HighlightOptions) -> Void) {
+        settings.update { edit(&$0.highlightOptions) }
+        applyLook()
+    }
+
+    func setHideRules(_ edit: (inout HideRules) -> Void) {
+        settings.update { edit(&$0.hideRules) }
+        updateHideReason()
     }
 
     func setLensDim(_ dim: Double) {
