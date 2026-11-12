@@ -1,75 +1,84 @@
 import BeaconCore
 import SwiftUI
 
-/// The first page. Top to bottom: the Stage, the five styles as a row of tiles, then two native grouped forms.
+/// The first page: the Stage, then the style tiles and the controls that tune the chosen style.
 struct LookPage: View {
     @EnvironmentObject private var model: AppModel
     private var settings: BeaconSettings { model.settings }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             Stage(style: settings.highlightStyle, look: settings.look)
-                .frame(minHeight: 200, maxHeight: .infinity)
-
-            VStack(spacing: 8) {
-                HStack(spacing: 10) {
-                    ForEach(HighlightStyle.allCases, id: \.self) { style in
-                        StyleTile(style: style, isSelected: settings.highlightStyle == style) { model.setStyle(style) }
-                    }
-                }
-                Text(Self.blurb(settings.highlightStyle))
-                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                .frame(minHeight: 240, maxHeight: .infinity)
+            HStack(alignment: .top, spacing: 16) {
+                stylePane
+                tunePane
             }
-
-            HStack(alignment: .top, spacing: 14) {
-                Form {
-                    Section("Appearance") {
-                        LabeledContent("Color") {
-                            HStack(spacing: 0) {
-                                ForEach(AccentChoice.allCases, id: \.self) { accent in
-                                    SwatchButton(fill: HighlightPage.fill(for: accent), isSelected: settings.accent == accent, label: accent.displayName) {
-                                        model.setAccent(accent)
-                                    }
-                                }
-                            }
-                        }
-                        LabeledContent("Size") {
-                            Slider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), in: HighlightLook.sizeRange)
-                                .frame(width: 190)
-                        }
-                        if settings.highlightStyle == .lens {
-                            LabeledContent("Screen dim") {
-                                Slider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), in: HighlightLook.dimRange)
-                                    .frame(width: 190)
-                            }
-                        } else {
-                            LabeledContent("Intensity") {
-                                Slider(value: Binding(get: { settings.highlightIntensity }, set: { model.setIntensity($0) }), in: HighlightLook.intensityRange)
-                                    .frame(width: 190)
-                                    .disabled(settings.accent == .highContrast)
-                            }
-                        }
-                    }
-                }
-                Form {
-                    Section("Behavior") {
-                        Toggle("Click ripples", isOn: Binding(get: { settings.clickRipples }, set: { model.setRipples($0) }))
-                            .toggleStyle(.switch)
-                        LabeledContent("Pointer size") {
-                            Picker("", selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })) {
-                                Text("1x").tag(1.0); Text("1.5x").tag(1.5); Text("2x").tag(2.0); Text("3x").tag(3.0)
-                            }
-                            .pickerStyle(.segmented).labelsHidden().frame(width: 170)
-                        }
-                    }
-                }
-            }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .scrollDisabled(true)
-            .tint(Theme.accent)
-            .frame(height: 168)
+            .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var stylePane: some View {
+        Pane(title: "Style") {
+            HStack(spacing: 8) {
+                ForEach(HighlightStyle.allCases, id: \.self) { style in
+                    StyleTile(style: style, isSelected: settings.highlightStyle == style) { model.setStyle(style) }
+                }
+            }
+            Text(Self.blurb(settings.highlightStyle))
+                .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                .fixedSize(horizontal: false, vertical: true).padding(.top, 4)
+            if settings.highlightStyle == .lens {
+                Divider().overlay(Theme.line).padding(.vertical, 4)
+                labeled("Screen dim") {
+                    Slider(value: Binding(get: { settings.lensDim }, set: { model.setLensDim($0) }), in: HighlightLook.dimRange)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var tunePane: some View {
+        Pane(title: "Tune") {
+            labeled("Color") {
+                HStack(spacing: 2) {
+                    ForEach(AccentChoice.allCases, id: \.self) { accent in
+                        SwatchButton(fill: HighlightPage.fill(for: accent), isSelected: settings.accent == accent, label: accent.displayName) {
+                            model.setAccent(accent)
+                        }
+                    }
+                }
+            }
+            labeled("Size") {
+                Slider(value: Binding(get: { settings.highlightSize }, set: { model.setSize($0) }), in: HighlightLook.sizeRange).frame(width: 200)
+            }
+            labeled("Intensity") {
+                Slider(value: Binding(get: { settings.highlightIntensity }, set: { model.setIntensity($0) }), in: HighlightLook.intensityRange)
+                    .frame(width: 200)
+                    .disabled(settings.accent == .highContrast)
+            }
+            labeled("Click ripples") {
+                Toggle("", isOn: Binding(get: { settings.clickRipples }, set: { model.setRipples($0) }))
+                    .toggleStyle(.switch).labelsHidden()
+            }
+            labeled("Pointer size") {
+                Picker("", selection: Binding(get: { Self.nearest(model.cursorScale) }, set: { model.setCursorScale($0) })) {
+                    Text("1x").tag(1.0); Text("1.5x").tag(1.5); Text("2x").tag(2.0); Text("3x").tag(3.0)
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: 170)
+            }
+        }
+        .frame(width: 360, alignment: .topLeading)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func labeled<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        HStack {
+            Text(title).font(.system(size: 13)).foregroundStyle(Theme.text)
+            Spacer(minLength: 12)
+            content().tint(Theme.accent)
+        }
+        .frame(minHeight: 26)
     }
 
     private static func blurb(_ style: HighlightStyle) -> String {
@@ -87,7 +96,25 @@ struct LookPage: View {
     }
 }
 
-/// One of the five styles: a live thumbnail and its name. Flat, with a ring when selected.
+struct Pane<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.dim)
+            content
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.white.opacity(0.7), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.line, lineWidth: 0.5).padding(-0.5))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
+    }
+}
+
 struct StyleTile: View {
     let style: HighlightStyle
     let isSelected: Bool
@@ -95,22 +122,21 @@ struct StyleTile: View {
     @State private var hovering = false
 
     var body: some View {
-        Button(action: { DebugLog.write("style \(style.rawValue)"); action() }) {
-            VStack(spacing: 8) {
+        Button(action: action) {
+            VStack(spacing: 7) {
                 StyleThumbnail(style: style)
-                    .frame(height: 64).frame(maxWidth: .infinity)
-                    .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .frame(height: 52).frame(maxWidth: .infinity)
+                    .background(Theme.stage, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                 Text(style.displayName).font(.system(size: 12, weight: .medium)).foregroundStyle(isSelected ? Theme.text : Theme.dim)
             }
-            .padding(8)
-            .background(isSelected ? Color.white.opacity(0.7) : (hovering ? Color.black.opacity(0.06) : Color.black.opacity(0.03)),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(7)
+            .background(hovering ? Theme.cardHover : Theme.raised, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? Theme.accent : .clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(isSelected ? Theme.accent : Theme.line, lineWidth: isSelected ? 1.5 : 1)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: isSelected ? Theme.accent.opacity(0.22) : .clear, radius: 10)
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
