@@ -8,14 +8,16 @@ import UniformTypeIdentifiers
 @MainActor
 final class AppModel: ObservableObject {
     let coordinator: AppCoordinator
+    let updater: AppUpdater
     @Published private(set) var revision = 0
     /// Set by the app delegate; opens the settings window on a page.
     var openSettings: (SettingsPage) -> Void = { _ in }
     var openWelcome: () -> Void = {}
     var quit: () -> Void = { NSApp.terminate(nil) }
 
-    init(coordinator: AppCoordinator) {
+    init(coordinator: AppCoordinator, updater: AppUpdater) {
         self.coordinator = coordinator
+        self.updater = updater
         coordinator.highlight.onChange = { [weak self] in self?.bump() }
         coordinator.ink.onChange = { [weak self] in self?.bump() }
         coordinator.onSizeChange = { [weak self] in self?.bump() }
@@ -31,6 +33,13 @@ final class AppModel: ObservableObject {
     var needsInputMonitoring: Bool { coordinator.needsInputMonitoring }
     var failedHotkeys: [HotKeyAction] { coordinator.failedHotkeys }
     var cursorScale: Double { Double(coordinator.cursorSize.currentScale ?? 1) }
+
+    // MARK: Updates
+
+    var updatesConfigured: Bool { updater.isConfigured }
+    var automaticUpdateChecks: Bool { updater.automaticallyChecks }
+    func setAutomaticUpdateChecks(_ on: Bool) { updater.automaticallyChecks = on; bump() }
+    func checkForUpdates() { updater.checkNow() }
 
     // MARK: Share safety
 

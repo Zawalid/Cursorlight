@@ -32,7 +32,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let coordinator = AppCoordinator(cursorSize: cursorSize)
             coordinator.start()
             self.coordinator = coordinator
-            let model = AppModel(coordinator: coordinator)
+            let updater = AppUpdater(startingUpdater: environment.allowsUpdater)
+            let model = AppModel(coordinator: coordinator, updater: updater)
             let windows = WindowControllers(model: model)
             self.model = model
             self.windows = windows

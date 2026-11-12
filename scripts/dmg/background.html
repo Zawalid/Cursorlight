@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Beacon installer background</title>
+<!-- Keep the 660x420 stage: settings.py puts the app icon centre at (170, 205) and the Applications shortcut centre at
+     (490, 205). After editing, run: node scripts/dmg/render-background.mjs (writes scripts/dmg/background.tiff, commit it). -->
+<style>
+  html, body { margin: 0; background: #0d0d10; }
+  body { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif; color: #f2f2f4; }
+  .stage { position: relative; width: 660px; height: 420px; overflow: hidden;
+    background: radial-gradient(circle at 170px 205px, rgba(255,90,54,.20), transparent 190px), linear-gradient(160deg, #17171b, #0b0b0e); }
+  .arrow { position: absolute; left: 276px; top: 188px; width: 108px; height: 34px; }
+  .hint { position: absolute; left: 0; right: 0; top: 340px; text-align: center; font-size: 14px; color: #9a9aa5; }
+  .title { position: absolute; left: 0; right: 0; top: 40px; text-align: center; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+</style>
+<div class="stage">
+  <div class="title">Beacon</div>
+  <svg class="arrow" viewBox="0 0 108 34" fill="none" stroke="#9a9aa5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 17h92M82 5l16 12-16 12"/>
+  </svg>
+  <div class="hint">Drag Beacon to Applications</div>
+</div>

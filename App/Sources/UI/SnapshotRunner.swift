@@ -17,7 +17,7 @@ enum SnapshotRunner {
         )
         coordinator.setAppRule(AppRule(bundleID: "us.zoom.xos", appName: "Zoom", profileID: "meeting"))
         coordinator.setAppRule(AppRule(bundleID: "com.apple.iWork.Keynote", appName: "Keynote", profileID: nil))
-        let model = AppModel(coordinator: coordinator)
+        let model = AppModel(coordinator: coordinator, updater: AppUpdater(startingUpdater: false))
         for page in SettingsPage.allCases {
             render(SettingsView(page: page, scrolls: false).environmentObject(model).frame(width: 940, height: 900), name: "settings-\(page.rawValue)", into: directory)
         }

@@ -7,6 +7,9 @@ options:
 packages:
   Beacon:
     path: ..
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.9.6
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -27,6 +30,8 @@ targets:
     dependencies:
       - package: Beacon
         product: BeaconCore
+      - package: Sparkle
+        product: Sparkle
     entitlements:
       path: Sources/Beacon.entitlements
       properties:
@@ -40,7 +45,15 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSUIElement: true
         LSMinimumSystemVersion: "14.6"
+        SUFeedURL: https://github.com/Zawalid/Beacon/releases/latest/download/appcast.xml
+        # Public half of the EdDSA key from generate_keys. While it starts with REPLACE the updater never starts.
+        SUPublicEDKey: REPLACE_WITH_PUBLIC_KEY
+        SUEnableAutomaticChecks: false
+        SUAllowsAutomaticUpdates: false
         NSHumanReadableCopyright: ""
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.beacon.mac
+        # One signed binary: a separate debug dylib signed differently from the app fails to load under hardened runtime.
+        ENABLE_DEBUG_DYLIB: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

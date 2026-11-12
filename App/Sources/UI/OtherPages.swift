@@ -146,8 +146,16 @@ struct AboutPage: View {
                     .opacity(LaunchAtLogin.isAvailable ? 1 : 0.4)
                     .allowsHitTesting(LaunchAtLogin.isAvailable)
                 }
-                SettingRow(title: "Updates", subtitle: "Update checks arrive with the first release") {
-                    Pill(text: "Not yet")
+                SettingRow(
+                    title: "Check for updates automatically",
+                    subtitle: model.updatesConfigured ? "Asks GitHub once a day. Nothing installs without your OK." : "This build has no update signing key yet"
+                ) {
+                    BeaconToggle(isOn: Binding(get: { model.automaticUpdateChecks }, set: { model.setAutomaticUpdateChecks($0) }))
+                        .opacity(model.updatesConfigured ? 1 : 0.4)
+                        .allowsHitTesting(model.updatesConfigured)
+                }
+                SettingRow(title: "Check now") {
+                    Button("Check") { model.checkForUpdates() }.buttonStyle(GhostButtonStyle())
                 }
                 SettingRow(title: "Welcome guide", subtitle: "See the shake demo and the optional permissions again", showsDivider: false) {
                     Button("Open") { model.openWelcome() }.buttonStyle(GhostButtonStyle())

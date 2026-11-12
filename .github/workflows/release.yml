@@ -1,0 +1,181 @@
+name: Release
+
+# Pushing a tag like v0.2.0 (made by scripts/release.sh) builds the app, packs a DMG and creates a DRAFT GitHub Release.
+# Test the DMG from the draft, then publish it: gh release edit vX.Y.Z --draft=false (the latest/download links and the
+# update feed only work once it is published).
+# Without signing secrets the app is ad hoc signed (people confirm it once, see docs/install.md). Add the secrets below
+# and the same workflow signs with that certificate (and notarizes when the Apple secrets exist). It can also be started by hand
+# (Actions, Release, Run workflow) to try the whole pipeline: it makes a throwaway draft pre-release under a test tag.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      note:
+        description: "Optional note for the trial run (nothing depends on it)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+# One release at a time, and never cancel one halfway: a half-published release is worse than a queued one.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      # Optional signing. Set these three repository secrets to sign every release with the SAME certificate, which keeps the
+      # app's identity across updates (an ad hoc build gets a new one every time, so macOS forgets its Accessibility grant):
+      #   SIGNING_P12 (base64 of the .p12), SIGNING_P12_PASSWORD, SIGNING_IDENTITY (the certificate's name).
+      # A self-signed certificate from scripts/make-signing-cert.sh is enough. An Apple "Developer ID Application" certificate
+      # works the same way and can also be notarized: add NOTARY_KEY_ID, NOTARY_ISSUER_ID and NOTARY_KEY_P8 (base64).
+      HAS_SIGNING: ${{ secrets.SIGNING_P12 != '' && secrets.SIGNING_P12_PASSWORD != '' && secrets.SIGNING_IDENTITY != '' }}
+      HAS_NOTARY: ${{ secrets.NOTARY_KEY_P8 != '' && secrets.NOTARY_KEY_ID != '' && secrets.NOTARY_ISSUER_ID != '' }}
+      # In-app updates: the EdDSA private key that signs each release's zip (see docs/updates.md). Without it the release
+      # still publishes, just without an update feed.
+      HAS_SPARKLE: ${{ secrets.SPARKLE_ED_PRIVATE_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out the version and check it
+        run: |
+          PROJECT_VERSION="$(grep -m1 'MARKETING_VERSION' App/project.yml | awk '{print $2}')"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            # A by-hand run is a trial: it builds whatever is on the branch as a throwaway draft pre-release under a
+            # test tag, so it never collides with a real release.
+            VERSION="$PROJECT_VERSION"
+            TAG="test-$GITHUB_RUN_NUMBER"
+            echo "DRAFT=1" >> "$GITHUB_ENV"
+          else
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#v}"
+            if [ "$VERSION" != "$PROJECT_VERSION" ]; then
+              echo "tag $TAG does not match MARKETING_VERSION $PROJECT_VERSION in App/project.yml" >&2
+              exit 1
+            fi
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - run: brew install xcodegen
+
+      - name: Require a green CI run on this commit
+        # The tests already run in ci.yml on every push. Running them again here made releases fail on slow runners
+        # and forced the tag to be moved. Instead the release waits for that run: if it failed, fix the cause, re-run
+        # the failed CI jobs from the Actions tab, then re-run this workflow. The tag never has to move.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 60); do
+            RESULT="$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" --json status,conclusion \
+              --jq 'map(select(.status == "completed")) | (.[0].conclusion // "pending")')"
+            echo "CI for $GITHUB_SHA: $RESULT (check $attempt)"
+            case "$RESULT" in
+              success) exit 0 ;;
+              pending) sleep 30 ;;
+              *) echo "CI did not pass on this commit: $RESULT" >&2; exit 1 ;;
+            esac
+          done
+          echo "No finished CI run for this commit after 30 minutes" >&2
+          exit 1
+
+      - name: Import the signing certificate
+        if: env.HAS_SIGNING == 'true'
+        env:
+          P12: ${{ secrets.SIGNING_P12 }}
+          P12_PASSWORD: ${{ secrets.SIGNING_P12_PASSWORD }}
+          IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          # A self-signed certificate is not trusted by default and codesign refuses an untrusted identity. A Developer ID
+          # certificate already chains to Apple, so only trust it for code signing when it is not valid yet.
+          if ! security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "$IDENTITY"; then
+            security find-certificate -c "$IDENTITY" -p "$KEYCHAIN" > "$RUNNER_TEMP/cert.pem"
+            sudo security add-trusted-cert -d -r trustRoot -p codeSign -k "$KEYCHAIN" "$RUNNER_TEMP/cert.pem"
+          fi
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "$IDENTITY" || { echo "the signing identity is not usable" >&2; exit 1; }
+          echo "SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Build the app
+        run: scripts/build-app.sh
+
+      - name: Show the app's signing identity
+        # With a certificate the requirement reads: identifier "app.beacon.mac" and certificate leaf = H"...".
+        # With an ad hoc build it is only a cdhash, which changes with every build.
+        run: codesign -d -r- build/Beacon.app 2>&1 | grep -E "designated" || true
+
+      - name: Pack the DMG
+        run: |
+          scripts/make-dmg.sh
+          mv build/Beacon.dmg "build/Beacon-$VERSION.dmg"
+
+      - name: Notarize and staple
+        if: env.HAS_SIGNING == 'true' && env.HAS_NOTARY == 'true'
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          echo "$NOTARY_KEY_P8" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          xcrun notarytool submit "build/Beacon-$VERSION.dmg" \
+            --key "$RUNNER_TEMP/AuthKey.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait
+          xcrun stapler staple "build/Beacon-$VERSION.dmg"
+
+      - name: Checksum and release notes
+        run: |
+          # A copy under a fixed name, so the permanent link releases/latest/download/Beacon.dmg always works.
+          cp "build/Beacon-$VERSION.dmg" build/Beacon.dmg
+          (cd build && shasum -a 256 "Beacon-$VERSION.dmg" > "Beacon-$VERSION.dmg.sha256")
+          awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > build/notes.md
+          [ -s build/notes.md ] || echo "Release $VERSION" > build/notes.md
+          # What the in-app update window shows: the changelog entry without the install instructions below.
+          cp build/notes.md build/update-notes.md
+          {
+            echo
+            echo "### Install"
+            echo "Download the DMG and drag Beacon to Applications. See docs/install.md for the first-launch steps."
+            echo "Or with Homebrew: \`brew install --cask zawalid/beacon/beacon\`."
+            echo "SHA-256: \`$(cut -d' ' -f1 "build/Beacon-$VERSION.dmg.sha256")\`"
+          } >> build/notes.md
+
+      - name: Build the update feed
+        if: env.HAS_SPARKLE == 'true'
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+          NOTES: build/update-notes.md
+        run: scripts/appcast.sh "$VERSION"
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Always a draft: nobody gets a build that has not been tried. A dash in the version makes it a pre-release.
+          FLAGS=(--draft)
+          case "$VERSION" in *-*) FLAGS+=(--prerelease);; esac
+          if [ "${DRAFT:-0}" = 1 ]; then FLAGS+=(--prerelease); fi
+          UPDATE_FILES=()
+          if [ -f build/appcast/appcast.xml ]; then
+            UPDATE_FILES=(build/appcast/appcast.xml "build/appcast/Beacon-$VERSION.zip")
+          fi
+          TARGET=()
+          if [ "${DRAFT:-0}" = 1 ]; then TARGET=(--target "$GITHUB_SHA"); fi
+          gh release create "$TAG" \
+            "build/Beacon-$VERSION.dmg" build/Beacon.dmg "build/Beacon-$VERSION.dmg.sha256" \
+            "${UPDATE_FILES[@]}" "${TARGET[@]}" \
+            --title "Beacon $VERSION" --notes-file build/notes.md "${FLAGS[@]}"
