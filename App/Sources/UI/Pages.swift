@@ -503,7 +503,7 @@ struct PenRow: View {
                 let tint = Color(rgba: color.rgba)
                 Button { select(style) } label: {
                     VStack(spacing: 6) {
-                        InkSwatchStroke(style: style, color: color, width: width)
+                        InkSwatchStroke(style: style, color: color, width: width * 0.55)
                             .padding(.horizontal, 5)
                             .frame(height: 50).frame(maxWidth: .infinity)
                             .background(Theme.stage, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
