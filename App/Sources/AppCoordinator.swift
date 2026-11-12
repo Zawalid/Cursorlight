@@ -8,6 +8,9 @@ final class AppCoordinator {
     private let tracker = CursorTracker()
     private let clicks = ClickMonitor()
     private var shake: ShakeRecognizer
+    private let hotkeys = CarbonHotKeys()
+    private let modifiers = ModifierGestureMonitor()
+    private var router: TriggerRouter
     let settings: SettingsStore
     let highlight: HighlightController
     let ink: InkController
@@ -15,12 +18,16 @@ final class AppCoordinator {
 
     /// Called after the cursor size changes, so the menu can refresh its checkmark.
     var onSizeChange: (() -> Void)?
+    /// Called after pause state or trigger settings change, so the menu can refresh.
+    var onTriggersChange: (() -> Void)?
+    private(set) var isPaused = false
 
     init(cursorSize: CursorSizeController, settings: SettingsStore = SettingsStore()) {
         self.cursorSize = cursorSize
         self.settings = settings
         let current = settings.settings
         shake = ShakeRecognizer(sensitivity: current.shakeSensitivity)
+        router = TriggerRouter(settings: current.triggers)
         highlight = HighlightController(
             overlays: overlays,
             style: current.highlightStyle,
@@ -49,12 +56,99 @@ final class AppCoordinator {
             self?.highlight.mouseButton(button, isDown: isDown, at: position)
         }
         clicks.start()
+        hotkeys.onPress = { [weak self] action in self?.handle(.hotkey(action)) }
+        modifiers.onEvent = { [weak self] event in self?.handle(event) }
+        applyTriggers()
+    }
+
+    // MARK: Triggers
+
+    private func handle(_ event: TriggerEvent) {
+        let active = ActiveEffects(inkActive: ink.isActive, laserOn: highlight.isLaserOn)
+        for command in router.route(event, active: active) { perform(command) }
+    }
+
+    private func perform(_ command: TriggerCommand) {
+        switch command {
+        case let .toggle(effect):
+            switch effect {
+            case .highlight: highlight.toggle()
+            case .laser: highlight.setLaser(!highlight.isLaserOn)
+            case .ink: toggleInk()
+            case .none: break
+            }
+        case let .set(effect, on):
+            switch effect {
+            case .highlight: highlight.setOn(on)
+            case .laser: highlight.setLaser(on)
+            case .ink: if on { ink.activate(takesKey: false) } else { ink.deactivate() }
+            case .none: break
+            }
+        case .togglePause:
+            setPaused(!isPaused)
+        }
+    }
+
+    func setPaused(_ paused: Bool) {
+        isPaused = paused
+        router.isPaused = paused
+        if paused {
+            highlight.setOn(false)
+            highlight.setLaser(false)
+            ink.deactivate()
+        }
+        onTriggersChange?()
+    }
+
+    func updateTriggers(_ edit: (inout TriggerSettings) -> Void) {
+        settings.update { edit(&$0.triggers) }
+        applyTriggers()
+    }
+
+    /// Registers shortcuts and starts or stops the modifier monitor to match the settings.
+    func applyTriggers() {
+        let triggers = settings.settings.triggers
+        router.settings = triggers
+        if triggers.hotkeysEnabled {
+            var keys: [HotKeyAction: HotKey] = [:]
+            for action in HotKeyAction.allCases { keys[action] = triggers.hotkey(for: action) }
+            hotkeys.register(keys)
+        } else {
+            hotkeys.unregisterAll()
+        }
+        if triggers.doubleTapEnabled || triggers.holdEnabled {
+            modifiers.start()
+        } else {
+            modifiers.stop()
+        }
+        onTriggersChange?()
+    }
+
+    var failedHotkeys: [HotKeyAction] { hotkeys.failed }
+
+    /// True when a modifier trigger is on but cannot see keys outside Beacon yet.
+    var needsInputMonitoring: Bool {
+        let t = settings.settings.triggers
+        return (t.doubleTapEnabled || t.holdEnabled) && !modifiers.hasGlobalAccess
+    }
+
+    func refreshInputMonitoring() {
+        modifiers.refreshAccess()
+    }
+
+    func requestInputMonitoring() {
+        if InputMonitoring.isGranted {
+            modifiers.refreshAccess()
+        } else {
+            InputMonitoring.request()
+            InputMonitoring.openSettings()
+        }
     }
 
     private func pointerMoved(to position: CGPoint, at time: TimeInterval) {
         highlight.pointerMoved()
         if shake.feed(position: position, time: time) {
-            highlight.toggle()
+            handle(.shake)
         }
     }
 
@@ -143,6 +237,8 @@ final class AppCoordinator {
         tracker.stop()
         clicks.onButton = nil
         clicks.stop()
+        modifiers.stop()
+        hotkeys.unregisterAll()
         ink.stop()
         highlight.stop()
         overlays.stop()

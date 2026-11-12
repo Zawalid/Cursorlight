@@ -10,6 +10,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private var ripplesItem: NSMenuItem?
     private var laserItem: NSMenuItem?
     private var inkItem: NSMenuItem?
+    private var pauseItem: NSMenuItem?
+    private var shakeTriggerItem: NSMenuItem?
+    private var doubleTapTriggerItem: NSMenuItem?
+    private var holdTriggerItem: NSMenuItem?
+    private var hotkeysTriggerItem: NSMenuItem?
+    private var permissionItem: NSMenuItem?
     private var inkCleanupItem: NSMenuItem?
     private var inkStyleItems: [(style: InkStyle, item: NSMenuItem)] = []
     private var inkColorItems: [(color: InkColor, item: NSMenuItem)] = []
@@ -41,11 +47,18 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         if let coordinator {
+            let pause = NSMenuItem(title: "Pause Beacon", action: #selector(togglePause), keyEquivalent: "")
+            pause.target = self
+            menu.addItem(pause)
+            pauseItem = pause
+            menu.addItem(.separator())
             addHighlightItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
             addInkItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
             addCursorItems(to: menu, coordinator: coordinator)
+            menu.addItem(.separator())
+            addTriggerItems(to: menu, coordinator: coordinator)
             menu.addItem(.separator())
         }
 
@@ -134,6 +147,31 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         coordinator.ink.onChange = { [weak self] in self?.refreshChecks() }
     }
 
+    private func addTriggerItems(to menu: NSMenu, coordinator: AppCoordinator) {
+        let submenu = NSMenu(title: "Triggers")
+        submenu.delegate = self
+        func add(_ action: Selector) -> NSMenuItem {
+            let item = NSMenuItem(title: "", action: action, keyEquivalent: "")
+            item.target = self
+            submenu.addItem(item)
+            return item
+        }
+        shakeTriggerItem = add(#selector(toggleShakeTrigger))
+        doubleTapTriggerItem = add(#selector(toggleDoubleTapTrigger))
+        holdTriggerItem = add(#selector(toggleHoldTrigger))
+        hotkeysTriggerItem = add(#selector(toggleHotkeysTrigger))
+        submenu.addItem(.separator())
+        let permission = NSMenuItem(title: "", action: #selector(requestInputMonitoring), keyEquivalent: "")
+        permission.target = self
+        submenu.addItem(permission)
+        permissionItem = permission
+
+        let parent = NSMenuItem(title: "Triggers", action: nil, keyEquivalent: "")
+        parent.submenu = submenu
+        menu.addItem(parent)
+        coordinator.onTriggersChange = { [weak self] in self?.refreshChecks() }
+    }
+
     private static let lookSizes: [(String, Double)] = [("Small", 0.75), ("Normal", 1.0), ("Large", 1.35), ("Extra large", 1.7)]
     private static let lookIntensities: [(String, Double)] = [("Subtle", 0.5), ("Medium", 0.75), ("Full", 1.0)]
     private static let lookDims: [(String, Double)] = [("Light", 0.3), ("Medium", 0.5), ("Strong", 0.7)]
@@ -203,6 +241,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        coordinator?.refreshInputMonitoring()
         refreshChecks()
     }
 
@@ -214,6 +253,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         highlightItem?.title = highlight?.isOn == true ? "Turn highlight off" : "Turn highlight on"
         ripplesItem?.state = highlight?.ripplesEnabled == true ? .on : .off
         laserItem?.title = highlight?.isLaserOn == true ? "Laser trail off" : "Laser trail on"
+        refreshTriggerItems()
         inkItem?.title = coordinator?.ink.isActive == true ? "Stop ink" : "Start ink"
         if let ink = coordinator?.ink {
             for (style, item) in inkStyleItems { item.state = style == ink.style ? .on : .off }
@@ -254,6 +294,42 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         coordinator?.setClickRipples(!highlight.ripplesEnabled)
         refreshChecks()
     }
+
+    private func refreshTriggerItems() {
+        guard let coordinator else { return }
+        let t = coordinator.settings.settings.triggers
+        pauseItem?.title = coordinator.isPaused ? "Resume Beacon" : "Pause Beacon"
+        pauseItem?.state = coordinator.isPaused ? .on : .off
+        shakeTriggerItem?.title = "Shake: \(t.shakeAction.displayName)"
+        shakeTriggerItem?.state = t.shakeEnabled ? .on : .off
+        doubleTapTriggerItem?.title = "Double-tap \(t.doubleTapKey.displayName): \(t.doubleTapAction.displayName)"
+        doubleTapTriggerItem?.state = t.doubleTapEnabled ? .on : .off
+        holdTriggerItem?.title = "Hold \(t.holdKey.displayName): \(t.holdAction.displayName)"
+        holdTriggerItem?.state = t.holdEnabled ? .on : .off
+        let keys = HotKeyAction.allCases.compactMap { action in
+            t.hotkey(for: action).map { "\($0.displayString) \(action.displayName)" }
+        }
+        hotkeysTriggerItem?.title = "Keyboard shortcuts"
+        hotkeysTriggerItem?.state = t.hotkeysEnabled ? .on : .off
+        hotkeysTriggerItem?.toolTip = keys.joined(separator: "\n")
+        let failed = coordinator.failedHotkeys
+        if !failed.isEmpty, t.hotkeysEnabled {
+            hotkeysTriggerItem?.title = "Keyboard shortcuts (taken by another app: \(failed.map(\.displayName).joined(separator: ", ")))"
+        }
+        permissionItem?.isHidden = !coordinator.needsInputMonitoring
+        permissionItem?.title = "Allow Input Monitoring for modifier triggers…"
+    }
+
+    @objc private func togglePause() {
+        guard let coordinator else { return }
+        coordinator.setPaused(!coordinator.isPaused)
+    }
+
+    @objc private func toggleShakeTrigger() { coordinator?.updateTriggers { $0.shakeEnabled.toggle() } }
+    @objc private func toggleDoubleTapTrigger() { coordinator?.updateTriggers { $0.doubleTapEnabled.toggle() } }
+    @objc private func toggleHoldTrigger() { coordinator?.updateTriggers { $0.holdEnabled.toggle() } }
+    @objc private func toggleHotkeysTrigger() { coordinator?.updateTriggers { $0.hotkeysEnabled.toggle() } }
+    @objc private func requestInputMonitoring() { coordinator?.requestInputMonitoring() }
 
     private func mark(_ items: [(value: Double, item: NSMenuItem)], current: Double) {
         let nearest = items.min { abs($0.value - current) < abs($1.value - current) }

@@ -49,11 +49,11 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 | Feature | Tier | Status |
 |---|---|---|
 | Shake gesture with sensitivity | V1 | done (no UI yet) |
-| Hold-key trigger (Laser, Ink) through Input Monitoring, optional | V1 | open |
-| Double-tap Option | V1 | open |
-| Toggle hotkeys without Input Monitoring (Carbon) | V1 | open |
-| Rebindable triggers, each mapped to an effect | V1 | open |
-| Pause everything (menu bar + hotkey) | V1 | open |
+| Hold-key trigger (default: hold Right Option draws ink) through optional Input Monitoring | V1 | done, untested on real desktop |
+| Double-tap Option (default: Left Option toggles laser) | V1 | done, untested on real desktop |
+| Toggle hotkeys without Input Monitoring (Carbon; defaults Ctrl+Option+H, L, I, P) | V1 | done, untested on real desktop |
+| Rebindable triggers, each mapped to an effect | V1 | model and storage done; rebinding UI in M5 |
+| Pause everything (menu bar + hotkey) | V1 | done |
 | Auto-pause when a full-screen video app is frontmost | V1.1 | open |
 
 ### E. Profiles, apps, displays

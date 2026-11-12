@@ -97,4 +97,13 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.settings.inkColor, .green)
         XCTAssertFalse(reloaded.settings.inkCleanup)
     }
+
+    func testTriggerSettingsPersist() {
+        let store = SettingsStore(defaults: defaults)
+        store.update { $0.triggers.shakeEnabled = false; $0.triggers.holdKey = .leftControl }
+        let reloaded = SettingsStore(defaults: defaults)
+        XCTAssertFalse(reloaded.settings.triggers.shakeEnabled)
+        XCTAssertEqual(reloaded.settings.triggers.holdKey, .leftControl)
+        XCTAssertEqual(reloaded.settings.triggers.doubleTapKey, .leftOption)
+    }
 }

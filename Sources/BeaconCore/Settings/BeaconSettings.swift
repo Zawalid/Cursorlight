@@ -19,6 +19,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var inkColor: InkColor
     /// Turn circles, rectangles, lines and arrows into clean shapes when a stroke ends.
     public var inkCleanup: Bool
+    public var triggers: TriggerSettings
 
     public var look: HighlightLook {
         HighlightLook(accent: accent, size: highlightSize, intensity: highlightIntensity, lensDim: lensDim)
@@ -35,13 +36,15 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         lensDim: 0.5,
         inkStyle: .marker,
         inkColor: .red,
-        inkCleanup: true
+        inkCleanup: true,
+        triggers: TriggerSettings()
     )
 
     public init(
         version: Int, highlightStyle: HighlightStyle, clickRipples: Bool, shakeSensitivity: Double,
         accent: AccentChoice, highlightSize: Double, highlightIntensity: Double, lensDim: Double,
-        inkStyle: InkStyle = .marker, inkColor: InkColor = .red, inkCleanup: Bool = true
+        inkStyle: InkStyle = .marker, inkColor: InkColor = .red, inkCleanup: Bool = true,
+        triggers: TriggerSettings = TriggerSettings()
     ) {
         self.version = version
         self.highlightStyle = highlightStyle
@@ -54,11 +57,12 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.inkStyle = inkStyle
         self.inkColor = inkColor
         self.inkCleanup = inkCleanup
+        self.triggers = triggers
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
-        case inkStyle, inkColor, inkCleanup
+        case inkStyle, inkColor, inkCleanup, triggers
     }
 
     public init(from decoder: Decoder) throws {
@@ -75,6 +79,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkStyle = (try? c.decode(InkStyle.self, forKey: .inkStyle)) ?? d.inkStyle
         inkColor = (try? c.decode(InkColor.self, forKey: .inkColor)) ?? d.inkColor
         inkCleanup = (try? c.decode(Bool.self, forKey: .inkCleanup)) ?? d.inkCleanup
+        triggers = (try? c.decode(TriggerSettings.self, forKey: .triggers)) ?? d.triggers
     }
 
     /// Returns a copy with every value forced into its valid range.
