@@ -106,6 +106,11 @@ final class AppModel: ObservableObject {
         bump()
     }
 
+    func setCategoryRule(_ category: AppCategory, profileID: String?, none: Bool) {
+        coordinator.setCategoryRule(category, profileID: profileID, none: none)
+        bump()
+    }
+
     func removeRule(_ rule: AppRule) { coordinator.removeAppRule(bundleID: rule.bundleID); bump() }
 
     /// Asks the user for an app and adds a rule for it, starting with the current base profile.

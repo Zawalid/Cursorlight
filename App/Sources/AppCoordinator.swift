@@ -36,6 +36,8 @@ final class AppCoordinator {
     /// Why a hide rule has switched Beacon off right now, if one has.
     private(set) var hideReason: HideReason?
     private var spaceObserver: NSObjectProtocol?
+    /// The last app that was frontmost other than Beacon itself.
+    private var frontBundleID: String?
     private var motionObserver: NSObjectProtocol?
 
     init(cursorSize: CursorSizeController, settings: SettingsStore = SettingsStore()) {
@@ -99,7 +101,8 @@ final class AppCoordinator {
             applyDisplayScope()
             shareSafe.onChange = { [weak self] in self?.onShareChange?() }
             shareSafe.start()
-            switcher.frontmostChanged(to: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+            frontBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            switcher.frontmostChanged(to: frontBundleID)
             workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
                 forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
             ) { [weak self] note in
@@ -127,6 +130,7 @@ final class AppCoordinator {
     private func frontmostAppChanged(to bundleID: String?) {
         // Using Beacon's own windows must not switch profiles.
         guard bundleID != Bundle.main.bundleIdentifier else { return }
+        frontBundleID = bundleID
         switcher.frontmostChanged(to: bundleID)
         reevaluateProfile()
         updateHideReason()
@@ -136,7 +140,7 @@ final class AppCoordinator {
     /// Applies whatever the switcher selects: a profile, or off for this app.
     private func reevaluateProfile() {
         let current = settings.settings
-        let selection = switcher.selection(rules: current.appRules, knownProfiles: Set(current.profiles.map(\.id)))
+        let selection = switcher.selection(rules: current.effectiveRules(frontBundleID: frontBundleID), knownProfiles: Set(current.profiles.map(\.id)))
         switch selection {
         case let .profile(id):
             profileOff = false
@@ -277,10 +281,20 @@ final class AppCoordinator {
             s.profiles.removeAll { $0.id == id }
             // Apps that used this scene go back to the default scene; a nil profile would switch Beacon off for them.
             s.appRules.removeAll { $0.profileID == id }
+            s.categoryRules.removeAll { $0.profileID == id }
         }
         let remaining = settings.settings
         if switcher.base == id { switcher.setBase(remaining.baseProfileID) }
         if appliedProfileID == id { appliedProfileID = nil }
+        reevaluateProfile()
+    }
+
+    /// Sets, changes or (with `none`) removes the rule for a kind of app.
+    func setCategoryRule(_ category: AppCategory, profileID: String?, none: Bool) {
+        settings.update { s in
+            s.categoryRules.removeAll { $0.category == category }
+            if !none { s.categoryRules.append(CategoryRule(category: category, profileID: profileID)) }
+        }
         reevaluateProfile()
     }
 

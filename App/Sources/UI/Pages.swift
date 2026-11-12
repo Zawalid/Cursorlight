@@ -895,6 +895,21 @@ struct ProfilesPage: View {
                 Text("A scene you pick by hand wins until you switch to another app.")
             }
 
+            Section {
+                ForEach(AppCategory.allCases, id: \.self) { category in
+                    HStack(spacing: 10) {
+                        Image(systemName: category.symbol).font(.system(size: 14)).foregroundStyle(.secondary).frame(width: 30)
+                        Text(category.displayName)
+                        Spacer(minLength: 6)
+                        CategoryMenu(category: category)
+                    }
+                }
+            } header: {
+                Text("Types of app")
+            } footer: {
+                Text("One rule for every app of a kind, such as every browser or code editor. A rule for a single app above wins.")
+            }
+
             if !calls.filter({ call in !rules.contains { $0.bundleID == call.bundleID } }).isEmpty {
                 Section {
                     ForEach(calls.filter { call in !rules.contains { $0.bundleID == call.bundleID } }, id: \.bundleID) { app in
@@ -1518,5 +1533,42 @@ struct ClickEffectRow: View {
             }
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// The scene (or off, or nothing) for one kind of app.
+struct CategoryMenu: View {
+    @EnvironmentObject private var model: AppModel
+    let category: AppCategory
+
+    var body: some View {
+        let rule = model.settings.categoryRules.first { $0.category == category }
+        let scene = rule?.profileID.flatMap { id in model.profiles.first { $0.id == id } }
+        Menu {
+            Button { model.setCategoryRule(category, profileID: nil, none: true) } label: {
+                Text(rule == nil ? "No rule  \u{2713}" : "No rule")
+            }
+            Divider()
+            ForEach(model.profiles) { profile in
+                Button { model.setCategoryRule(category, profileID: profile.id, none: false) } label: {
+                    Label {
+                        Text(rule?.profileID == profile.id ? "\(profile.name)  \u{2713}" : profile.name)
+                    } icon: {
+                        Image(nsImage: MenuThumbnail.style(profile.snapshot.highlightStyle, tint: Color(rgba: profile.highlightColor)))
+                    }
+                }
+            }
+            Divider()
+            Button { model.setCategoryRule(category, profileID: nil, none: false) } label: {
+                Text(rule != nil && rule?.profileID == nil ? "Beacon off  \u{2713}" : "Beacon off")
+            }
+        } label: {
+            if let rule {
+                if let scene { Text(scene.name).font(.system(size: 12, weight: .medium)) } else if rule.profileID == nil { Text("Off").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.warn) }
+            } else {
+                Text("No rule").font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+        }
+        .menuStyle(.borderlessButton).fixedSize()
     }
 }

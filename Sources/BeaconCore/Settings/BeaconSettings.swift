@@ -35,6 +35,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     /// The profile the user last chose; per-app rules apply on top of it.
     public var baseProfileID: String
     public var appRules: [AppRule]
+    /// A rule for a whole kind of app. A rule for one app wins over it.
+    public var categoryRules: [CategoryRule]
     public var displayScope: DisplayScope
     /// One option per highlight style, and fading when the pointer is still.
     public var highlightOptions: HighlightOptions
@@ -48,6 +50,14 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
 
     /// The pen color in use, custom or preset.
     public var penColor: RGBA { inkCustom.map { RGBA(hex: $0) } ?? inkColor.rgba }
+
+    /// The rules to apply while `frontBundleID` is frontmost: the app rules, plus its category's rule when the app has
+    /// no rule of its own.
+    public func effectiveRules(frontBundleID: String?) -> [AppRule] {
+        guard let front = frontBundleID, !appRules.contains(where: { $0.bundleID == front }),
+              let category = AppCategory.of(front), let rule = categoryRules.first(where: { $0.category == category }) else { return appRules }
+        return appRules + [AppRule(bundleID: front, appName: category.displayName, profileID: rule.profileID)]
+    }
 
     public var look: HighlightLook {
         HighlightLook(accent: accent, size: highlightSize, intensity: highlightIntensity, lensDim: lensDim, options: highlightOptions)
@@ -75,6 +85,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         profiles: Profile.presets(),
         baseProfileID: Profile.streamID,
         appRules: [],
+        categoryRules: [],
         displayScope: .all,
         highlightOptions: HighlightOptions(),
         hideRules: HideRules(),
@@ -95,6 +106,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         profiles: [Profile] = Profile.presets(),
         baseProfileID: String = Profile.streamID,
         appRules: [AppRule] = [],
+        categoryRules: [CategoryRule] = [],
         displayScope: DisplayScope = .all,
         highlightOptions: HighlightOptions = HighlightOptions(),
         hideRules: HideRules = HideRules(),
@@ -121,6 +133,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.profiles = profiles
         self.baseProfileID = baseProfileID
         self.appRules = appRules
+        self.categoryRules = categoryRules
         self.displayScope = displayScope
         self.highlightOptions = highlightOptions
         self.hideRules = hideRules
@@ -130,7 +143,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
         case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, inkWidth, inkCustom, inkShapes, inkFades, welcomeSeen
-        case profiles, baseProfileID, appRules, displayScope, highlightOptions, hideRules, toolbar
+        case profiles, baseProfileID, appRules, categoryRules, displayScope, highlightOptions, hideRules, toolbar
     }
 
     public init(from decoder: Decoder) throws {
@@ -156,6 +169,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         welcomeSeen = (try? c.decode(Bool.self, forKey: .welcomeSeen)) ?? d.welcomeSeen
         baseProfileID = (try? c.decode(String.self, forKey: .baseProfileID)) ?? d.baseProfileID
         appRules = (try? c.decode([AppRule].self, forKey: .appRules)) ?? d.appRules
+        categoryRules = (try? c.decode([CategoryRule].self, forKey: .categoryRules)) ?? d.categoryRules
         displayScope = (try? c.decode(DisplayScope.self, forKey: .displayScope)) ?? d.displayScope
         highlightOptions = ((try? c.decode(HighlightOptions.self, forKey: .highlightOptions)) ?? d.highlightOptions).sanitized()
         hideRules = (try? c.decode(HideRules.self, forKey: .hideRules)) ?? d.hideRules
@@ -183,6 +197,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         copy.inkFadeAfter = Self.clamp(inkFadeAfter, Self.inkFadeRange, fallback: 2)
         copy.inkWidth = Self.clamp(inkWidth, Self.inkWidthRange, fallback: 1)
         copy.highlightOptions = highlightOptions.sanitized()
+        let known = Set(copy.profiles.map(\.id))
+        copy.categoryRules.removeAll { rule in rule.profileID.map { !known.contains($0) } ?? false }
         if !copy.profiles.contains(where: { $0.id == copy.baseProfileID }) {
             copy.baseProfileID = copy.profiles.first?.id ?? Profile.streamID
         }

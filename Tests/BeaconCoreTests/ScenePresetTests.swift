@@ -50,3 +50,40 @@ final class ScenePresetTests: XCTestCase {
         XCTAssertEqual(scene.snapshot.lensDim, HighlightLook.dimRange.upperBound)
     }
 }
+
+final class AppCategoryTests: XCTestCase {
+    func testCategoriesRecognizeApps() {
+        XCTAssertEqual(AppCategory.of("us.zoom.xos"), .calls)
+        XCTAssertEqual(AppCategory.of("com.apple.dt.Xcode"), .editors)
+        XCTAssertEqual(AppCategory.of("com.jetbrains.intellij"), .editors, "prefix match")
+        XCTAssertEqual(AppCategory.of("company.thebrowser.Browser"), .browsers)
+        XCTAssertEqual(AppCategory.of("org.videolan.vlc"), .video)
+        XCTAssertNil(AppCategory.of("com.example.unknown"))
+    }
+
+    func testCategoryRuleAppliesWhenTheAppHasNoRuleOfItsOwn() {
+        var s = BeaconSettings.defaults
+        s.categoryRules = [CategoryRule(category: .browsers, profileID: "meeting")]
+        let rules = s.effectiveRules(frontBundleID: "com.google.Chrome")
+        XCTAssertEqual(rules.last?.profileID, "meeting")
+        XCTAssertEqual(s.effectiveRules(frontBundleID: "com.apple.finder"), s.appRules)
+        XCTAssertEqual(s.effectiveRules(frontBundleID: nil), s.appRules)
+    }
+
+    func testARuleForOneAppBeatsItsCategory() {
+        var s = BeaconSettings.defaults
+        s.categoryRules = [CategoryRule(category: .browsers, profileID: "meeting")]
+        s.appRules = [AppRule(bundleID: "com.google.Chrome", appName: "Chrome", profileID: "recording")]
+        let rules = s.effectiveRules(frontBundleID: "com.google.Chrome")
+        XCTAssertEqual(rules, s.appRules, "no extra rule is added")
+    }
+
+    func testOffCategoryAndCleanupOfDeletedScenes() throws {
+        var s = BeaconSettings.defaults
+        s.categoryRules = [CategoryRule(category: .video, profileID: nil), CategoryRule(category: .calls, profileID: "gone")]
+        let clean = s.sanitized()
+        XCTAssertEqual(clean.categoryRules.map(\.category), [.video], "off stays, a rule for a missing scene goes")
+        let decoded = try JSONDecoder().decode(BeaconSettings.self, from: JSONEncoder().encode(s))
+        XCTAssertEqual(decoded.categoryRules.count, 2)
+    }
+}
