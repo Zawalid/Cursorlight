@@ -17,17 +17,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let statusItemController = StatusItemController()
     private let cursorSize = CursorSizeController(scaling: SystemCursorScale(), markers: UserDefaultsScaleMarker())
     private var coordinator: AppCoordinator?
+    private var model: AppModel?
+    private var windows: WindowControllers?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let directory = SnapshotRunner.directory {
+            SnapshotRunner.run(into: directory)
+            NSApp.terminate(nil)
+            return
+        }
         if environment.startsCoordinator {
             // Before anything else: a previous run that died with the cursor resized left the marker set.
             cursorSize.restoreIfStale()
             let coordinator = AppCoordinator(cursorSize: cursorSize)
             coordinator.start()
             self.coordinator = coordinator
-            statusItemController.coordinator = coordinator
+            let model = AppModel(coordinator: coordinator)
+            let windows = WindowControllers(model: model)
+            self.model = model
+            self.windows = windows
+            statusItemController.install(model: model)
+            if !coordinator.settings.settings.welcomeSeen && !environment.isAgentMode {
+                windows.showWelcome()
+            }
+        } else {
+            statusItemController.install(model: nil)
         }
-        statusItemController.install()
         // Launch-at-login and Sparkle are added in later tasks; both are gated
         // on environment.allowsLaunchAtLogin / environment.allowsUpdater.
     }

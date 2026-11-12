@@ -77,11 +77,11 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 | Feature | Tier | Status |
 |---|---|---|
 | Menu bar agent, no Dock icon | V1 | done (basic menu) |
-| Menu bar popover: profile switch, pause, share status, quick style | V1 | open |
-| Settings window with sidebar: Highlight, Ink, Triggers, Profiles and Apps, Displays, About | V1 | open |
-| Style gallery with live preview following the real cursor (the showpiece) | V1 | open |
-| First-run guide: shake demo, optional permissions explained | V1 | open |
-| Launch at login | V1 | open |
+| Menu bar popover: quick effect toggles, pause, share tip | V1 | done; profile switch waits for M6, share status for M7 |
+| Settings window with sidebar: Highlight, Ink, Triggers, Profiles and Apps, Displays, About | V1 | done; Profiles and Displays are placeholders until M6 |
+| Style gallery with animated preview | V1 | done as in-window preview; following the real cursor is not done |
+| First-run guide: shake demo, optional permissions explained | V1 | done |
+| Launch at login | V1 | done (About page), untested on real desktop |
 | Sparkle update check | V1 | open |
 | Keyboard shortcut cheat sheet in the popover | V1.1 | open |
 | Localisation: English, French | V1.1 | open |

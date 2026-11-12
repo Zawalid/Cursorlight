@@ -38,6 +38,7 @@ public final class InkController {
         style: InkStyle = .marker,
         color: InkColor = .red,
         cleanupEnabled: Bool = true,
+        fadeAfter: TimeInterval = 2,
         clock: @escaping @MainActor () -> TimeInterval = { CACurrentMediaTime() },
         makeLink: @escaping HighlightController.LinkFactory = HighlightController.displayLinkFactory
     ) {
@@ -46,13 +47,15 @@ public final class InkController {
         self.color = color
         self.clock = clock
         self.makeLink = makeLink
-        model = InkModel(cleanupEnabled: cleanupEnabled)
+        model = InkModel(fadeAfter: fadeAfter, cleanupEnabled: cleanupEnabled)
     }
 
-    public convenience init(overlays: OverlayManager, style: InkStyle, color: InkColor, cleanupEnabled: Bool) {
+    public convenience init(
+        overlays: OverlayManager, style: InkStyle, color: InkColor, cleanupEnabled: Bool, fadeAfter: TimeInterval = 2
+    ) {
         self.init(
             windows: { [weak overlays] in overlays.map { Array($0.windows.values) } ?? [] },
-            style: style, color: color, cleanupEnabled: cleanupEnabled
+            style: style, color: color, cleanupEnabled: cleanupEnabled, fadeAfter: fadeAfter
         )
     }
 
@@ -105,6 +108,10 @@ public final class InkController {
     public func setColor(_ color: InkColor) {
         self.color = color
         onChange?()
+    }
+
+    public func setFadeAfter(_ seconds: TimeInterval) {
+        model.fadeAfter = seconds
     }
 
     public func setCleanupEnabled(_ enabled: Bool) {

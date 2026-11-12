@@ -106,4 +106,13 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.settings.triggers.holdKey, .leftControl)
         XCTAssertEqual(reloaded.settings.triggers.doubleTapKey, .leftOption)
     }
+
+    func testInkFadeIsClampedAndWelcomeFlagPersists() {
+        let store = SettingsStore(defaults: defaults)
+        XCTAssertFalse(store.settings.welcomeSeen)
+        store.update { $0.inkFadeAfter = 100; $0.welcomeSeen = true }
+        let reloaded = SettingsStore(defaults: defaults)
+        XCTAssertEqual(reloaded.settings.inkFadeAfter, BeaconSettings.inkFadeRange.upperBound, accuracy: 0.0001)
+        XCTAssertTrue(reloaded.settings.welcomeSeen)
+    }
 }

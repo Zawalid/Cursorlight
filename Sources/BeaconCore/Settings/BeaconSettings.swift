@@ -20,6 +20,11 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     /// Turn circles, rectangles, lines and arrows into clean shapes when a stroke ends.
     public var inkCleanup: Bool
     public var triggers: TriggerSettings
+    /// Seconds a finished stroke stays before it fades.
+    public var inkFadeAfter: Double
+    public var welcomeSeen: Bool
+
+    public static let inkFadeRange: ClosedRange<Double> = 0.8...8
 
     public var look: HighlightLook {
         HighlightLook(accent: accent, size: highlightSize, intensity: highlightIntensity, lensDim: lensDim)
@@ -37,14 +42,18 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkStyle: .marker,
         inkColor: .red,
         inkCleanup: true,
-        triggers: TriggerSettings()
+        triggers: TriggerSettings(),
+        inkFadeAfter: 2,
+        welcomeSeen: false
     )
 
     public init(
         version: Int, highlightStyle: HighlightStyle, clickRipples: Bool, shakeSensitivity: Double,
         accent: AccentChoice, highlightSize: Double, highlightIntensity: Double, lensDim: Double,
         inkStyle: InkStyle = .marker, inkColor: InkColor = .red, inkCleanup: Bool = true,
-        triggers: TriggerSettings = TriggerSettings()
+        triggers: TriggerSettings = TriggerSettings(),
+        inkFadeAfter: Double = 2,
+        welcomeSeen: Bool = false
     ) {
         self.version = version
         self.highlightStyle = highlightStyle
@@ -58,11 +67,13 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.inkColor = inkColor
         self.inkCleanup = inkCleanup
         self.triggers = triggers
+        self.inkFadeAfter = inkFadeAfter
+        self.welcomeSeen = welcomeSeen
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
-        case inkStyle, inkColor, inkCleanup, triggers
+        case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, welcomeSeen
     }
 
     public init(from decoder: Decoder) throws {
@@ -80,6 +91,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkColor = (try? c.decode(InkColor.self, forKey: .inkColor)) ?? d.inkColor
         inkCleanup = (try? c.decode(Bool.self, forKey: .inkCleanup)) ?? d.inkCleanup
         triggers = (try? c.decode(TriggerSettings.self, forKey: .triggers)) ?? d.triggers
+        inkFadeAfter = (try? c.decode(Double.self, forKey: .inkFadeAfter)) ?? d.inkFadeAfter
+        welcomeSeen = (try? c.decode(Bool.self, forKey: .welcomeSeen)) ?? d.welcomeSeen
     }
 
     /// Returns a copy with every value forced into its valid range.
@@ -89,6 +102,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         copy.highlightSize = Self.clamp(highlightSize, HighlightLook.sizeRange, fallback: 1)
         copy.highlightIntensity = Self.clamp(highlightIntensity, HighlightLook.intensityRange, fallback: 1)
         copy.lensDim = Self.clamp(lensDim, HighlightLook.dimRange, fallback: 0.5)
+        copy.inkFadeAfter = Self.clamp(inkFadeAfter, Self.inkFadeRange, fallback: 2)
         return copy
     }
 

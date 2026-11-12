@@ -35,7 +35,8 @@ final class AppCoordinator {
             look: current.look
         )
         ink = InkController(
-            overlays: overlays, style: current.inkStyle, color: current.inkColor, cleanupEnabled: current.inkCleanup
+            overlays: overlays, style: current.inkStyle, color: current.inkColor, cleanupEnabled: current.inkCleanup,
+            fadeAfter: current.inkFadeAfter
         )
         // The overlay manager has one hook; both controllers follow window changes through it.
         overlays.onWindowsChanged = { [weak self] in
@@ -193,6 +194,15 @@ final class AppCoordinator {
     func setInkColor(_ color: InkColor) {
         ink.setColor(color)
         settings.update { $0.inkColor = color }
+    }
+
+    func setInkFadeAfter(_ seconds: Double) {
+        settings.update { $0.inkFadeAfter = seconds }
+        ink.setFadeAfter(settings.settings.inkFadeAfter)
+    }
+
+    func markWelcomeSeen() {
+        settings.update { $0.welcomeSeen = true }
     }
 
     func setInkCleanup(_ enabled: Bool) {
