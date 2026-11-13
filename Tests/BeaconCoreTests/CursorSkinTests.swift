@@ -100,3 +100,27 @@ struct CursorSkinControllerTests {
         #expect(controller.failed)
     }
 }
+
+struct CursorSkinSceneTests {
+    @Test func theSkinTravelsWithTheScene() {
+        var settings = BeaconSettings.defaults
+        settings.cursorSkin = CursorSkinSettings(design: .ghost, color: "#112233", size: 1.5)
+        let snapshot = settings.snapshot
+        #expect(snapshot.cursorSkin.design == .ghost)
+        var other = BeaconSettings.defaults
+        other.apply(snapshot)
+        #expect(other.cursorSkin == settings.cursorSkin)
+    }
+
+    @Test func aSceneWithoutASkinGivesTheSystemPointerBack() {
+        var settings = BeaconSettings.defaults
+        settings.cursorSkin = CursorSkinSettings(design: .bolt)
+        settings.apply(ProfileSnapshot())
+        #expect(settings.cursorSkin.design == .system)
+    }
+
+    @Test func oldSceneFilesWithoutASkinStillDecode() throws {
+        let snapshot = try JSONDecoder().decode(ProfileSnapshot.self, from: Data("{}".utf8))
+        #expect(snapshot.cursorSkin == CursorSkinSettings())
+    }
+}

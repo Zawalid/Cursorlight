@@ -18,6 +18,8 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
     public var inkShapes: InkShapeSet
     public var inkFades: Bool
     public var options: HighlightOptions
+    /// The real pointer for this scene; `.system` leaves it alone.
+    public var cursorSkin: CursorSkinSettings
 
     public init(
         highlightStyle: HighlightStyle = .aura, accent: AccentChoice = .styleDefault, highlightSize: Double = 1,
@@ -27,7 +29,8 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         inkCustom: String? = nil,
         inkShapes: InkShapeSet = .all,
         inkFades: Bool = true,
-        options: HighlightOptions = HighlightOptions()
+        options: HighlightOptions = HighlightOptions(),
+        cursorSkin: CursorSkinSettings = CursorSkinSettings()
     ) {
         self.highlightStyle = highlightStyle
         self.accent = accent
@@ -44,11 +47,12 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         self.inkShapes = inkShapes
         self.inkFades = inkFades
         self.options = options
+        self.cursorSkin = cursorSkin
     }
 
     private enum CodingKeys: String, CodingKey {
         case highlightStyle, accent, highlightSize, highlightIntensity, lensDim, clickRipples
-        case inkStyle, inkColor, inkCleanup, inkFadeAfter, inkWidth, inkCustom, inkShapes, inkFades, options
+        case inkStyle, inkColor, inkCleanup, inkFadeAfter, inkWidth, inkCustom, inkShapes, inkFades, options, cursorSkin
     }
 
     /// Tolerant: a missing field takes its default.
@@ -70,6 +74,7 @@ public struct ProfileSnapshot: Codable, Equatable, Sendable {
         inkShapes = (try? c.decode(InkShapeSet.self, forKey: .inkShapes)) ?? d.inkShapes
         inkFades = (try? c.decode(Bool.self, forKey: .inkFades)) ?? d.inkFades
         options = ((try? c.decode(HighlightOptions.self, forKey: .options)) ?? d.options).sanitized()
+        cursorSkin = (try? c.decode(CursorSkinSettings.self, forKey: .cursorSkin)) ?? d.cursorSkin
     }
 }
 

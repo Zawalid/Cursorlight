@@ -106,7 +106,7 @@ final class AppCoordinator {
             applyTriggers()
         }
         if !(all || off.contains("extras")) {
-            cursorSkin.apply(settings.settings.cursorSkin)
+            refreshCursorSkin()
             keyMonitor.onKey = { [weak self] press in self?.handleKey(press) }
             applyKeyMonitoring()
             applyDisplayScope()
@@ -204,6 +204,7 @@ final class AppCoordinator {
         guard off != isOffForApp else { return }
         isOffForApp = off
         router.isPaused = isPaused || off
+        refreshCursorSkin()
         if off {
             highlight.setOn(false)
             highlight.setLaser(false)
@@ -231,6 +232,7 @@ final class AppCoordinator {
         ink.setFades(current.inkFades)
         settings.liveProfileID = id
         appliedProfileID = id
+        refreshCursorSkin()
     }
 
     /// The user picked a profile: it wins until the frontmost app changes.
@@ -442,6 +444,7 @@ final class AppCoordinator {
     func setPaused(_ paused: Bool) {
         isPaused = paused
         router.isPaused = paused || isOffForApp
+        refreshCursorSkin()
         if paused {
             highlight.setOn(false)
             highlight.setLaser(false)
@@ -701,7 +704,12 @@ final class AppCoordinator {
 
     func setCursorSkin(_ edit: (inout CursorSkinSettings) -> Void) {
         settings.update { edit(&$0.cursorSkin) }
-        cursorSkin.apply(settings.settings.cursorSkin)
+        refreshCursorSkin()
+    }
+
+    /// The skin of the live scene, or the normal pointer while Beacon is paused or off for the app in front.
+    private func refreshCursorSkin() {
+        cursorSkin.apply(settings.settings.cursorSkin, paused: isPaused || isOffForApp)
     }
 
     func shutdown() {

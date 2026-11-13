@@ -200,7 +200,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
                 highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
                 highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
                 inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter,
-                inkWidth: inkWidth, inkCustom: inkCustom, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions
+                inkWidth: inkWidth, inkCustom: inkCustom, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions, cursorSkin: cursorSkin
             ))
         }
     }
@@ -229,7 +229,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
             highlightStyle: highlightStyle, accent: accent, highlightSize: highlightSize,
             highlightIntensity: highlightIntensity, lensDim: lensDim, clickRipples: clickRipples,
             inkStyle: inkStyle, inkColor: inkColor, inkCleanup: inkCleanup, inkFadeAfter: inkFadeAfter,
-            inkWidth: inkWidth, inkCustom: inkCustom, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions
+            inkWidth: inkWidth, inkCustom: inkCustom, inkShapes: inkShapes, inkFades: inkFades, options: highlightOptions, cursorSkin: cursorSkin
         )
     }
 
@@ -249,6 +249,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         inkShapes = s.inkShapes
         inkFades = s.inkFades
         highlightOptions = s.options
+        cursorSkin = s.cursorSkin
     }
 
     private static func clamp(_ value: Double, _ range: ClosedRange<Double>, fallback: Double) -> Double {
