@@ -48,6 +48,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
     public var keystrokes: KeystrokeSettings
     /// Let `beacon://` links control Beacon.
     public var allowLinks: Bool
+    /// The real pointer replaced by a design.
+    public var cursorSkin: CursorSkinSettings
 
     public static let inkFadeRange: ClosedRange<Double> = 0.8...8
     public static let inkWidthRange: ClosedRange<Double> = 0.6...2.5
@@ -95,7 +97,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         hideRules: HideRules(),
         toolbar: ToolbarSettings(),
         keystrokes: KeystrokeSettings(),
-        allowLinks: true
+        allowLinks: true,
+        cursorSkin: CursorSkinSettings()
     )
 
     public init(
@@ -118,7 +121,8 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         hideRules: HideRules = HideRules(),
         toolbar: ToolbarSettings = ToolbarSettings(),
         keystrokes: KeystrokeSettings = KeystrokeSettings(),
-        allowLinks: Bool = true
+        allowLinks: Bool = true,
+        cursorSkin: CursorSkinSettings = CursorSkinSettings()
     ) {
         self.version = version
         self.highlightStyle = highlightStyle
@@ -148,12 +152,13 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         self.toolbar = toolbar
         self.keystrokes = keystrokes
         self.allowLinks = allowLinks
+        self.cursorSkin = cursorSkin
     }
 
     private enum CodingKeys: String, CodingKey {
         case version, highlightStyle, clickRipples, shakeSensitivity, accent, highlightSize, highlightIntensity, lensDim
         case inkStyle, inkColor, inkCleanup, triggers, inkFadeAfter, inkWidth, inkCustom, inkShapes, inkFades, welcomeSeen
-        case profiles, baseProfileID, appRules, categoryRules, displayScope, highlightOptions, hideRules, toolbar, keystrokes, allowLinks
+        case profiles, baseProfileID, appRules, categoryRules, displayScope, highlightOptions, hideRules, toolbar, keystrokes, allowLinks, cursorSkin
     }
 
     public init(from decoder: Decoder) throws {
@@ -186,6 +191,7 @@ public struct BeaconSettings: Codable, Equatable, Sendable {
         toolbar = (try? c.decode(ToolbarSettings.self, forKey: .toolbar)) ?? d.toolbar
         keystrokes = (try? c.decode(KeystrokeSettings.self, forKey: .keystrokes)) ?? d.keystrokes
         allowLinks = (try? c.decode(Bool.self, forKey: .allowLinks)) ?? d.allowLinks
+        cursorSkin = (try? c.decode(CursorSkinSettings.self, forKey: .cursorSkin)) ?? d.cursorSkin
         // Settings saved before profiles existed: their current look becomes the Stream profile.
         if let stored = try? c.decode([Profile].self, forKey: .profiles), !stored.isEmpty {
             profiles = stored

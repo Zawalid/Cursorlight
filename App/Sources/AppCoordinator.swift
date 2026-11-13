@@ -19,6 +19,7 @@ final class AppCoordinator {
     let ink: InkController
     let spotlight: SpotlightController
     let cursorSize: CursorSizeController
+    let cursorSkin = CursorSkinController(replacer: SkyLightCursorReplacer())
     let shareSafe = ShareSafeMonitor()
     private let keyMonitor = KeyActivityMonitor()
     /// The keys the display shows right now.
@@ -105,6 +106,7 @@ final class AppCoordinator {
             applyTriggers()
         }
         if !(all || off.contains("extras")) {
+            cursorSkin.apply(settings.settings.cursorSkin)
             keyMonitor.onKey = { [weak self] press in self?.handleKey(press) }
             applyKeyMonitoring()
             applyDisplayScope()
@@ -697,7 +699,13 @@ final class AppCoordinator {
         onSizeChange?()
     }
 
+    func setCursorSkin(_ edit: (inout CursorSkinSettings) -> Void) {
+        settings.update { edit(&$0.cursorSkin) }
+        cursorSkin.apply(settings.settings.cursorSkin)
+    }
+
     func shutdown() {
+        cursorSkin.stop()
         cursorSize.reset()
         tracker.onMove = nil
         tracker.stop()

@@ -29,3 +29,10 @@ Prior art that does work on macOS 26: MaCursor (github.com/writronic/MaCursor, G
 
 ## Spike 0c: system cursor scale (2026-11-11)
 `SLSSetCursorScale(cid, 3.0)` returned 0 and the read-back returned 3.0 (set worked in the registry, unlike the registration). Visible effect on screen is for the user to confirm. If it works, a system-wide cursor size slider is a real, simple, no-overlay feature (it is also what MaCursor offers as "Cursor Scale", 0.5x to 4x).
+
+## Spike 0b, second result (2026-11-13): replacing the pointer WORKS with a custom name
+
+- Register the image under Beacon's own name with `SLSRegisterCursorWithImages`, then set it with `SLSSetRegisteredCursor`. Re-registering the system Arrow name stays ignored on macOS 26.
+- The window server resets the cursor on pointer moves. A global mouse monitor re-applying is not enough (flicker). A fast thread that watches `SLSCurrentCursorSeed` and sets the cursor again the moment the seed changes removes the flicker, including when still and on fast drags.
+- `SetsCursorInBackground` on the connection and `SLSSetDockCursorOverride(true)` make it hold over other apps and the Dock.
+- The owner confirmed by eye that it looks right and does not flicker. Clean-room code in `Sources/BeaconCore/Private/CursorReplacer.swift`.

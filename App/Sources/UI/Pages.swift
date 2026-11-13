@@ -167,6 +167,19 @@ struct LookPage: View {
                 Text("Behavior")
             }
             Section {
+                CursorSkinRow(settings: settings.cursorSkin, available: model.cursorSkinAvailable) { edit in model.setCursorSkin(edit) }
+            } header: {
+                Text("Pointer skin")
+            } footer: {
+                if !model.cursorSkinAvailable {
+                    Text("This Mac does not allow replacing the pointer, so the skins are off.")
+                } else if model.cursorSkinFailed {
+                    Text("The system refused this pointer. Pick another one or switch back to System.")
+                } else {
+                    Text("Replaces the real pointer everywhere, in every app, and it is the same for every scene. Quitting Beacon gives your normal pointer back.")
+                }
+            }
+            Section {
                 SpotlightShapeRow(selection: options.spotlightShape) { v in model.setOptions { $0.spotlightShape = v } }
                 LabeledContent("Dim") {
                     ValueSlider(value: Binding(get: { options.spotlightDim }, set: { v in model.setOptions { $0.spotlightDim = v } }), range: HighlightOptions.dimRange)
@@ -1623,5 +1636,63 @@ struct CategoryMenu: View {
             }
         }
         .menuStyle(.borderlessButton).fixedSize()
+    }
+}
+
+/// The real pointer as a design: a grid of skins drawn by the same renderer that registers them, a color and a size.
+struct CursorSkinRow: View {
+    let settings: CursorSkinSettings
+    let available: Bool
+    let edit: ((inout CursorSkinSettings) -> Void) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 64), spacing: 10)], spacing: 10) {
+                ForEach(CursorDesign.allCases, id: \.self) { design in
+                    let on = design == settings.design
+                    Button { edit { $0.design = design } } label: {
+                        VStack(spacing: 5) {
+                            thumbnail(design)
+                                .frame(height: 46).frame(maxWidth: .infinity)
+                                .background(Theme.stage, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Theme.accent : Color.white.opacity(0.1), lineWidth: on ? 2 : 1))
+                            Text(design.displayName).font(.system(size: 10.5, weight: on ? .semibold : .regular)).foregroundStyle(on ? Theme.text : Theme.faint)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!available)
+                    .accessibilityLabel(design.displayName)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            if settings.isActive {
+                LabeledContent("Color") {
+                    HStack(spacing: 8) {
+                        Button("Default") { edit { $0.color = nil } }
+                            .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(settings.color == nil ? Color.secondary : Theme.accent)
+                            .disabled(settings.color == nil)
+                        CustomSwatch(hex: settings.resolvedColor.hexString, selected: settings.color != nil) { hex in edit { $0.color = hex } }
+                    }
+                }
+                LabeledContent("Size") {
+                    ValueSlider(
+                        value: Binding(get: { settings.size }, set: { v in edit { $0.size = (v * 4).rounded() / 4 } }),
+                        range: CursorSkinSettings.sizeRange, format: { String(format: "%gx", ($0 * 4).rounded() / 4) }
+                    )
+                }
+            }
+        }
+        .padding(.vertical, 2)
+        .opacity(available ? 1 : 0.5)
+    }
+
+    @ViewBuilder
+    private func thumbnail(_ design: CursorDesign) -> some View {
+        if design == .system {
+            Image(systemName: "cursorarrow").font(.system(size: 22)).foregroundStyle(Color.white.opacity(0.85))
+        } else if let skin = CursorSkinRenderer.render(CursorSkinSettings(design: design, color: settings.color, size: 1)), let image = skin.images.dropFirst().first {
+            Image(decorative: image, scale: 2).interpolation(.high)
+        }
     }
 }

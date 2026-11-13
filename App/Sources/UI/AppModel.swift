@@ -209,6 +209,9 @@ final class AppModel: ObservableObject {
     func setHideRules(_ edit: (inout HideRules) -> Void) { coordinator.setHideRules(edit); bump() }
     var hideReason: HideReason? { coordinator.hideReason }
     func setRipples(_ on: Bool) { coordinator.setClickRipples(on); bump() }
+    func setCursorSkin(_ edit: (inout CursorSkinSettings) -> Void) { coordinator.setCursorSkin(edit); bump() }
+    var cursorSkinAvailable: Bool { coordinator.cursorSkin.isAvailable }
+    var cursorSkinFailed: Bool { coordinator.cursorSkin.failed }
     func setCursorScale(_ scale: Double) { coordinator.setCursorScale(Float(scale)) }
     func setShakeSensitivity(_ value: Double) { coordinator.setShakeSensitivity(value); bump() }
 

@@ -3,7 +3,7 @@
 Native macOS menu bar app: find, point and mark up with the cursor while screen sharing, plus polished cursor skins. Goal and scope: `GOAL.md`. Specs: `docs/superpowers/specs/`. Research: `docs/research/`.
 
 ## Status
-Building. Follow `docs/ROADMAP.md` (milestones M1 to M9); detailed task text for Ink, triggers, profiles, Share-safe and packaging is in `docs/superpowers/plans/`. Done: scaffold, overlays, shake, cursor size, five highlight styles, settings store, laser, ink, triggers, settings window/popover/first-run (M1 to M5), profiles, app rules, display scope (M6). share-safe check (M7, manual declaration). Settings redesign, floating bar and custom colors are done. Next feature: Spotlight rectangle; pick further features from `docs/BACKLOG.md`.
+Building. Follow `docs/ROADMAP.md` (milestones M1 to M9); detailed task text for Ink, triggers, profiles, Share-safe and packaging is in `docs/superpowers/plans/`. Done: scaffold, overlays, shake, cursor size, five highlight styles, settings store, laser, ink, triggers, settings window/popover/first-run (M1 to M5), profiles, app rules, display scope (M6). share-safe check (M7, manual declaration). Settings redesign, floating bar and custom colors are done. Spotlight, presenting tools and pointer skins are done. Pick further features from `docs/BACKLOG.md`.
 
 ## App shape (decided)
 Menu bar agent (LSUIElement) with a sidebar settings window and a menu bar popover. No Dock app, no tabs.
