@@ -51,7 +51,7 @@ targets:
         LSMinimumSystemVersion: "14.6"
         SUFeedURL: https://github.com/Zawalid/Cursorlight/releases/latest/download/appcast.xml
         # Public half of the EdDSA key from generate_keys. While it starts with REPLACE the updater never starts.
-        SUPublicEDKey: REPLACE_WITH_PUBLIC_KEY
+        SUPublicEDKey: grATakqncDgT+qYEVBzOk7SodjxcynJWWtIAv76zclM=
         SUEnableAutomaticChecks: false
         SUAllowsAutomaticUpdates: false
         NSHumanReadableCopyright: ""
