@@ -31,7 +31,7 @@ enum SnapshotRunner {
             renderWindowed(TriggersPage().environmentObject(model).tint(Theme.accent), size: CGSize(width: 780, height: 720), appearance: appearance, name: "page-keys-\(name)", into: directory)
         }
         for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
-            renderWindowed(PopoverView().environmentObject(model).background(Theme.window), size: CGSize(width: 340, height: 330), appearance: appearance, name: "popover-\(name)", into: directory)
+            renderWindowed(PopoverView().environmentObject(model).background(Theme.window), size: CGSize(width: 360, height: 560), appearance: appearance, name: "popover-\(name)", into: directory)
             let tint: Color = appearance == .darkAqua ? .white : .black
             let icons = HStack(spacing: 26) {
                 ForEach([MenuBarIconState.idle, .active, .paused], id: \.self) { state in
