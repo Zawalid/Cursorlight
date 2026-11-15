@@ -12,6 +12,8 @@ final class GuidePanel: NSPanel {
 final class GuideController {
     private let model: AppModel
     private var panel: GuidePanel?
+    private var illustrationPanel: NSPanel?
+    private let illustration = IllustrationState()
 
     init(model: AppModel) { self.model = model }
 
@@ -38,16 +40,12 @@ final class GuideController {
         material.material = .hudWindow
         material.blendingMode = .behindWindow
         material.state = .active
-        material.wantsLayer = true
-        material.layer?.cornerRadius = 22
-        material.layer?.cornerCurve = .continuous
-        material.layer?.masksToBounds = true
-        material.layer?.borderWidth = 1
-        material.layer?.borderColor = NSColor.white.withAlphaComponent(0.12).cgColor
+        material.maskImage = Self.roundedMask(radius: 22)
         material.autoresizingMask = [.width, .height]
 
         let view = GuideView(
             stepChanged: { [weak self] step in self?.move(to: step) },
+            succeeded: { [weak self] in self?.illustration.step = nil },
             finish: { [weak self] in self?.close() }
         ).environmentObject(model)
         let host = FirstClickHostingView(rootView: AnyView(view))
@@ -62,15 +60,42 @@ final class GuideController {
         panel.alphaValue = 0
         panel.orderFrontRegardless()
         panel.makeKey()
+        panel.invalidateShadow()
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.35
             panel.animator().alphaValue = 1
         }
+        makeIllustrationPanel(on: screen)
+    }
+
+    /// The click-through panel in the middle of the screen that draws what to do.
+    private func makeIllustrationPanel(on screen: NSScreen) {
+        let visible = screen.visibleFrame
+        let size = NSSize(width: 620, height: 360)
+        let frame = NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2 + 40, width: size.width, height: size.height)
+        let panel = NSPanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.ignoresMouseEvents = true
+        panel.isReleasedWhenClosed = false
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        let host = NSHostingView(rootView: IllustrationRoot(state: illustration))
+        host.sizingOptions = []
+        panel.contentView = host
+        panel.setFrame(frame, display: true)
+        panel.orderFrontRegardless()
+        illustrationPanel = panel
     }
 
     func close() {
         guard let panel else { return }
         self.panel = nil
+        illustration.step = nil
+        let illustrationPanel = self.illustrationPanel
+        self.illustrationPanel = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { illustrationPanel?.orderOut(nil) }
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.25
             panel.animator().alphaValue = 0
@@ -82,11 +107,25 @@ final class GuideController {
         let screen = panel.screen ?? NSScreen.main ?? NSScreen.screens[0]
         let frame = Self.frame(for: step, on: screen, model: model)
         if step.isCoach == false { panel.makeKey() }
+        illustration.step = step.isCoach ? step : nil
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.55
             context.timingFunction = CAMediaTimingFunction(controlPoints: 0.23, 1, 0.32, 1)
             panel.animator().setFrame(frame, display: true)
         }, completionHandler: { panel.invalidateShadow() })
+    }
+
+    /// A rounded rectangle the window material is cut to. The window shadow follows this shape, so the corners stay clean.
+    private static func roundedMask(radius: CGFloat) -> NSImage {
+        let edge = radius * 2 + 1
+        let image = NSImage(size: NSSize(width: edge, height: edge), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+        image.resizingMode = .stretch
+        return image
     }
 
     static func frame(for step: GuideStep, on screen: NSScreen, model: AppModel) -> NSRect {

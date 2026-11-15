@@ -41,6 +41,12 @@ enum SnapshotRunner {
             let framed = ZStack { Color(red: 0.16, green: 0.15, blue: 0.2); guide.environmentObject(model) }.frame(width: step.panelSize.width, height: step.panelSize.height)
             renderWindowed(framed, size: step.panelSize, name: name, into: directory, settle: 1.2)
         }
+        for step in [GuideStep.shake, .laser, .ink] {
+            let state = IllustrationState()
+            state.step = step
+            let framed = ZStack { Color(red: 0.86, green: 0.87, blue: 0.9); IllustrationRoot(state: state) }.frame(width: 620, height: 360)
+            renderWindowed(framed, size: CGSize(width: 620, height: 360), name: "illustration-\(step.rawValue)", into: directory, settle: 1.1)
+        }
         defaults.removePersistentDomain(forName: suite)
     }
 

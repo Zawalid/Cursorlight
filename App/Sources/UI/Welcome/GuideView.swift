@@ -31,17 +31,19 @@ struct GuideView: View {
     @State private var stuck = false
     let autonomous: Bool
     let stepChanged: (GuideStep) -> Void
+    let succeeded: () -> Void
     let finish: () -> Void
 
     init(
         startAt step: GuideStep = .intro, phase: Phase = .waiting, inkSeen: Bool = false, autonomous: Bool = true,
-        stepChanged: @escaping (GuideStep) -> Void = { _ in }, finish: @escaping () -> Void
+        stepChanged: @escaping (GuideStep) -> Void = { _ in }, succeeded: @escaping () -> Void = {}, finish: @escaping () -> Void
     ) {
         _step = State(initialValue: step)
         _phase = State(initialValue: phase)
         _inkSeen = State(initialValue: inkSeen)
         self.autonomous = autonomous
         self.stepChanged = stepChanged
+        self.succeeded = succeeded
         self.finish = finish
     }
 
@@ -54,6 +56,7 @@ struct GuideView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.12), lineWidth: 1).allowsHitTesting(false))
         .preferredColorScheme(.dark)
         .onReceive(Timer.publish(every: 0.12, on: .main, in: .common).autoconnect()) { _ in tick() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in model.refreshInputMonitoring() }
@@ -114,6 +117,7 @@ struct GuideView: View {
         let current = step
         withAnimation(.easeOut(duration: 0.25)) { phase = .success }
         NSSound(named: "Tink")?.play()
+        succeeded()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
             if step == current { advance() }
         }
