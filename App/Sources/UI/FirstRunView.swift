@@ -23,7 +23,7 @@ struct FirstRunView: View {
 
     var body: some View {
         ZStack {
-            WelcomeBackdrop(step: step)
+            WelcomeBackdrop()
             VStack(spacing: 0) {
                 HStack(alignment: .center, spacing: 40) {
                     copyColumn
@@ -72,11 +72,11 @@ struct FirstRunView: View {
 
     private var bottomBar: some View {
         HStack(spacing: 0) {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 ForEach(0..<Self.stepCount, id: \.self) { i in
-                    Capsule()
-                        .fill(i == step ? WelcomeStyle.ember : Color.white.opacity(i < step ? 0.4 : 0.16))
-                        .frame(width: i == step ? 26 : 6, height: 6)
+                    Rectangle()
+                        .fill(i <= step ? WelcomeStyle.ember : Color.white.opacity(0.16))
+                        .frame(width: 22, height: 2)
                 }
             }
             .animation(WelcomeStyle.ease, value: step)
@@ -113,16 +113,9 @@ struct FirstRunView: View {
             }
         }
         .frame(width: 400, height: 400)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(LinearGradient(colors: [Color(red: 0.12, green: 0.09, blue: 0.2).opacity(0.78), Color(red: 0.06, green: 0.045, blue: 0.11).opacity(0.86)], startPoint: .top, endPoint: .bottom))
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(LinearGradient(colors: [Color.white.opacity(0.22), Color.white.opacity(0.05)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.5), radius: 40, y: 24)
+        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(WelcomeStyle.panel))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Color.white.opacity(0.09), lineWidth: 1))
     }
 
     private var stageTransition: AnyTransition {
@@ -169,23 +162,17 @@ struct FirstRunView: View {
     }
 
     private var introCopy: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text(Branding.appName.uppercased())
-                .font(.system(size: 12, weight: .semibold)).tracking(1.6)
-                .foregroundStyle(WelcomeStyle.ember)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Be seen wherever you point.")
+                .font(.system(size: 38, weight: .semibold)).tracking(-0.8)
+                .foregroundStyle(WelcomeStyle.text)
+                .fixedSize(horizontal: false, vertical: true)
                 .reveal(0)
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Be seen wherever you point.")
-                    .font(.system(size: 38, weight: .semibold)).tracking(-0.8)
-                    .foregroundStyle(WelcomeStyle.text)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .reveal(1)
-                Text("On a call, in a recording or on a stage, your pointer should never get lost. This takes about a minute.")
-                    .font(.system(size: 15.5)).lineSpacing(3)
-                    .foregroundStyle(WelcomeStyle.dim)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .reveal(2)
-            }
+            Text("On a call, in a recording or on a stage, your pointer should never get lost. This takes about a minute.")
+                .font(.system(size: 15.5)).lineSpacing(3)
+                .foregroundStyle(WelcomeStyle.dim)
+                .fixedSize(horizontal: false, vertical: true)
+                .reveal(1)
         }
     }
 
@@ -231,9 +218,8 @@ struct FirstRunView: View {
                 HStack(spacing: 3) { ForEach(keys, id: \.self) { WKey(text: $0) } }
             }
             .padding(.horizontal, 10).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Color.white.opacity(selected ? 0.085 : 0)))
-            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(selected ? WelcomeStyle.ember.opacity(0.55) : Color.clear, lineWidth: 1))
-            .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(selected ? 0.07 : 0)))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])

@@ -116,7 +116,7 @@ final class DemoPointer: @unchecked Sendable {
     }
 
     private func drawDesk(_ c: inout GraphicsContext, _ size: CGSize) {
-        let window = CGRect(x: 26, y: 34, width: size.width - 52, height: size.height - 68)
+        let window = CGRect(x: 26, y: 34, width: size.width - 52, height: size.height - 100)
         c.fill(Path(roundedRect: window, cornerRadius: 14, style: .continuous), with: .color(.white.opacity(0.05)))
         c.stroke(Path(roundedRect: window, cornerRadius: 14, style: .continuous), with: .color(.white.opacity(0.09)), lineWidth: 1)
         for i in 0..<3 {

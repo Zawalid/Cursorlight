@@ -20,7 +20,7 @@ struct IntroStage: View {
                     .resizable().interpolation(.high)
                     .frame(width: 168, height: 168)
                     .scaleEffect(1.24)
-                    .shadow(color: WelcomeStyle.ember.opacity(0.45), radius: 36, y: 18)
+                    .shadow(color: .black.opacity(0.5), radius: 24, y: 14)
                     .rotation3DEffect(.degrees(Double(tilt.height) * -9), axis: (x: 1, y: 0, z: 0), perspective: 0.6)
                     .rotation3DEffect(.degrees(Double(tilt.width) * 11), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
                     .offset(y: reduceMotion ? 0 : CGFloat(sin(t * 1.1)) * 6)
@@ -86,9 +86,7 @@ struct MiniScreen: View {
                 let frame = CGRect(origin: .zero, size: size)
                 let shape = Path(roundedRect: frame, cornerRadius: 11, style: .continuous)
                 c.clip(to: shape)
-                c.fill(shape, with: .linearGradient(
-                    Gradient(colors: [Color(red: 0.30, green: 0.2, blue: 0.55), Color(red: 0.62, green: 0.24, blue: 0.4)]),
-                    startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height)))
+                c.fill(shape, with: .color(Color(red: 0.2, green: 0.23, blue: 0.31)))
                 let window = CGRect(x: size.width * 0.16, y: size.height * 0.2, width: size.width * 0.68, height: size.height * 0.62)
                 c.fill(Path(roundedRect: window, cornerRadius: 7, style: .continuous), with: .color(Color(red: 0.95, green: 0.94, blue: 0.97)))
                 c.fill(Path(roundedRect: CGRect(x: window.minX, y: window.minY, width: window.width, height: 12), cornerRadius: 7, style: .continuous),
@@ -127,8 +125,7 @@ struct MenuBarStage: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            LinearGradient(colors: [Color(red: 0.26, green: 0.17, blue: 0.5), Color(red: 0.55, green: 0.2, blue: 0.38)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .opacity(0.55)
+            Color(red: 0.19, green: 0.21, blue: 0.29)
             VStack(spacing: 0) {
                 bar
                 Spacer()

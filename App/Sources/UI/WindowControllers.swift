@@ -53,7 +53,7 @@ final class WindowControllers {
         let size = NSSize(width: FirstRunView.size.width, height: FirstRunView.size.height)
         let window = Self.makeWindow(size: size, resizable: false)
         window.appearance = NSAppearance(named: .darkAqua)
-        window.backgroundColor = NSColor(red: 0.03, green: 0.024, blue: 0.065, alpha: 1)
+        window.backgroundColor = NSColor(red: 0.078, green: 0.072, blue: 0.098, alpha: 1)
         let host = FirstClickHostingView(rootView: view)
         Self.install(host, in: window)
         window.setContentSize(size)
