@@ -31,21 +31,24 @@ enum SnapshotRunner {
             renderWindowed(TriggersPage().environmentObject(model).tint(Theme.accent), size: CGSize(width: 780, height: 720), appearance: appearance, name: "page-keys-\(name)", into: directory)
         }
         render(PopoverView().environmentObject(model), name: "popover", into: directory)
-        for step in 0..<3 {
-            render(FirstRunView(startAt: step, finish: {}).environmentObject(model), name: "firstrun-\(step + 1)", into: directory)
+        for step in 0..<FirstRunView.stepCount {
+            renderWindowed(
+                FirstRunView(startAt: step, finish: {}).environmentObject(model), size: FirstRunView.size,
+                name: "firstrun-\(step + 1)", into: directory, settle: 1.8
+            )
         }
         defaults.removePersistentDomain(forName: suite)
     }
 
     /// Renders in a real but never-shown window, so native controls (switch, slider, menus) draw as they do on screen.
-    private static func renderWindowed<V: View>(_ view: V, size: CGSize, appearance: NSAppearance.Name = .darkAqua, name: String, into directory: String) {
+    private static func renderWindowed<V: View>(_ view: V, size: CGSize, appearance: NSAppearance.Name = .darkAqua, name: String, into directory: String, settle: TimeInterval = 0.5) {
         let host = NSHostingView(rootView: view)
         host.frame = CGRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: host.frame, styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: appearance)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        RunLoop.current.run(until: Date().addingTimeInterval(settle))
         host.layoutSubtreeIfNeeded()
         guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
         host.cacheDisplay(in: host.bounds, to: rep)

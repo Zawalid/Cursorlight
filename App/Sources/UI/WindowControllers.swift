@@ -50,10 +50,13 @@ final class WindowControllers {
 
     func showWelcome() {
         let view = AnyView(FirstRunView { [weak self] in self?.welcome?.close() }.environmentObject(model))
-        let window = Self.makeWindow(size: NSSize(width: 580, height: 520), resizable: false)
+        let size = NSSize(width: FirstRunView.size.width, height: FirstRunView.size.height)
+        let window = Self.makeWindow(size: size, resizable: false)
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.backgroundColor = NSColor(red: 0.03, green: 0.024, blue: 0.065, alpha: 1)
         let host = FirstClickHostingView(rootView: view)
         Self.install(host, in: window)
-        window.setContentSize(NSSize(width: 580, height: 520))
+        window.setContentSize(size)
         window.center()
         welcome = window
         Self.present(window)
