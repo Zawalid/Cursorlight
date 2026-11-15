@@ -238,13 +238,22 @@ struct OnChip: View {
 }
 
 /// The product mark: a bright core inside a glowing ring, in the accent color.
+/// The app icon's tile shape: corners at 22.5 percent of the width, whatever the size.
+private struct IconTile: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(roundedRect: rect, cornerRadius: rect.width * 0.225, style: .continuous)
+    }
+}
+
 struct BrandMark: View {
     var body: some View {
         // The app icon carries transparent padding, so it is drawn a little larger than its frame.
         Image(nsImage: NSImage(named: "AppIcon") ?? NSApplication.shared.applicationIconImage)
             .resizable()
             .interpolation(.high)
-            .scaleEffect(1.24)
+            .scaleEffect(1.243)
+            // The tile fills the frame; cut away the icon's transparent margin and baked shadow.
+            .clipShape(IconTile())
             .accessibilityHidden(true)
     }
 }

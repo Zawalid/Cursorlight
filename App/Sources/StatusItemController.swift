@@ -11,6 +11,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var model: AppModel?
     private var eventMonitor: Any?
     private var cancellable: AnyCancellable?
+    private var iconState = MenuBarIconState.idle
+    private var iconTimer: Timer?
 
     /// The icon's frame in screen coordinates.
     var buttonFrame: NSRect? { statusItem?.button?.window?.frame }
@@ -28,7 +30,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         guard statusItem == nil else { return }
         self.model = model
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "scope", accessibilityDescription: Branding.appName)
+        item.button?.image = MenuBarIcon.image(.idle)
+        item.button?.setAccessibilityLabel(Branding.appName)
         item.button?.target = self
         item.button?.action = #selector(clicked(_:))
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -40,13 +43,26 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
                 DispatchQueue.main.async {
                     let attention = model?.shareStatus.needsAttention ?? false
                     self?.statusItem?.button?.contentTintColor = attention ? .systemOrange : nil
+                    self?.refreshIcon()
                 }
+            }
+            // Effects can start from a shortcut without the model announcing it, so the icon also checks on a slow beat.
+            iconTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.refreshIcon() }
             }
             popover.behavior = .transient
             popover.animates = true
             popover.delegate = self
             popover.contentViewController = NSHostingController(rootView: PopoverView().environmentObject(model))
         }
+    }
+
+    private func refreshIcon() {
+        guard let model else { return }
+        let state: MenuBarIconState = model.isPaused ? .paused : (model.anyEffectRunning ? .active : .idle)
+        guard state != iconState else { return }
+        iconState = state
+        statusItem?.button?.image = MenuBarIcon.image(state)
     }
 
     @objc private func clicked(_ sender: NSStatusBarButton) {

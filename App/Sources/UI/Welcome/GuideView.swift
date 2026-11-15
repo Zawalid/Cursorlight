@@ -261,7 +261,7 @@ struct GuideView: View {
             Spacer(minLength: 12)
             HStack {
                 Spacer()
-                Button(action: end) { Text("Start using \(Branding.appName)") }
+                Button { end(); if autonomous { model.openSettings(.highlight) } } label: { Text("Start using \(Branding.appName)") }
                     .buttonStyle(EmberButtonStyle()).keyboardShortcut(.defaultAction)
             }
             .reveal(3)

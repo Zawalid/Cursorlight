@@ -30,7 +30,16 @@ enum SnapshotRunner {
             renderWindowed(LookPage().environmentObject(model).tint(Theme.accent), size: CGSize(width: 780, height: 720), appearance: appearance, name: "page-look-\(name)", into: directory)
             renderWindowed(TriggersPage().environmentObject(model).tint(Theme.accent), size: CGSize(width: 780, height: 720), appearance: appearance, name: "page-keys-\(name)", into: directory)
         }
-        render(PopoverView().environmentObject(model), name: "popover", into: directory)
+        for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
+            renderWindowed(PopoverView().environmentObject(model).background(Theme.window), size: CGSize(width: 340, height: 330), appearance: appearance, name: "popover-\(name)", into: directory)
+            let tint: Color = appearance == .darkAqua ? .white : .black
+            let icons = HStack(spacing: 26) {
+                ForEach([MenuBarIconState.idle, .active, .paused], id: \.self) { state in
+                    Image(nsImage: MenuBarIcon.image(state)).renderingMode(.template).resizable().frame(width: 100, height: 90).foregroundStyle(tint)
+                }
+            }.padding(24).background(appearance == .darkAqua ? Color(white: 0.16) : Color(white: 0.93))
+            renderWindowed(icons, size: CGSize(width: 440, height: 140), appearance: appearance, name: "menubar-icon-\(name)", into: directory)
+        }
         let states: [(String, GuideStep, GuideView.Phase, Bool)] = [
             ("guide-1-intro", .intro, .waiting, false), ("guide-2-shake", .shake, .waiting, false), ("guide-2-shake-done", .shake, .success, false),
             ("guide-3-laser", .laser, .waiting, false), ("guide-4-ink", .ink, .waiting, false), ("guide-4-ink-drawing", .ink, .waiting, true),
