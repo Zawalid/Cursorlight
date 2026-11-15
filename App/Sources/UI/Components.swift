@@ -62,7 +62,7 @@ struct SettingRow<Trailing: View>: View {
 }
 
 /// The three controls below are the native ones, tinted with the accent, so they behave and feel like the system's.
-struct BeaconToggle: View {
+struct CursorlightToggle: View {
     @Binding var isOn: Bool
 
     var body: some View {
@@ -70,7 +70,7 @@ struct BeaconToggle: View {
     }
 }
 
-struct BeaconSlider: View {
+struct CursorlightSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     var width: CGFloat = 190
@@ -80,7 +80,7 @@ struct BeaconSlider: View {
     }
 }
 
-struct BeaconSegmented<Value: Hashable>: View {
+struct CursorlightSegmented<Value: Hashable>: View {
     let options: [(value: Value, title: String)]
     @Binding var selection: Value
     var fills = false
@@ -94,7 +94,7 @@ struct BeaconSegmented<Value: Hashable>: View {
 }
 
 /// A dropdown that shows its current value.
-struct BeaconMenu<Value: Hashable>: View {
+struct CursorlightMenu<Value: Hashable>: View {
     let options: [(value: Value, title: String)]
     @Binding var selection: Value
     var width: CGFloat = 140

@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// Every page is a native grouped Form, the same structure System Settings uses, so spacing, row heights, controls and
@@ -58,7 +58,7 @@ private extension View {
 
 struct LookPage: View {
     @EnvironmentObject private var model: AppModel
-    private var settings: BeaconSettings { model.settings }
+    private var settings: CursorlightSettings { model.settings }
     private var options: HighlightOptions { settings.highlightOptions }
 
     var body: some View {
@@ -176,7 +176,7 @@ struct LookPage: View {
                 } else if model.cursorSkinFailed {
                     Text("The system refused this pointer. Pick another one or switch back to System.")
                 } else {
-                    Text("Replaces the real pointer everywhere, in every app, including over text and links. It is saved with the current scene, so each scene can have its own pointer, and it goes back to normal while Beacon is paused. Quitting Beacon gives your normal pointer back.")
+                    Text("Replaces the real pointer everywhere, in every app, including over text and links. It is saved with the current scene, so each scene can have its own pointer, and it goes back to normal while Cursorlight is paused. Quitting Cursorlight gives your normal pointer back.")
                 }
             }
             Section {
@@ -411,7 +411,7 @@ struct ValueSlider: View {
 
 struct InkPage: View {
     @EnvironmentObject private var model: AppModel
-    private var settings: BeaconSettings { model.settings }
+    private var settings: CursorlightSettings { model.settings }
 
     var body: some View {
         Form {
@@ -443,7 +443,7 @@ struct InkPage: View {
                     }
                 }
                 LabeledContent("Thickness") {
-                    ValueSlider(value: Binding(get: { settings.inkWidth }, set: { model.setInkWidth($0) }), range: BeaconSettings.inkWidthRange)
+                    ValueSlider(value: Binding(get: { settings.inkWidth }, set: { model.setInkWidth($0) }), range: CursorlightSettings.inkWidthRange)
                 }
             }
             Section {
@@ -467,7 +467,7 @@ struct InkPage: View {
                     LabeledContent("Fade after") {
                         ValueSlider(
                             value: Binding(get: { settings.inkFadeAfter }, set: { model.setInkFade(($0 * 10).rounded() / 10) }),
-                            range: BeaconSettings.inkFadeRange, format: { String(format: "%.1f s", $0) }
+                            range: CursorlightSettings.inkFadeRange, format: { String(format: "%.1f s", $0) }
                         )
                     }
                 }
@@ -700,7 +700,7 @@ struct TriggersPage: View {
                         Image(systemName: "exclamationmark.shield.fill").font(.system(size: 16)).foregroundStyle(Theme.warn)
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Double-tap and hold need Input Monitoring").font(.system(size: 13, weight: .semibold))
-                            Text("Without it, Beacon sees those keys only while its own window is in front.")
+                            Text("Without it, Cursorlight sees those keys only while its own window is in front.")
                                 .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                             Button("Allow Input Monitoring…") { model.requestInputMonitoring() }
                         }
@@ -776,10 +776,10 @@ struct TriggersPage: View {
             }
             Section {
                 Toggle(isOn: Binding(get: { model.settings.allowLinks }, set: { model.setAllowLinks($0) })) {
-                    caption("Allow beacon:// links", "Let Stream Deck, Raycast, Alfred, Shortcuts and scripts control Beacon.")
+                    caption("Allow cursorlight:// links", "Let Stream Deck, Raycast, Alfred, Shortcuts and scripts control Cursorlight.")
                 }
                 Menu("Copy a link…") {
-                    ForEach(BeaconLink.examples, id: \.link) { example in
+                    ForEach(CursorlightLink.examples, id: \.link) { example in
                         Button(example.title) {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(example.link, forType: .string)
@@ -790,7 +790,7 @@ struct TriggersPage: View {
             } header: {
                 Text("Automation")
             } footer: {
-                Text("Paste a link into a Stream Deck Open Website button, a Raycast or Alfred command, or the Shortcuts app's Open URLs action. In Terminal: open \"beacon://highlight/toggle\". Links only switch Beacon's own effects.")
+                Text("Paste a link into a Stream Deck Open Website button, a Raycast or Alfred command, or the Shortcuts app's Open URLs action. In Terminal: open \"cursorlight://highlight/toggle\". Links only switch Cursorlight's own effects.")
             }
             Section {
                 Button("Restore defaults") { model.updateTriggers { $0 = TriggerSettings() } }
@@ -943,7 +943,7 @@ struct ProfilesPage: View {
                 if rules.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("No app rules yet").font(.system(size: 13, weight: .semibold))
-                        Text("Give Zoom the Meeting scene, or turn Beacon off in a video player. Beacon switches as soon as the app is in front.")
+                        Text("Give Zoom the Meeting scene, or turn Cursorlight off in a video player. Cursorlight switches as soon as the app is in front.")
                             .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.vertical, 4)
@@ -1010,7 +1010,7 @@ struct AppGlyph: View {
     }
 }
 
-/// One rule: the app, what Beacon does there, and a menu to change it. The remove button shows on hover.
+/// One rule: the app, what Cursorlight does there, and a menu to change it. The remove button shows on hover.
 struct RuleRow: View {
     @EnvironmentObject private var model: AppModel
     let rule: AppRule
@@ -1021,7 +1021,7 @@ struct RuleRow: View {
             AppGlyph(bundleID: rule.bundleID)
             VStack(alignment: .leading, spacing: 1) {
                 Text(rule.appName).font(.system(size: 13, weight: .medium)).lineLimit(1)
-                Text(rule.profileID == nil ? "Beacon stays off here" : "Switches the scene")
+                Text(rule.profileID == nil ? "Cursorlight stays off here" : "Switches the scene")
                     .font(.system(size: 11)).foregroundStyle(rule.profileID == nil ? Theme.warn : .secondary)
             }
             Spacer(minLength: 6)
@@ -1037,7 +1037,7 @@ struct RuleRow: View {
     }
 }
 
-/// A compact menu that shows a scene as a small thumbnail and its name, with an option to turn Beacon off.
+/// A compact menu that shows a scene as a small thumbnail and its name, with an option to turn Cursorlight off.
 struct SceneMenu: View {
     @EnvironmentObject private var model: AppModel
     let selection: String?
@@ -1063,7 +1063,7 @@ struct SceneMenu: View {
                 Button {
                     choose(nil)
                 } label: {
-                    if selection == nil { Label("Beacon off", systemImage: "checkmark") } else { Text("Beacon off") }
+                    if selection == nil { Label("Cursorlight off", systemImage: "checkmark") } else { Text("Cursorlight off") }
                 }
             }
         } label: {
@@ -1190,7 +1190,7 @@ struct DisplaysPage: View {
             } header: {
                 Text("Sharing")
             } footer: {
-                Text("Beacon can't tell what you share, so it asks. Click your choice again to clear it. It resets when the call app quits.")
+                Text("Cursorlight can't tell what you share, so it asks. Click your choice again to clear it. It resets when the call app quits.")
             }
         }
         .page()
@@ -1284,7 +1284,7 @@ struct AboutPage: View {
             }
             Section {
                 privacyRow("lock.shield", "No accounts, no analytics", "Nothing about you leaves this Mac.", .ok)
-                privacyRow("rectangle.dashed.badge.record", "Screen Recording", "Not needed. Beacon never reads your screen.", .ok)
+                privacyRow("rectangle.dashed.badge.record", "Screen Recording", "Not needed. Cursorlight never reads your screen.", .ok)
                 privacyRow("accessibility", "Accessibility", "Not needed.", .ok)
                 if model.needsInputMonitoring {
                     privacyRow("keyboard", "Input Monitoring", "Optional, and off. Only double-tap and hold use it.", .warn)
@@ -1328,7 +1328,7 @@ struct AboutPage: View {
             Button("Reset", role: .destructive) { model.resetAllSettings() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Scenes, app rules, shortcuts and looks go back to how Beacon starts.")
+            Text("Scenes, app rules, shortcuts and looks go back to how Cursorlight starts.")
         }
     }
 
@@ -1626,7 +1626,7 @@ struct CategoryMenu: View {
             }
             Divider()
             Button { model.setCategoryRule(category, profileID: nil, none: false) } label: {
-                Text(rule != nil && rule?.profileID == nil ? "Beacon off  \u{2713}" : "Beacon off")
+                Text(rule != nil && rule?.profileID == nil ? "Cursorlight off  \u{2713}" : "Cursorlight off")
             }
         } label: {
             if let rule {

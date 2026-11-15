@@ -12,8 +12,8 @@ All notable changes. Format follows Keep a Changelog.
 - Scenes with presets (Teaching, Webinar, Tutorial, Pairing, High visibility), reorder, duplicate, rename, export and import, per-app rules, app category rules and a default scene.
 - Triggers: shake, double-tap and hold a modifier (optional Input Monitoring), rebindable global shortcuts with conflict checks, pause, next scene.
 - Floating tool bar, presenter timer chip and a keystroke display with an optional key sound (optional Input Monitoring).
-- `beacon://` links to control Beacon from Stream Deck, Raycast, Alfred, Shortcuts and scripts.
-- Share-safe reminder: tell Beacon what you share and it warns when viewers will not see effects. The bar can hide from screen sharing.
+- `cursorlight://` links to control Cursorlight from Stream Deck, Raycast, Alfred, Shortcuts and scripts.
+- Share-safe reminder: tell Cursorlight what you share and it warns when viewers will not see effects. The bar can hide from screen sharing.
 - Hide automatically in full-screen apps and video players, and follow Reduce Motion.
 - System cursor size, restored on quit and after a crash.
 - Settings window with a live preview canvas, a menu bar popover and a first-run guide.

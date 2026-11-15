@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Beacon design direction</title>
+<title>Cursorlight design direction</title>
 <style>
 :root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;--mono:ui-monospace,"SF Mono",Menlo,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -118,12 +118,12 @@ kbd.down{transform:translateY(1px);background:var(--acc);color:#fff;box-shadow:0
 </style>
 </head>
 <body>
-<nav class="top"><div class="wrap"><b>Beacon design direction</b><a href="#idea">Idea</a><a href="#light">Color</a><a href="#type">Type</a><a href="#layout">Layout</a><a href="#parts">Components</a><a href="#art">Illustration</a><a href="#onboard">Onboarding</a><a href="#pop">Popover</a><a href="#motion">Motion</a><a href="#calls">Your calls</a></div></nav>
+<nav class="top"><div class="wrap"><b>Cursorlight design direction</b><a href="#idea">Idea</a><a href="#light">Color</a><a href="#type">Type</a><a href="#layout">Layout</a><a href="#parts">Components</a><a href="#art">Illustration</a><a href="#onboard">Onboarding</a><a href="#pop">Popover</a><a href="#motion">Motion</a><a href="#calls">Your calls</a></div></nav>
 
 <div class="wrap" style="padding-top:88px">
-  <div class="eyebrow">Beacon, design direction, draft 1</div>
+  <div class="eyebrow">Cursorlight, design direction, draft 1</div>
   <h1>Your cursor is the product. <span>So the window is a stage for it.</span></h1>
-  <p class="lead">Beacon's whole job is light: finding, pointing, marking. The direction below makes the app itself behave like that. A live miniature of your screen sits at the top of every page, your real pointer plays across it, and every setting changes it as you drag. Nothing is described that can be shown.</p>
+  <p class="lead">Cursorlight's whole job is light: finding, pointing, marking. The direction below makes the app itself behave like that. A live miniature of your screen sits at the top of every page, your real pointer plays across it, and every setting changes it as you drag. Nothing is described that can be shown.</p>
 </div>
 
 <!-- IDEA -->
@@ -227,12 +227,12 @@ kbd.down{transform:translateY(1px);background:var(--acc);color:#fff;box-shadow:0
     <div class="card"><div class="demo night"><div class="beam" style="width:190px"><b style="width:60%"></b><u style="left:60%"></u></div></div><h3>Beam slider</h3><p>The track fills with a trail of light that ends in a glowing head. It is the cursor comet as a control. Drags are springy, release settles with no overshoot.</p></div>
     <div class="card"><div class="demo night"><kbd>Ctrl</kbd><kbd>Opt</kbd><kbd class="down">H</kbd></div><h3>Keycap</h3><p>A physical key: a flat top, a dark underside. It presses and glows when the matching real key goes down, anywhere in the app.</p></div>
     <div class="card"><div class="demo night"><div class="scenes"><button class="on">Stream</button><button>Meeting</button><button>Recording</button></div></div><h3>Scene chips</h3><p>A pill group at the top of the window. Switching a scene re-lights the stage in one spring. Long-press to rename.</p></div>
-    <div class="card"><div class="demo night"><div class="sig" style="margin:0"><i></i>Whole screen shared</div><div class="sig" style="margin:0;color:#ffcf8a"><i style="background:radial-gradient(circle,#fff 0 18%,#f2b14a 22% 50%,transparent 70%);box-shadow:0 0 12px #f2b14a"></i>One window: no effects</div></div><h3>Signal</h3><p>The share status as a small beacon: lit and warm when viewers can see effects, amber when they cannot. Always with words. Click to say what you are sharing.</p></div>
+    <div class="card"><div class="demo night"><div class="sig" style="margin:0"><i></i>Whole screen shared</div><div class="sig" style="margin:0;color:#ffcf8a"><i style="background:radial-gradient(circle,#fff 0 18%,#f2b14a 22% 50%,transparent 70%);box-shadow:0 0 12px #f2b14a"></i>One window: no effects</div></div><h3>Signal</h3><p>The share status as a small cursorlight: lit and warm when viewers can see effects, amber when they cannot. Always with words. Click to say what you are sharing.</p></div>
     <div class="card"><div class="demo night"><div class="tog on"></div><div class="tog"></div><div class="dock" style="position:static;transform:none"><button class="on">Look</button><button>Draw</button></div></div><h3>Switch and dock</h3><p>Native-feeling switch, ember when on. The dock is a floating pill that sits over the tray, like a real Dock, and shrinks to icons when the window is narrow.</p></div>
   </div>
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><h3>Consequence cards</h3><p>For choices with side effects (how long ink stays, how bold the laser is), three cards with one line each: <i>Subtle, nothing lingers. Balanced, fades in two seconds. Dramatic, trails stay and glow.</i> Taken from LookAway.</p></div>
-    <div class="card"><h3>Real controls where they exist</h3><p>Pop-up menus, text fields, the file picker and the permission buttons stay native, so Beacon feels like it belongs on the Mac. Only the three things that are about light (slider, tile, signal) are custom.</p></div>
+    <div class="card"><h3>Real controls where they exist</h3><p>Pop-up menus, text fields, the file picker and the permission buttons stay native, so Cursorlight feels like it belongs on the Mac. Only the three things that are about light (slider, tile, signal) are custom.</p></div>
   </div>
 </div>
 
@@ -249,7 +249,7 @@ kbd.down{transform:translateY(1px);background:var(--acc);color:#fff;box-shadow:0
   <div class="grid g3" style="margin-top:16px">
     <div class="card"><h3>Keys</h3><p>The Keys page draws a plain row of keycaps in the finish color. Ctrl, Opt, Shift and Cmd are always there and light up when held; the chosen shortcut keys glow Ember.</p></div>
     <div class="card"><h3>Permissions</h3><p>Never a lock or shield. A tiny diagram of the real System Settings switch, off then on, with the sentence that says what stays private.</p></div>
-    <div class="card"><h3>Empty states</h3><p>One small ring, one sentence, one button. "No app rules yet. Add Zoom and Beacon changes scene when it is in front."</p></div>
+    <div class="card"><h3>Empty states</h3><p>One small ring, one sentence, one button. "No app rules yet. Add Zoom and Cursorlight changes scene when it is in front."</p></div>
   </div>
 </div>
 
@@ -268,9 +268,9 @@ kbd.down{transform:translateY(1px);background:var(--acc);color:#fff;box-shadow:0
     <div class="frame" style="background:#0b0b0e"><span class="step">3 of 3</span><h4>Keys do the rest. <span>No permission needed.</span></h4><p>Press them now. The keycaps light as you do. Double-tap and hold gestures are optional and ask once, later.</p>
       <div style="display:flex;gap:6px;margin:20px 0 6px"><kbd style="height:34px;min-width:44px;font-size:13px">Ctrl</kbd><kbd style="height:34px;min-width:44px;font-size:13px">Opt</kbd><kbd class="down" style="height:34px;min-width:44px;font-size:13px">H</kbd><span style="color:#8d887f;align-self:center;font-size:12px;margin-left:6px">Highlight</span></div>
       <div style="display:flex;gap:6px;margin:0"><kbd style="height:34px;min-width:44px;font-size:13px">Ctrl</kbd><kbd style="height:34px;min-width:44px;font-size:13px">Opt</kbd><kbd style="height:34px;min-width:44px;font-size:13px">I</kbd><span style="color:#8d887f;align-self:center;font-size:12px;margin-left:6px">Ink</span></div>
-      <div class="btnp">Start using Beacon</div></div>
+      <div class="btnp">Start using Cursorlight</div></div>
   </div>
-  <p class="sub" style="margin-top:18px">The permission is not a screen. It is one line under the last step ("Want double-tap and hold? Allow Input Monitoring. Beacon never records keystrokes.") with the real diagram of the switch. Described by what you get, not by what the OS calls it.</p>
+  <p class="sub" style="margin-top:18px">The permission is not a screen. It is one line under the last step ("Want double-tap and hold? Allow Input Monitoring. Cursorlight never records keystrokes.") with the real diagram of the switch. Described by what you get, not by what the OS calls it.</p>
 </div>
 
 <!-- POPOVER -->
@@ -279,12 +279,12 @@ kbd.down{transform:translateY(1px);background:var(--acc);color:#fff;box-shadow:0
   <h2>A remote, <span>not a menu.</span></h2>
   <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:28px;align-items:flex-start">
     <div class="pop night">
-      <div class="hd"><span style="width:22px;height:22px;border-radius:7px;background:radial-gradient(circle,#fff 0 14%,#ff5a36 18% 50%,transparent 75%),#2a1510;display:block"></span><b>Beacon</b><span class="sig" style="margin:0;padding:3px 10px 3px 6px"><i style="width:12px;height:12px"></i>Screen</span></div>
+      <div class="hd"><span style="width:22px;height:22px;border-radius:7px;background:radial-gradient(circle,#fff 0 14%,#ff5a36 18% 50%,transparent 75%),#2a1510;display:block"></span><b>Cursorlight</b><span class="sig" style="margin:0;padding:3px 10px 3px 6px"><i style="width:12px;height:12px"></i>Screen</span></div>
       <div class="scenes" style="width:100%;justify-content:space-between"><button class="on">Stream</button><button>Meeting</button><button>Recording</button></div>
       <div class="round"><div class="on"><div class="dot"></div>Highlight<small>Ctrl Opt H</small></div><div><div class="dot"></div>Laser<small>Ctrl Opt L</small></div><div><div class="dot"></div>Ink<small>Ctrl Opt I</small></div></div>
       <div style="display:flex;justify-content:space-between;color:var(--dim);border-top:1px solid var(--line);padding-top:11px"><span>Settings</span><span>Pause</span><span>Quit</span></div>
     </div>
-    <div class="card" style="flex:1;min-width:260px"><h3>How it works</h3><p>Three big round buttons, each a tiny lit ring that glows when its effect is on, with the shortcut under it. Scene chips on top, the Signal in the header, a plain footer. 330 wide, system popover material, no cards inside it. It is the one place where Beacon must be understood in one second.</p><p style="margin-top:10px">Right click on the icon gives the short menu (Settings, Pause, Quit). The icon tints amber when the Signal needs attention.</p></div>
+    <div class="card" style="flex:1;min-width:260px"><h3>How it works</h3><p>Three big round buttons, each a tiny lit ring that glows when its effect is on, with the shortcut under it. Scene chips on top, the Signal in the header, a plain footer. 330 wide, system popover material, no cards inside it. It is the one place where Cursorlight must be understood in one second.</p><p style="margin-top:10px">Right click on the icon gives the short menu (Settings, Pause, Quit). The icon tints amber when the Signal needs attention.</p></div>
   </div>
 </div>
 
@@ -309,7 +309,7 @@ kbd.down{transform:translateY(1px);background:var(--acc);color:#fff;box-shadow:0
   </div>
   <div class="grid g3" style="margin-top:16px">
     <div class="card"><h3>1. Default light</h3><p>Night as the default, with Daylight and Dusk as options. Or follow the system appearance automatically?</p></div>
-    <div class="card"><h3>2. Name</h3><p>"Light" language (beam, Signal, Stage) works for Beacon. If you rename the app later the whole system survives, except the word itself.</p></div>
+    <div class="card"><h3>2. Name</h3><p>"Light" language (beam, Signal, Stage) works for Cursorlight. If you rename the app later the whole system survives, except the word itself.</p></div>
     <div class="card"><h3>3. Scope of the first build</h3><p>Build Night first with the Stage, dock, tiles, beam slider and keycaps, then the popover and onboarding, then Daylight and Dusk.</p></div>
   </div>
 </div>

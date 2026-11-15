@@ -1,15 +1,15 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
-/// Proves real mouse events reach the SwiftUI buttons, without touching the screen: with BEACON_CLICKTEST=1 it builds the
+/// Proves real mouse events reach the SwiftUI buttons, without touching the screen: with CURSORLIGHT_CLICKTEST=1 it builds the
 /// welcome window far off screen, sends three synthetic clicks at the Continue button and checks that the guide finished.
 @MainActor
 enum ClickSelfTest {
-    static var isRequested: Bool { ProcessInfo.processInfo.environment["BEACON_CLICKTEST"] == "1" }
+    static var isRequested: Bool { ProcessInfo.processInfo.environment["CURSORLIGHT_CLICKTEST"] == "1" }
 
     static func run() {
-        let suite = "beacon.clicktest.\(UUID().uuidString)"
+        let suite = "cursorlight.clicktest.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { return }
         let coordinator = AppCoordinator(
             cursorSize: CursorSizeController(scaling: SystemCursorScale(), markers: UserDefaultsScaleMarker(defaults: defaults)),

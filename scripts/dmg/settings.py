@@ -1,9 +1,9 @@
-# dmgbuild settings for the Beacon installer window. Run through scripts/make-dmg.sh.
+# dmgbuild settings for the Cursorlight installer window. Run through scripts/make-dmg.sh.
 # The window is 660x420 points; icon positions are the icon centers and line up with scripts/dmg/background.html.
 import os
 
-root = os.environ["BEACON_ROOT"]
-app = os.path.join(root, "build/Beacon.app")
+root = os.environ["CURSORLIGHT_ROOT"]
+app = os.path.join(root, "build/Cursorlight.app")
 
 format = "UDZO"
 filesystem = "HFS+"
@@ -25,6 +25,6 @@ icon_size = 128
 text_size = 13
 arrange_by = None
 icon_locations = {
-    "Beacon.app": (170, 205),
+    "Cursorlight.app": (170, 205),
     "Applications": (490, 205),
 }

@@ -1,4 +1,4 @@
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 struct FirstRunView: View {
@@ -74,7 +74,7 @@ struct FirstRunView: View {
             heading("Two optional extras", "Everything works without asking for anything. These unlock more, and you can skip them.")
             perm(
                 title: "Double-tap and hold a key",
-                body: "Needs Input Monitoring so Beacon can see the key while another app is in front.",
+                body: "Needs Input Monitoring so Cursorlight can see the key while another app is in front.",
                 tag: "Optional",
                 action: model.needsInputMonitoring ? ("Allow", { model.requestInputMonitoring() }) : nil,
                 done: !model.needsInputMonitoring
@@ -105,7 +105,7 @@ struct FirstRunView: View {
 
     private var doneStep: some View {
         VStack(alignment: .leading, spacing: 0) {
-            heading("You are set", "Beacon lives in the menu bar. These are the ways to summon it.")
+            heading("You are set", "Cursorlight lives in the menu bar. These are the ways to summon it.")
             SettingsGroup {
                 SettingRow(title: "Shake the pointer", subtitle: "Highlight on or off") { EmptyView() }
                 SettingRow(title: "Highlight, laser, ink", subtitle: "Keyboard shortcuts work in every app") {

@@ -1,4 +1,4 @@
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// The top of the window: a miniature display that runs the effect you are editing. A presenter-like pointer glides
@@ -54,7 +54,7 @@ struct Stage: View {
 
 /// The "what viewers see" preview: the display inside a share frame, and the effects gone when the share is one window.
 enum ViewerView {
-    static let storageKey = "beacon.viewerView"
+    static let storageKey = "cursorlight.viewerView"
 }
 
 struct ViewerFrame: View {

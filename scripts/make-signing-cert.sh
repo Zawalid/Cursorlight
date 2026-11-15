@@ -8,16 +8,16 @@
 # app's identity, so the grant survives updates. This does NOT remove the first-launch Gatekeeper step (that needs an Apple
 # Developer ID and notarization), and it cannot be notarized.
 #
-# It writes the certificate and its private key to ~/.beacon-secrets/ (mode 700) and prints the commands that put them in
+# It writes the certificate and its private key to ~/.cursorlight-secrets/ (mode 700) and prints the commands that put them in
 # GitHub secrets. Nothing secret is printed. Back the folder up: if the key is lost, every install re-grants Accessibility
 # once, and a new certificate means a new identity. It never touches your keychain.
 set -euo pipefail
 
-NAME="${SIGNING_NAME:-Beacon Release}"
-DIR="${SECRETS_DIR:-$HOME/.beacon-secrets}"
+NAME="${SIGNING_NAME:-Cursorlight Release}"
+DIR="${SECRETS_DIR:-$HOME/.cursorlight-secrets}"
 OPENSSL=/usr/bin/openssl   # the system one: its p12 files import on macOS and on the CI runner
-P12="$DIR/beacon-release.p12"
-PASS="$DIR/beacon-release.p12.password"
+P12="$DIR/cursorlight-release.p12"
+PASS="$DIR/cursorlight-release.p12.password"
 
 umask 077
 mkdir -p "$DIR"
@@ -53,8 +53,8 @@ echo "made $P12 (certificate \"$NAME\", valid 10 years) and its password file."
 echo
 echo "Put them in GitHub, one command each (each reads a file, nothing is shown):"
 echo
-echo "  base64 < \"$P12\" | gh secret set SIGNING_P12 --repo Zawalid/Beacon"
-echo "  gh secret set SIGNING_P12_PASSWORD --repo Zawalid/Beacon < \"$PASS\""
-echo "  printf '%s' \"$NAME\" | gh secret set SIGNING_IDENTITY --repo Zawalid/Beacon"
+echo "  base64 < \"$P12\" | gh secret set SIGNING_P12 --repo Zawalid/Cursorlight"
+echo "  gh secret set SIGNING_P12_PASSWORD --repo Zawalid/Cursorlight < \"$PASS\""
+echo "  printf '%s' \"$NAME\" | gh secret set SIGNING_IDENTITY --repo Zawalid/Cursorlight"
 echo
 echo "Then back up the folder $DIR (password manager or an encrypted drive)."

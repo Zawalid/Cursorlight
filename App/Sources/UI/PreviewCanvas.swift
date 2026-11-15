@@ -1,4 +1,4 @@
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// An animated stand-in for a highlight style on a fake window, driven by the real style recipes and the user's look.

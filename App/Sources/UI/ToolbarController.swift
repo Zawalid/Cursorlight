@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import Combine
 import SwiftUI
 
@@ -55,7 +55,7 @@ final class ToolbarController {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
-        panel.title = "Beacon bar"
+        panel.title = "Cursorlight bar"
         let host = NSHostingView(rootView: AnyView(ToolbarView().environmentObject(model).tint(Theme.accent)))
         panel.contentView = host
         self.host = host

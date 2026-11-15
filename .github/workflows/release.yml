@@ -116,14 +116,14 @@ jobs:
         run: scripts/build-app.sh
 
       - name: Show the app's signing identity
-        # With a certificate the requirement reads: identifier "app.beacon.mac" and certificate leaf = H"...".
+        # With a certificate the requirement reads: identifier "app.cursorlight.mac" and certificate leaf = H"...".
         # With an ad hoc build it is only a cdhash, which changes with every build.
-        run: codesign -d -r- build/Beacon.app 2>&1 | grep -E "designated" || true
+        run: codesign -d -r- build/Cursorlight.app 2>&1 | grep -E "designated" || true
 
       - name: Pack the DMG
         run: |
           scripts/make-dmg.sh
-          mv build/Beacon.dmg "build/Beacon-$VERSION.dmg"
+          mv build/Cursorlight.dmg "build/Cursorlight-$VERSION.dmg"
 
       - name: Notarize and staple
         if: env.HAS_SIGNING == 'true' && env.HAS_NOTARY == 'true'
@@ -133,15 +133,15 @@ jobs:
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
           echo "$NOTARY_KEY_P8" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
-          xcrun notarytool submit "build/Beacon-$VERSION.dmg" \
+          xcrun notarytool submit "build/Cursorlight-$VERSION.dmg" \
             --key "$RUNNER_TEMP/AuthKey.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait
-          xcrun stapler staple "build/Beacon-$VERSION.dmg"
+          xcrun stapler staple "build/Cursorlight-$VERSION.dmg"
 
       - name: Checksum and release notes
         run: |
-          # A copy under a fixed name, so the permanent link releases/latest/download/Beacon.dmg always works.
-          cp "build/Beacon-$VERSION.dmg" build/Beacon.dmg
-          (cd build && shasum -a 256 "Beacon-$VERSION.dmg" > "Beacon-$VERSION.dmg.sha256")
+          # A copy under a fixed name, so the permanent link releases/latest/download/Cursorlight.dmg always works.
+          cp "build/Cursorlight-$VERSION.dmg" build/Cursorlight.dmg
+          (cd build && shasum -a 256 "Cursorlight-$VERSION.dmg" > "Cursorlight-$VERSION.dmg.sha256")
           awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > build/notes.md
           [ -s build/notes.md ] || echo "Release $VERSION" > build/notes.md
           # What the in-app update window shows: the changelog entry without the install instructions below.
@@ -149,9 +149,9 @@ jobs:
           {
             echo
             echo "### Install"
-            echo "Download the DMG and drag Beacon to Applications. See docs/install.md for the first-launch steps."
-            echo "Or with Homebrew: \`brew install --cask zawalid/beacon/beacon\`."
-            echo "SHA-256: \`$(cut -d' ' -f1 "build/Beacon-$VERSION.dmg.sha256")\`"
+            echo "Download the DMG and drag Cursorlight to Applications. See docs/install.md for the first-launch steps."
+            echo "Or with Homebrew: \`brew install --cask zawalid/cursorlight/cursorlight\`."
+            echo "SHA-256: \`$(cut -d' ' -f1 "build/Cursorlight-$VERSION.dmg.sha256")\`"
           } >> build/notes.md
 
       - name: Build the update feed
@@ -171,11 +171,11 @@ jobs:
           if [ "${DRAFT:-0}" = 1 ]; then FLAGS+=(--prerelease); fi
           UPDATE_FILES=()
           if [ -f build/appcast/appcast.xml ]; then
-            UPDATE_FILES=(build/appcast/appcast.xml "build/appcast/Beacon-$VERSION.zip")
+            UPDATE_FILES=(build/appcast/appcast.xml "build/appcast/Cursorlight-$VERSION.zip")
           fi
           TARGET=()
           if [ "${DRAFT:-0}" = 1 ]; then TARGET=(--target "$GITHUB_SHA"); fi
           gh release create "$TAG" \
-            "build/Beacon-$VERSION.dmg" build/Beacon.dmg "build/Beacon-$VERSION.dmg.sha256" \
+            "build/Cursorlight-$VERSION.dmg" build/Cursorlight.dmg "build/Cursorlight-$VERSION.dmg.sha256" \
             "${UPDATE_FILES[@]}" "${TARGET[@]}" \
-            --title "Beacon $VERSION" --notes-file build/notes.md "${FLAGS[@]}"
+            --title "Cursorlight $VERSION" --notes-file build/notes.md "${FLAGS[@]}"

@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// A hosting view that accepts the click that brings its window forward. Without this, the first click on a window
@@ -42,7 +42,7 @@ final class WindowControllers {
             window.setContentSize(NSSize(width: 1180, height: 740))
             window.contentMinSize = NSSize(width: 980, height: 640)
             window.center()
-            window.setFrameAutosaveName("BeaconSettings.v7")
+            window.setFrameAutosaveName("CursorlightSettings.v7")
             settings = window
         }
         Self.present(settings)

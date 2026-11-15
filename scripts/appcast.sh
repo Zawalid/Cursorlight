@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # Builds the update feed for a release: a signed zip of the app and the appcast Sparkle reads.
 #
-#   scripts/appcast.sh 0.5.0                 uses build/Beacon.app and build/notes.md, key from the login keychain
+#   scripts/appcast.sh 0.5.0                 uses build/Cursorlight.app and build/notes.md, key from the login keychain
 #   SPARKLE_ED_PRIVATE_KEY=... scripts/appcast.sh 0.5.0     key given as text (CI)
 #
-# Writes build/appcast/Beacon-<version>.zip and build/appcast/appcast.xml. Attach both to the GitHub release: the app
+# Writes build/appcast/Cursorlight-<version>.zip and build/appcast/appcast.xml. Attach both to the GitHub release: the app
 # reads releases/latest/download/appcast.xml. The EdDSA private key signs the zip. Whoever holds it can ship an update to
 # every install, and losing it strands every install, so it lives in a GitHub secret and an offline backup.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSION="${1:?usage: scripts/appcast.sh <version>}"
-APP="${APP:-build/Beacon.app}"
+APP="${APP:-build/Cursorlight.app}"
 NOTES="${NOTES:-build/notes.md}"
-ACCOUNT="${SPARKLE_ACCOUNT:-beacon}"
+ACCOUNT="${SPARKLE_ACCOUNT:-cursorlight}"
 SPARKLE_VERSION="${SPARKLE_VERSION:-2.10.0}"
 OUT="build/appcast"
 
@@ -37,9 +37,9 @@ BIN="$(find_tools)"
 
 find "$OUT" -mindepth 1 -delete 2>/dev/null || true
 mkdir -p "$OUT"
-ditto -c -k --sequesterRsrc --keepParent "$APP" "$OUT/Beacon-$VERSION.zip"
+ditto -c -k --sequesterRsrc --keepParent "$APP" "$OUT/Cursorlight-$VERSION.zip"
 # Sparkle shows these notes in the update window, in place of a web page.
-if [ -s "$NOTES" ]; then cp "$NOTES" "$OUT/Beacon-$VERSION.md"; fi
+if [ -s "$NOTES" ]; then cp "$NOTES" "$OUT/Cursorlight-$VERSION.md"; fi
 
 KEY_ARGS=(--account "$ACCOUNT")
 if [ -n "${SPARKLE_ED_PRIVATE_KEY:-}" ]; then
@@ -50,12 +50,12 @@ if [ -n "${SPARKLE_ED_PRIVATE_KEY:-}" ]; then
 fi
 
 "$BIN/generate_appcast" "${KEY_ARGS[@]}" \
-  --download-url-prefix "https://github.com/Zawalid/Beacon/releases/download/v$VERSION/" \
-  --link "https://beacon.example.com" \
+  --download-url-prefix "https://github.com/Zawalid/Cursorlight/releases/download/v$VERSION/" \
+  --link "https://cursorlight.example.com" \
   --maximum-versions 1 \
   --embed-release-notes \
   "$OUT"
 
 [ -s "$OUT/appcast.xml" ] || { echo "no appcast was written" >&2; exit 1; }
 grep -q "sparkle:edSignature" "$OUT/appcast.xml" || { echo "the appcast has no signature" >&2; exit 1; }
-echo "wrote $OUT/appcast.xml and $OUT/Beacon-$VERSION.zip"
+echo "wrote $OUT/appcast.xml and $OUT/Cursorlight-$VERSION.zip"

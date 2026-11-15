@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 private final class TimerPanel: NSPanel {
@@ -41,8 +41,8 @@ final class TimerController: ObservableObject {
 
     func start(_ mode: PresenterTimer.Mode) { timer.start(mode, at: now) }
 
-    /// The timer parts of a `beacon://` link.
-    func run(_ command: BeaconLinkCommand) {
+    /// The timer parts of a `cursorlight://` link.
+    func run(_ command: CursorlightLinkCommand) {
         switch command {
         case .timerToggle: toggle()
         case let .timerStart(minutes):
@@ -67,7 +67,7 @@ final class TimerController: ObservableObject {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
-        panel.title = "Beacon timer"
+        panel.title = "Cursorlight timer"
         let host = NSHostingView(rootView: AnyView(TimerView(controller: self).tint(Theme.accent)))
         panel.contentView = host
         self.host = host

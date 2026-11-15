@@ -1,4 +1,4 @@
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// Colors, type and metrics for every screen. The accent comes from Branding; everything else is neutral.

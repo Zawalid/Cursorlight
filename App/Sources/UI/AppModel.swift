@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
 
     func bump() { revision += 1 }
 
-    var settings: BeaconSettings { coordinator.settings.settings }
+    var settings: CursorlightSettings { coordinator.settings.settings }
     var look: HighlightLook { settings.look }
     var isPaused: Bool { coordinator.isPaused }
     var needsInputMonitoring: Bool { coordinator.needsInputMonitoring }
@@ -65,7 +65,7 @@ final class AppModel: ObservableObject {
         bump()
     }
 
-    /// Saves a scene as a file anyone with Beacon can import.
+    /// Saves a scene as a file anyone with Cursorlight can import.
     func exportScene(_ profile: Profile) {
         guard let data = SceneFile(name: profile.name, snapshot: profile.snapshot).encoded() else { return }
         let panel = NSSavePanel()
@@ -76,16 +76,16 @@ final class AppModel: ObservableObject {
         try? data.write(to: url, options: .atomic)
     }
 
-    /// Adds a scene from a file. Returns an error message when the file is not a Beacon scene.
+    /// Adds a scene from a file. Returns an error message when the file is not a Cursorlight scene.
     @discardableResult
     func importScene() -> String? {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [UTType(filenameExtension: SceneFile.fileExtension) ?? .json, .json]
         panel.allowsMultipleSelection = false
-        panel.message = "Choose a Beacon scene file"
+        panel.message = "Choose a Cursorlight scene file"
         guard panel.runModal() == .OK, let url = panel.url else { return nil }
         guard let data = try? Data(contentsOf: url), let file = SceneFile.decode(data) else {
-            return "That file is not a Beacon scene, or it comes from a newer version."
+            return "That file is not a Cursorlight scene, or it comes from a newer version."
         }
         coordinator.addProfile(file.scene(existing: profiles))
         bump()
@@ -98,7 +98,7 @@ final class AppModel: ObservableObject {
     func renameProfile(_ id: String, to name: String) { coordinator.renameProfile(id, to: name); bump() }
     func setDisplayScope(_ scope: DisplayScope) { coordinator.setDisplayScope(scope); bump() }
 
-    /// Sets the profile for an app, or nil to switch Beacon off while it is frontmost.
+    /// Sets the profile for an app, or nil to switch Cursorlight off while it is frontmost.
     func setRule(_ rule: AppRule, profileID: String?) {
         var updated = rule
         updated.profileID = profileID
@@ -114,7 +114,7 @@ final class AppModel: ObservableObject {
     func removeRule(_ rule: AppRule) { coordinator.removeAppRule(bundleID: rule.bundleID); bump() }
 
     /// Asks the user for an app and adds a rule for it, starting with the current base profile.
-    /// Regular apps that are open right now, except Beacon, sorted by name.
+    /// Regular apps that are open right now, except Cursorlight, sorted by name.
     func runningAppCandidates() -> [RunningApp] {
         var seen = Set<String>()
         return NSWorkspace.shared.runningApplications

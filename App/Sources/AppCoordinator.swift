@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 
 /// Owns the live pieces (overlays, pointer and button tracking, the highlight, cursor size).
 @MainActor
@@ -32,19 +32,19 @@ final class AppCoordinator {
     /// Called after pause state or trigger settings change, so the menu can refresh.
     var onTriggersChange: (() -> Void)?
     /// Set by the app delegate; runs the timer parts of a link.
-    var onTimerLink: ((BeaconLinkCommand) -> Void)?
+    var onTimerLink: ((CursorlightLinkCommand) -> Void)?
     /// Set by the app delegate; shows or hides the timer chip.
     var onToggleTimer: (() -> Void)?
     /// Called when the share status changes.
     var onShareChange: (() -> Void)?
     private(set) var isPaused = false
-    /// True while Beacon is off for the frontmost app: a per-app rule, or a hide rule such as full screen.
+    /// True while Cursorlight is off for the frontmost app: a per-app rule, or a hide rule such as full screen.
     private(set) var isOffForApp = false
     private var profileOff = false
-    /// Why a hide rule has switched Beacon off right now, if one has.
+    /// Why a hide rule has switched Cursorlight off right now, if one has.
     private(set) var hideReason: HideReason?
     private var spaceObserver: NSObjectProtocol?
-    /// The last app that was frontmost other than Beacon itself.
+    /// The last app that was frontmost other than Cursorlight itself.
     private var frontBundleID: String?
     private var motionObserver: NSObjectProtocol?
 
@@ -80,8 +80,8 @@ final class AppCoordinator {
     }
 
     func start() {
-        // Diagnostic: BEACON_DISABLE=overlays,monitors,triggers,extras (or all) switches parts off to find which one breaks clicks.
-        let off = Set((ProcessInfo.processInfo.environment["BEACON_DISABLE"] ?? "").split(separator: ",").map(String.init))
+        // Diagnostic: CURSORLIGHT_DISABLE=overlays,monitors,triggers,extras (or all) switches parts off to find which one breaks clicks.
+        let off = Set((ProcessInfo.processInfo.environment["CURSORLIGHT_DISABLE"] ?? "").split(separator: ",").map(String.init))
         let all = off.contains("all")
         if !(all || off.contains("overlays")) {
             overlays.start()
@@ -139,7 +139,7 @@ final class AppCoordinator {
     // MARK: Profiles
 
     private func frontmostAppChanged(to bundleID: String?) {
-        // Using Beacon's own windows must not switch profiles.
+        // Using Cursorlight's own windows must not switch profiles.
         guard bundleID != Bundle.main.bundleIdentifier else { return }
         frontBundleID = bundleID
         switcher.frontmostChanged(to: bundleID)
@@ -168,7 +168,7 @@ final class AppCoordinator {
         let rules = settings.settings.hideRules
         let front = NSWorkspace.shared.frontmostApplication
         var reason: HideReason?
-        // Beacon's own windows never hide effects: that is where they are set up.
+        // Cursorlight's own windows never hide effects: that is where they are set up.
         if let front, front.bundleIdentifier != Bundle.main.bundleIdentifier, rules.isActive {
             reason = rules.reason(
                 frontBundleID: front.bundleIdentifier,
@@ -292,7 +292,7 @@ final class AppCoordinator {
         if wasLive { settings.liveProfileID = nil }
         settings.update { s in
             s.profiles.removeAll { $0.id == id }
-            // Apps that used this scene go back to the default scene; a nil profile would switch Beacon off for them.
+            // Apps that used this scene go back to the default scene; a nil profile would switch Cursorlight off for them.
             s.appRules.removeAll { $0.profileID == id }
             s.categoryRules.removeAll { $0.profileID == id }
         }
@@ -392,7 +392,7 @@ final class AppCoordinator {
     func clearInk() { ink.clearAll() }
 
     /// Switches to the next scene in the list, wrapping around.
-    private func resolve(_ choice: BeaconLinkCommand.Switch, current: Bool) -> Bool {
+    private func resolve(_ choice: CursorlightLinkCommand.Switch, current: Bool) -> Bool {
         switch choice {
         case .on: true
         case .off: false
@@ -400,8 +400,8 @@ final class AppCoordinator {
         }
     }
 
-    /// Runs what a `beacon://` link asked for, if links are allowed.
-    func runLink(_ command: BeaconLinkCommand) {
+    /// Runs what a `cursorlight://` link asked for, if links are allowed.
+    func runLink(_ command: CursorlightLinkCommand) {
         guard settings.settings.allowLinks else { return }
         switch command {
         case let .highlight(choice): highlight.setOn(resolve(choice, current: highlight.isOn))
@@ -454,12 +454,12 @@ final class AppCoordinator {
         onTriggersChange?()
     }
 
-    /// Puts every setting back to how Beacon starts, keeping only that the welcome was seen.
+    /// Puts every setting back to how Cursorlight starts, keeping only that the welcome was seen.
     func resetAllSettings() {
         let seen = settings.settings.welcomeSeen
         settings.liveProfileID = nil
         settings.update {
-            $0 = BeaconSettings.defaults
+            $0 = CursorlightSettings.defaults
             $0.welcomeSeen = seen
         }
         switcher.setBase(settings.settings.baseProfileID)
@@ -499,7 +499,7 @@ final class AppCoordinator {
 
     var failedHotkeys: [HotKeyAction] { hotkeys.failed }
 
-    /// True when a modifier trigger is on but cannot see keys outside Beacon yet.
+    /// True when a modifier trigger is on but cannot see keys outside Cursorlight yet.
     var needsInputMonitoring: Bool {
         let t = settings.settings.triggers
         let gestures = (t.doubleTapEnabled || t.holdEnabled) && !modifiers.hasGlobalAccess
@@ -561,7 +561,7 @@ final class AppCoordinator {
         NSSound(named: NSSound.Name("Tink"))?.play()
     }
 
-    /// Reads the system "Reduce motion" setting into the look, when the user asked Beacon to follow it.
+    /// Reads the system "Reduce motion" setting into the look, when the user asked Cursorlight to follow it.
     private var effectiveLook: HighlightLook {
         let look = settings.settings.look
         return look.options.respectReduceMotion && NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? look.reducingMotion() : look
@@ -707,7 +707,7 @@ final class AppCoordinator {
         refreshCursorSkin()
     }
 
-    /// The skin of the live scene, or the normal pointer while Beacon is paused or off for the app in front.
+    /// The skin of the live scene, or the normal pointer while Cursorlight is paused or off for the app in front.
     private func refreshCursorSkin() {
         cursorSkin.apply(settings.settings.cursorSkin, paused: isPaused || isOffForApp)
     }

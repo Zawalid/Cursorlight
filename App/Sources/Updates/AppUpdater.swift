@@ -27,7 +27,7 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate {
         checksOn = controller?.updater.automaticallyChecksForUpdates ?? false
     }
 
-    /// Whether Beacon asks GitHub once a day if a newer version exists. Off until the person turns it on.
+    /// Whether Cursorlight asks GitHub once a day if a newer version exists. Off until the person turns it on.
     var automaticallyChecks: Bool {
         get { checksOn }
         set {
@@ -60,7 +60,7 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate {
     #if DEBUG
         /// Debug builds only: point the updater at a local appcast to try an update without publishing one.
         nonisolated func feedURLString(for updater: SPUUpdater) -> String? {
-            ProcessInfo.processInfo.environment["BEACON_FEED_URL"]
+            ProcessInfo.processInfo.environment["CURSORLIGHT_FEED_URL"]
         }
     #endif
 }

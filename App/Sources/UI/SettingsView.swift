@@ -1,4 +1,4 @@
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// The window is a canvas and an inspector. The canvas is a live miniature of a screen, full-bleed, with your real mouse
@@ -306,14 +306,14 @@ struct ShareStatusInfo {
         case .notSharing:
             symbol = "rectangle.on.rectangle.slash"; tint = Theme.dim; chipTint = Color.white.opacity(0.45)
             title = "Not sharing"
-            body = "Tell Beacon when you start sharing and it will check."
+            body = "Tell Cursorlight when you start sharing and it will check."
             short = "Not sharing."
             pill = "Not sharing"
         }
     }
 }
 
-/// The share status with a control for telling Beacon what is being shared.
+/// The share status with a control for telling Cursorlight what is being shared.
 struct ShareStatusCard: View {
     @EnvironmentObject private var model: AppModel
 
@@ -329,7 +329,7 @@ struct ShareStatusCard: View {
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text("I am sharing").font(.system(size: 11)).foregroundStyle(Theme.faint)
-                BeaconSegmented(
+                CursorlightSegmented(
                     options: [(DeclaredShare?.some(.notSharing), "Nothing"), (.some(.wholeScreen), "Screen"), (.some(.singleWindow), "A window")],
                     selection: Binding(get: { model.declaredShare }, set: { model.declareShare($0) }),
                     fills: true

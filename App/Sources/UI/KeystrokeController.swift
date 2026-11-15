@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 private final class KeystrokePanel: NSPanel {
@@ -54,7 +54,7 @@ final class KeystrokeController {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
-        panel.title = "Beacon keys"
+        panel.title = "Cursorlight keys"
         let host = NSHostingView(rootView: AnyView(KeystrokeView(coordinator: coordinator)))
         panel.contentView = host
         self.host = host

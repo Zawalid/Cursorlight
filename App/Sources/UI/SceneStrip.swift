@@ -1,4 +1,4 @@
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// The scenes as a strip of cards under the canvas. Each card draws the scene's real look: its style in its own color,

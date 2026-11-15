@@ -1,11 +1,11 @@
-# Goal: Beacon (working name), a cursor toolkit for screen sharing on macOS
+# Goal: Cursorlight (working name), a cursor toolkit for screen sharing on macOS
 
 ## Why this exists
 When you share your screen, the other person often cannot see where your cursor is. Zoom hides it when you share a single window, video compression washes it out, and the built-in pointer tools only work for the sharer and look plain. Existing Mac utilities (Mouseposé, Mouzz, Mouse Pro, FocusCursor, Presentify, Epic Pen) each cover one or two jobs and look like utilities. Screen Studio proves people pay for polished cursor motion, but it only records.
 
-Beacon is one small, beautiful app that does three jobs: find the cursor, point with it, mark things up. It is meant to be good enough to publish and sell.
+Cursorlight is one small, beautiful app that does three jobs: find the cursor, point with it, mark things up. It is meant to be good enough to publish and sell.
 
-"Beacon" is a placeholder. Identity (name, icon, visual design) will be reshaped later, so keep all branding in one place.
+"Cursorlight" is a placeholder. Identity (name, icon, visual design) will be reshaped later, so keep all branding in one place.
 
 ## The three jobs
 1. Find: halo, spotlight, dimming, shake to find.
@@ -27,7 +27,7 @@ Shake the cursor, double-tap Option, or hold a hotkey. All three trigger the sam
 
 ## Version 1 scope (agreed in conversation)
 - A handful of beautiful cursor skins, with matching hand and I-beam variants.
-- Beacon (halo and optional screen dim), Laser (comet trail), Ink (auto-fading strokes with shape cleanup), click pulse.
+- Cursorlight (halo and optional screen dim), Laser (comet trail), Ink (auto-fading strokes with shape cleanup), click pulse.
 - Shake and double-tap Option summon, hold-to-draw hotkey.
 - Per-app and per-display settings, presenter profiles (Stream, Meeting, Recording).
 - Share-safe check: tell the user whether their effects are visible in the current share.
@@ -48,7 +48,7 @@ Overlays reach viewers in full-screen share, but not in single-window share. Det
 
 **Decision (2026-11-08):** v1 supports full-screen share. The Share-safe check warns the user when they share a single window, because effects will not be visible to viewers. Mirror mode (live copy of a window with effects drawn in) is deferred, not v1.
 
-**Revision 2026-11-11:** the cursor-skin approach changed. See `docs/superpowers/specs/2026-11-08-beacon-v1-design.md` section 4.3: v1 uses the system cursor size plus effects around the real cursor; custom arrows are a later research task.
+**Revision 2026-11-11:** the cursor-skin approach changed. See `docs/superpowers/specs/2026-11-08-cursorlight-v1-design.md` section 4.3: v1 uses the system cursor size plus effects around the real cursor; custom arrows are a later research task.
 
 ## Open technical risk (spike first)
 Overlay windows are only captured by Zoom, Meet and Teams when the user shares the entire screen, not a single window. Replacing the system cursor is not supported by public API; the usual route is to hide the real cursor and draw an overlay. Before building features, run a throwaway spike to find out:

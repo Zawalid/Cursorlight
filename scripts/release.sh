@@ -73,6 +73,6 @@ PY
 
 git add CHANGELOG.md App/project.yml
 git commit -q -m "chore: release $TAG"
-git tag -a "$TAG" -m "Beacon $VERSION"
+git tag -a "$TAG" -m "Cursorlight $VERSION"
 echo "tagged $TAG. Review with: git show $TAG --stat"
 echo "Publish with:   git push origin main --follow-tags"

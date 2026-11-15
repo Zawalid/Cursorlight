@@ -5,7 +5,7 @@ import SwiftUI
 enum PreviewScene: String, CaseIterable, Identifiable {
     case slides, code, dashboard
 
-    static let storageKey = "beacon.previewScene"
+    static let storageKey = "cursorlight.previewScene"
 
     var id: String { rawValue }
 

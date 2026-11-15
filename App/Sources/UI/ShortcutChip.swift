@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// The shortcut for what the canvas is showing, read from the real settings: Toggle highlight on Look, Toggle ink on
@@ -67,7 +67,7 @@ struct MiniKey: View {
     }
 }
 
-/// Watches the keys held while this app is in front. It sees only events delivered to Beacon itself, so it needs no
+/// Watches the keys held while this app is in front. It sees only events delivered to Cursorlight itself, so it needs no
 /// permission. It reads key characters only from key events, never from mouse events.
 @MainActor
 final class KeyPressWatcher: ObservableObject {

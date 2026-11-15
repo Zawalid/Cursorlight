@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// The floating bar: the three effects and pause, a few quick choices for the one in use, the scene, and a handle.

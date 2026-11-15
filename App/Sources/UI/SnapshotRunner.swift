@@ -1,15 +1,15 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
-/// Visual check without a screen: with BEACON_SNAPSHOT_DIR set, renders each page to a PNG there and quits.
+/// Visual check without a screen: with CURSORLIGHT_SNAPSHOT_DIR set, renders each page to a PNG there and quits.
 /// Needs no Screen Recording permission because nothing is captured from the screen.
 @MainActor
 enum SnapshotRunner {
-    static var directory: String? { ProcessInfo.processInfo.environment["BEACON_SNAPSHOT_DIR"] }
+    static var directory: String? { ProcessInfo.processInfo.environment["CURSORLIGHT_SNAPSHOT_DIR"] }
 
     static func run(into directory: String) {
-        let suite = "beacon.snapshot.\(UUID().uuidString)"
+        let suite = "cursorlight.snapshot.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { return }
         let coordinator = AppCoordinator(
             cursorSize: CursorSizeController(scaling: SystemCursorScale(), markers: UserDefaultsScaleMarker(defaults: defaults)),

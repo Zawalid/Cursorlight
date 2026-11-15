@@ -1,6 +1,6 @@
-# Beacon roadmap
+# Cursorlight roadmap
 
-Written 2026-11-12. Supersedes the task order in `docs/superpowers/plans/2026-11-08-beacon-v1.md` (that file stays as the detailed task text for Ink, triggers, profiles, Share-safe and packaging). Name and branding are placeholders.
+Written 2026-11-12. Supersedes the task order in `docs/superpowers/plans/2026-11-08-cursorlight-v1.md` (that file stays as the detailed task text for Ink, triggers, profiles, Share-safe and packaging). Name and branding are placeholders.
 
 The feature menu for what to build next lives in `docs/BACKLOG.md`.
 
@@ -114,7 +114,7 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 
 ## 4. Milestones (in order)
 
-**M1 Settings foundation.** Versioned `BeaconSettings` model, `SettingsStore` (UserDefaults, injectable), wire existing controllers (style, ripples, scale, shake sensitivity, dim) to it so choices survive relaunch. Exit: tests pass, relaunch keeps choices.
+**M1 Settings foundation.** Versioned `CursorlightSettings` model, `SettingsStore` (UserDefaults, injectable), wire existing controllers (style, ripples, scale, shake sensitivity, dim) to it so choices survive relaunch. Exit: tests pass, relaunch keeps choices.
 
 **M2 Laser and effect polish.** Laser trail on the existing trail buffer, colour/size/intensity/dim settings applied to all five styles, high-contrast palette. Exit: tests pass, user tries it on the real cursor.
 

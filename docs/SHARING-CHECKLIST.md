@@ -20,7 +20,7 @@ Share a **whole screen**, then a **single window**, then a **single app window w
 | Timer chip and keystroke display visible or hidden as set | | |
 | Share-safe status says the right thing for the share type | | |
 
-Expected for a single window: Beacon overlays are not part of that window, so the viewer sees none of them. The
+Expected for a single window: Cursorlight overlays are not part of that window, so the viewer sees none of them. The
 share-safe status must say so.
 
 ## Displays and spaces
@@ -33,8 +33,8 @@ share-safe status must say so.
 ## Pointer skin
 - Skin shows over the Dock, menu bar, a text field, a link, and a window edge (resize cursor).
 - No flicker while still, while dragging fast, or while moving between displays.
-- Quit Beacon (menu bar, Quit): the normal pointer returns at once.
-- Force quit Beacon: the normal pointer returns after the next mouse move into any window.
+- Quit Cursorlight (menu bar, Quit): the normal pointer returns at once.
+- Force quit Cursorlight: the normal pointer returns after the next mouse move into any window.
 - Sleep and wake, and fast user switching: the skin is back or the normal pointer shows, never a stuck blank.
 - Screenshot (Shift-Command-4) and screen recording show the skin as the viewer would see it.
 
@@ -45,7 +45,7 @@ share-safe status must say so.
 - Per-app rules: switching to the rule's app switches the scene, and the pointer skin follows.
 
 ## Permissions
-- Fresh install: Beacon asks for nothing until a feature needs it.
+- Fresh install: Cursorlight asks for nothing until a feature needs it.
 - Input Monitoring granted: hold trigger, keystroke display, key sound, hide while typing.
 - Input Monitoring denied: those items explain what is missing and everything else still works.
 - Password field: the keystroke display shows nothing.

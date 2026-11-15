@@ -1,12 +1,12 @@
-# Releasing Beacon
+# Releasing Cursorlight
 
 Everything below is prepared and local-tested (release build, universal binary, DMG). Nothing has been pushed, signed
 with a stable identity, or published. The flow and its lessons come from the `mac-app-shipping` skill.
 
 ## Placeholders that change when the name is decided
-The name "Beacon", the bundle id `app.beacon.mac`, the repo `Zawalid/Beacon`, the domain `beacon.example.com` and the
+The name "Cursorlight", the bundle id `app.cursorlight.mac`, the repo `Zawalid/Cursorlight`, the domain `cursorlight.example.com` and the
 cask text are placeholders. To rename: search and replace them in `App/project.yml`, `scripts/`, `.github/workflows/`,
-`packaging/homebrew/beacon.rb`, `Sources/BeaconCore/Branding.swift`, then regenerate the icon (`scripts/gen-icon.swift`)
+`packaging/homebrew/cursorlight.rb`, `Sources/CursorlightCore/Branding.swift`, then regenerate the icon (`scripts/gen-icon.swift`)
 and the DMG art (`scripts/dmg/background.html`).
 
 ## Done
@@ -19,7 +19,7 @@ and the DMG art (`scripts/dmg/background.html`).
 1. Decide the name, icon and domain (see the placeholders above).
 2. Create the GitHub repository and push (`git remote add origin ...`).
 3. Make the signing certificate: `scripts/make-signing-cert.sh`, then set the three secrets it prints.
-4. Make the Sparkle key pair (`generate_keys --account beacon`), put the public key in `App/project.yml`
+4. Make the Sparkle key pair (`generate_keys --account cursorlight`), put the public key in `App/project.yml`
    (`SUPublicEDKey`), set `SPARKLE_ED_PRIVATE_KEY`, keep an offline backup.
 5. Trial run of the Release workflow by hand, then `scripts/release.sh 0.1.0`, push the tag, try the draft DMG on a
    clean account, publish, create the tap and cask (`scripts/cask.sh`).

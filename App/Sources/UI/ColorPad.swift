@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// A color picker drawn in the app's own style: a saturation and brightness square, a hue strip, a hex field, an
@@ -12,7 +12,7 @@ struct ColorPad: View {
     @State private var saturation = 1.0
     @State private var brightness = 1.0
     @State private var hexText = ""
-    @AppStorage("beacon.recentColors") private var recentRaw = ""
+    @AppStorage("cursorlight.recentColors") private var recentRaw = ""
 
     private let squareSize = CGSize(width: 232, height: 148)
 

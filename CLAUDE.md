@@ -1,4 +1,4 @@
-# Beacon (working name)
+# Cursorlight (working name)
 
 Native macOS menu bar app: find, point and mark up with the cursor while screen sharing, plus polished cursor skins. Goal and scope: `GOAL.md`. Specs: `docs/superpowers/specs/`. Research: `docs/research/`.
 

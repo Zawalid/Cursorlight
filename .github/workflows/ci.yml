@@ -38,7 +38,7 @@ jobs:
       - name: Build
         run: |
           xcodebuild build \
-            -project App/Beacon.xcodeproj -scheme Beacon \
+            -project App/Cursorlight.xcodeproj -scheme Cursorlight \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO
 

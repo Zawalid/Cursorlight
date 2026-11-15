@@ -1,11 +1,11 @@
-name: Beacon
+name: Cursorlight
 options:
-  bundleIdPrefix: app.beacon
+  bundleIdPrefix: app.cursorlight
   deploymentTarget:
     macOS: "14.6"
   createIntermediateGroups: true
 packages:
-  Beacon:
+  Cursorlight:
     path: ..
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
@@ -22,34 +22,34 @@ settings:
     ARCHS: "$(ARCHS_STANDARD)"
     ONLY_ACTIVE_ARCH: NO
 targets:
-  Beacon:
+  Cursorlight:
     type: application
     platform: macOS
     sources:
       - Sources
     dependencies:
-      - package: Beacon
-        product: BeaconCore
+      - package: Cursorlight
+        product: CursorlightCore
       - package: Sparkle
         product: Sparkle
     entitlements:
-      path: Sources/Beacon.entitlements
+      path: Sources/Cursorlight.entitlements
       properties:
         com.apple.security.cs.disable-library-validation: true
     info:
       path: Sources/Info.plist
       properties:
-        CFBundleName: Beacon
-        CFBundleDisplayName: Beacon
+        CFBundleName: Cursorlight
+        CFBundleDisplayName: Cursorlight
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSUIElement: true
         CFBundleURLTypes:
-          - CFBundleURLName: app.beacon.mac
+          - CFBundleURLName: app.cursorlight.mac
             CFBundleURLSchemes:
-              - beacon
+              - cursorlight
         LSMinimumSystemVersion: "14.6"
-        SUFeedURL: https://github.com/Zawalid/Beacon/releases/latest/download/appcast.xml
+        SUFeedURL: https://github.com/Zawalid/Cursorlight/releases/latest/download/appcast.xml
         # Public half of the EdDSA key from generate_keys. While it starts with REPLACE the updater never starts.
         SUPublicEDKey: REPLACE_WITH_PUBLIC_KEY
         SUEnableAutomaticChecks: false
@@ -57,7 +57,7 @@ targets:
         NSHumanReadableCopyright: ""
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.beacon.mac
+        PRODUCT_BUNDLE_IDENTIFIER: app.cursorlight.mac
         # One signed binary: a separate debug dylib signed differently from the app fails to load under hardened runtime.
         ENABLE_DEBUG_DYLIB: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

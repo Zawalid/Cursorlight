@@ -1,5 +1,5 @@
 import AppKit
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// Draws a believable Mac display in a fixed 1280 by 800 space, scaled into any rectangle: a wallpaper, a menu bar with a
@@ -214,7 +214,7 @@ enum DesktopArt {
         }
         w.fill(Path(R(s.minX + 470, baseline, 320, 1)), with: .color(hx("#D8DAE2")))
         label(w, "+38%", s.minX + 772, baseline - 196 - 12, size: 24, weight: .bold, color: hx("#4F46E5"), anchor: .bottom)
-        label(w, "Beacon Labs  -  Q3 review", s.minX + 56, s.maxY - 34, size: 12, color: hx("#9A9EAE"))
+        label(w, "Cursorlight Labs  -  Q3 review", s.minX + 56, s.maxY - 34, size: 12, color: hx("#9A9EAE"))
         label(w, "2", s.maxX - 56, s.maxY - 34, size: 12, color: hx("#9A9EAE"), anchor: .topTrailing)
     }
 
@@ -401,7 +401,7 @@ enum DesktopArt {
     }
 }
 
-/// App icons read from this Mac, so the preview shows the real ones without Beacon shipping a copy of any artwork.
+/// App icons read from this Mac, so the preview shows the real ones without Cursorlight shipping a copy of any artwork.
 /// Looked up once per app; an app that is not installed is remembered as missing.
 final class AppIconCache: @unchecked Sendable {
     static let shared = AppIconCache()

@@ -1,4 +1,4 @@
-# Beacon feature backlog
+# Cursorlight feature backlog
 
 Written 2026-11-12. Pick one item at a time. `docs/ROADMAP.md` stays the milestone plan; this file is the menu of what to build next, after the settings, floating bar and design work.
 
@@ -19,7 +19,7 @@ Permission key: **none** keeps the "no Screen Recording, no Accessibility" promi
 - Cursor and effect designs: click effects (ripple, double ring, burst, pulse) with an optional click sound, Crosshair style, Follow Reduce Motion, locator ring when the pointer jumps displays
 - Scene presets (Teaching, Webinar, Tutorial, Pairing, High visibility) and export and import of scene files
 - App category rules (calls, code, browsers, slides, design, video), the "Viewers" preview on the canvas, keystroke display, key sound and hide while typing (all three listen to the keyboard through optional Input Monitoring)
-- `beacon://` links to control Beacon from Stream Deck, Raycast, Alfred, Shortcuts (Open URLs) and scripts
+- `cursorlight://` links to control Cursorlight from Stream Deck, Raycast, Alfred, Shortcuts (Open URLs) and scripts
 - Curved arrow, speech bubble stamp and a hold focus ring
 - Pointer skins: the real pointer replaced by Classic, Dart, Bolt, Ring, Target, Star, Heart or Ghost, with color and size, saved per scene (private SkyLight calls behind a protocol, off on Macs that refuse)
 - Presenting tools: text labels, number stamps (also fading pins), check, cross, star, heart, question and exclamation stamps, whiteboard (white or black), cover box, filled translucent box, eraser, arrow, double arrow, bracket, Shift for straight lines, persistent strokes (the fade switch), presenter timer chip
@@ -49,7 +49,7 @@ Nothing queued. Pick from the lists below.
 
 | Idea | Size | Permission | Why |
 |---|---|---|---|
-| Native Shortcuts actions (App Intents), so Beacon shows up in the Shortcuts app by name | M | none | The URL scheme already works through Open URLs |
+| Native Shortcuts actions (App Intents), so Cursorlight shows up in the Shortcuts app by name | M | none | The URL scheme already works through Open URLs |
 | Presentation clicker support: map clicker buttons to laser and next scene | M | Input | Presenters already own clickers |
 | Mouse side-button trigger | S | Input | Hands stay on the mouse |
 | Per-scene shortcuts | S | none | Jump straight to a scene |

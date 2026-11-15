@@ -1,4 +1,4 @@
-import BeaconCore
+import CursorlightCore
 import SwiftUI
 
 /// A looping before-and-after: a rough loop is drawn, snaps into an ellipse, then fades.
