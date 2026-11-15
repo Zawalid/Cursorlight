@@ -1,4 +1,5 @@
 ---
+import Shot from './Shot.astro';
 ---
 <section class="section on-paper sharing" id="sharing" aria-labelledby="sharing-title" data-sharing>
   <div class="wrap">
@@ -76,6 +77,11 @@
       </p>
       <p class="tip">If viewers need to see the pointer, share the screen, not a window.</p>
     </div>
+
+    <div class="in-app">
+      <Shot id="screens" />
+      <p class="cap">In the app: pick the display, and the reminder tells you whether viewers can see your effects.</p>
+    </div>
   </div>
 </section>
 
@@ -113,5 +119,7 @@
   .check { margin-top: clamp(56px, 8vw, 112px); display: grid; gap: 16px; max-width: 46rem; border-top: 1px solid var(--paper-line); padding-top: clamp(28px, 4vw, 44px); }
   .check h3 { font-weight: 700; font-size: clamp(1.7rem, 3.2vw, 2.7rem); letter-spacing: -0.03em; line-height: 1.05; }
   .check p { color: var(--paper-muted); }
+  .in-app { margin-top: clamp(56px, 8vw, 112px); }
+  .cap { margin-top: 20px; color: var(--paper-muted); max-width: 34rem; }
   .check .tip { color: var(--paper-text); font-weight: 600; }
 </style>

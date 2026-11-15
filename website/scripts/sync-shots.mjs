@@ -13,6 +13,6 @@ if (!existsSync(from)) {
   console.log('sync-shots: ../docs/images does not exist yet, the page will show placeholder frames.');
   process.exit(0);
 }
-const files = readdirSync(from).filter((f) => /\.(png|jpe?g|webp|avif)$/i.test(f));
+const files = readdirSync(from, { withFileTypes: true }).filter((e) => e.isFile() && /\.(png|jpe?g|webp|avif)$/i.test(e.name)).map((e) => e.name);
 for (const file of files) cpSync(`${from}/${file}`, `${to}/${file}`);
 console.log(`sync-shots: copied ${files.length} image(s) from docs/images.`);

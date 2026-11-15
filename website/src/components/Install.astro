@@ -64,6 +64,10 @@ import { links, version, site } from '../data/site';
         </div>
       </li>
     </ol>
+    <p class="more">
+      Checksums, building from source, updating and uninstalling are in the
+      <a class="link" href={links.install}>install guide</a>. Updates are optional: turn on the check in Settings, About.
+    </p>
   </div>
 </section>
 
@@ -72,6 +76,8 @@ import { links, version, site } from '../data/site';
   @media (min-width: 960px) { .install-head { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } .dl { justify-self: end; } }
   .dl { display: grid; gap: 14px; }
   .btn-lg { min-height: 64px; padding: 0 32px; font-size: 1.15rem; }
+  .more { margin-top: 28px; color: var(--muted); max-width: 44rem; }
+  .more a { color: var(--text); }
   .fine { color: var(--faint); font-size: 0.92rem; }
 
   .steps { border-top: 1px solid var(--line); counter-reset: none; }

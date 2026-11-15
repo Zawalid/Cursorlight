@@ -30,6 +30,7 @@ export const links = {
   changelog: `${repo}/blob/main/CHANGELOG.md`,
   license: `${repo}/blob/main/LICENSE`,
   issues: `${repo}/issues`,
+  install: `${repo}/blob/main/docs/install.md`,
   author: 'https://zawalid.com',
   github: 'https://github.com/Zawalid',
 };

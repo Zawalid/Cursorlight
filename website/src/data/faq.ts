@@ -26,7 +26,7 @@ export const faq: Faq[] = [
   },
   {
     q: 'Does it replace my real cursor?',
-    a: 'Only if you choose a pointer skin. By default the effects are drawn around your normal pointer. Cursorlight can also change the system cursor size, and it puts it back when you quit and after a crash.',
+    a: 'Only if you choose a pointer skin, and it goes back to normal when Cursorlight is paused or quits. By default the effects are drawn around your normal pointer. Cursorlight can also change the system cursor size, and it puts it back when you quit and after a crash.',
   },
   {
     q: 'Can I control it from a Stream Deck, Raycast or Shortcuts?',

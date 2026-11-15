@@ -9,7 +9,7 @@ import type { ImageMetadata } from 'astro';
  * frame, never as a fake screenshot.
  */
 export interface Shot {
-  /** File name in docs/images, with the extension. The site is dark, so the dark variants are used. */
+  /** File name in docs/images, with the extension. The site is dark, so the dark variants are used (light ones exist too). */
   file: string;
   alt: string;
   /** Used only for the placeholder frame, so the page does not shift when the real picture arrives. */
@@ -20,34 +20,64 @@ export interface Shot {
 
 export const shots = {
   overview: {
-    file: 'overview-dark.png',
-    alt: 'The Cursorlight settings window showing the highlight style, color and size, with a live preview.',
-    ratio: [16, 10],
-    brief: 'Settings window, overview page, dark',
+    file: 'overview-dark.webp',
+    alt: 'The Cursorlight settings window on the Look page: the Aura highlight with its color, size and intensity, and a live preview over a code editor. The scene strip along the bottom shows Stream, Meeting and Recording.',
+    ratio: [2360, 1480],
+    brief: 'Settings window, Look page, dark',
+  },
+  styles: {
+    file: 'styles-dark.webp',
+    alt: 'The six highlight styles on the same slide: Aura, Lens, Comet, Keyline, Sonar and Crosshair.',
+    ratio: [3323, 1610],
+    brief: 'The six highlight styles side by side',
+  },
+  draw: {
+    file: 'draw-dark.webp',
+    alt: 'The Draw page of Cursorlight with the pen tools, and a rough hand-drawn loop around a line of code being cleaned into an ellipse.',
+    ratio: [2360, 1480],
+    brief: 'Draw page with a snapped shape',
   },
   popover: {
-    file: 'popover-dark.png',
-    alt: 'The Cursorlight menu bar popover with the scenes, color, size and tool switches.',
-    ratio: [4, 5],
+    file: 'popover-dark.webp',
+    alt: 'The Cursorlight menu bar popover with the Highlight, Laser, Ink and Spotlight switches, the scenes, a color row, a size slider and the share-safe reminder.',
+    ratio: [772, 1302],
     brief: 'Menu bar popover, dark',
   },
   welcome: {
-    file: 'welcome.png',
-    alt: 'The Cursorlight welcome guide asking you to try the shake, the laser and the ink.',
-    ratio: [16, 10],
-    brief: 'Welcome guide, shake step',
+    file: 'welcome.webp',
+    alt: 'The Cursorlight welcome guide: an intro card, a note on picking the entire screen when sharing, and floating prompts that ask you to press the laser shortcut and to draw something.',
+    ratio: [2520, 1024],
+    brief: 'Welcome guide',
   },
   scenes: {
-    file: 'scenes-dark.png',
-    alt: 'The Scenes page listing Stream, Meeting and Recording with per-app rules.',
-    ratio: [16, 10],
-    brief: 'Scenes page with rules, dark',
+    file: 'apps-dark.webp',
+    alt: 'The Apps page of Cursorlight: a scene for everywhere else, rules by app category such as video calls, code and terminals, browsers and slide decks, and the scene strip with Stream, Meeting and Recording.',
+    ratio: [2360, 1480],
+    brief: 'Apps page, per-app and per-category scene rules',
   },
   skins: {
-    file: 'pointer-skins-dark.png',
-    alt: 'The pointer skins gallery: classic, dart, bolt, ring, target, star, heart and ghost.',
-    ratio: [16, 10],
-    brief: 'Pointer skins gallery, dark',
+    file: 'skins-dark.webp',
+    alt: 'The pointer skins gallery: system, classic, dart, bolt, ring, target, star, heart and ghost, with color and size controls.',
+    ratio: [1520, 424],
+    brief: 'Pointer skins gallery',
+  },
+  keys: {
+    file: 'keys-dark.webp',
+    alt: 'The Keys page of Cursorlight: shake to find the pointer, double-tap a key, hold a key, and the global shortcuts for highlight and laser.',
+    ratio: [2360, 1480],
+    brief: 'Keys page, triggers and shortcuts',
+  },
+  screens: {
+    file: 'screens-dark.webp',
+    alt: 'The Screens page of Cursorlight: which display shows effects, the floating bar, hiding the bar from screen sharing, and the sharing reminder that says viewers can see your effects when you share the whole screen.',
+    ratio: [2360, 1480],
+    brief: 'Screens page with the sharing reminder',
+  },
+  about: {
+    file: 'about-dark.webp',
+    alt: 'The About page of Cursorlight stating no accounts and no analytics, Screen Recording not needed, Accessibility not used and Input Monitoring optional.',
+    ratio: [2360, 1480],
+    brief: 'About page, privacy statements',
   },
 } as const satisfies Record<string, Shot>;
 

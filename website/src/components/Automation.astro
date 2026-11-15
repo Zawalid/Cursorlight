@@ -1,4 +1,5 @@
 ---
+import Shot from './Shot.astro';
 const links = [
   ['Toggle the highlight', 'cursorlight://highlight/toggle'],
   ['Switch to a scene', 'cursorlight://scene?name=Meeting'],
@@ -22,6 +23,10 @@ const links = [
       ))}
     </ul>
   </div>
+  <div class="wrap keys-shot" data-reveal>
+    <Shot id="keys" sizes="(min-width: 960px) 62vw, 92vw" />
+    <p class="cap">Triggers and global shortcuts are rebindable, with conflict checks.</p>
+  </div>
 </section>
 
 <style>
@@ -33,6 +38,8 @@ const links = [
   .links { border-top: 1px solid var(--line); }
   .links li { display: grid; gap: 4px 24px; padding: 14px 0; border-bottom: 1px solid var(--line); grid-template-columns: 1fr; }
   @media (min-width: 620px) { .links li { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.3fr); align-items: baseline; } }
+  .keys-shot { margin-top: clamp(48px, 7vw, 96px); max-width: 62rem; margin-inline: auto; }
+  .cap { margin-top: 20px; color: var(--muted); }
   .what { color: var(--muted); }
   .links code { color: var(--text); overflow-wrap: anywhere; }
 </style>
