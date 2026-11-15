@@ -8,13 +8,13 @@ final class FirstClickHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
-/// Owns the settings window and the welcome window. Both are plain titled windows hosting SwiftUI.
+/// Owns the settings window and the welcome guide (a floating card, see GuideController).
 @MainActor
 final class WindowControllers {
     private let model: AppModel
     private var settings: NSWindow?
     private var settingsController: NSHostingController<AnyView>?
-    private var welcome: NSWindow?
+    private lazy var guide = GuideController(model: model)
 
     init(model: AppModel) {
         self.model = model
@@ -49,17 +49,7 @@ final class WindowControllers {
     }
 
     func showWelcome() {
-        let view = AnyView(FirstRunView { [weak self] in self?.welcome?.close() }.environmentObject(model))
-        let size = NSSize(width: FirstRunView.size.width, height: FirstRunView.size.height)
-        let window = Self.makeWindow(size: size, resizable: false)
-        window.appearance = NSAppearance(named: .darkAqua)
-        window.backgroundColor = NSColor(red: 0.078, green: 0.072, blue: 0.098, alpha: 1)
-        let host = FirstClickHostingView(rootView: view)
-        Self.install(host, in: window)
-        window.setContentSize(size)
-        window.center()
-        welcome = window
-        Self.present(window)
+        guide.show()
     }
 
     /// A menu bar app is an accessory app, and accessory apps are not reliably activated when one of their windows is
@@ -70,7 +60,7 @@ final class WindowControllers {
     }
 
     func windowClosed() {
-        let open = [settings, welcome].compactMap { $0 }.contains { $0.isVisible }
+        let open = settings?.isVisible ?? false
         if !open { NSApp.setActivationPolicy(.accessory) }
     }
 

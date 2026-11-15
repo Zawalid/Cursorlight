@@ -3,7 +3,7 @@ import CursorlightCore
 import SwiftUI
 
 /// Proves real mouse events reach the SwiftUI buttons, without touching the screen: with CURSORLIGHT_CLICKTEST=1 it builds the
-/// welcome window far off screen, sends one synthetic click per step at the Continue button and checks that the guide finished.
+/// welcome guide far off screen, sends synthetic clicks at its Not now button and checks that the guide finished.
 @MainActor
 enum ClickSelfTest {
     static var isRequested: Bool { ProcessInfo.processInfo.environment["CURSORLIGHT_CLICKTEST"] == "1" }
@@ -17,16 +17,18 @@ enum ClickSelfTest {
         )
         let model = AppModel(coordinator: coordinator, updater: AppUpdater(startingUpdater: false))
         var finished = false
-        let size = NSSize(width: FirstRunView.size.width, height: FirstRunView.size.height)
+        let size = GuideStep.intro.panelSize
         let window = WindowControllers.makeWindow(size: size, resizable: false)
-        window.contentView = FirstClickHostingView(rootView: AnyView(FirstRunView { finished = true }.environmentObject(model)))
+        let host = FirstClickHostingView(rootView: AnyView(GuideView(autonomous: false, finish: { finished = true }).environmentObject(model)))
+        host.sizingOptions = []
+        window.contentView = host
         window.setContentSize(size)
         window.setFrameOrigin(NSPoint(x: -9000, y: 100))
         window.orderFront(nil)
-        spin(0.6)
-        // Continue sits in the bottom right: 44 points from the right edge, 30 from the bottom, about 40 high.
-        let point = NSPoint(x: size.width - 44 - 40, y: 30 + 20)
-        for _ in 0..<FirstRunView.stepCount {
+        spin(0.9)
+        // "Not now" sits left of "Show me": 28 points of shadow margin, then about 50 up to the middle of the button row.
+        let point = NSPoint(x: size.width / 2 - 58, y: 78)
+        for _ in 0..<3 where !finished {
             for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
                 if let event = NSEvent.mouseEvent(
                     with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
@@ -34,9 +36,9 @@ enum ClickSelfTest {
                 ) { window.sendEvent(event) }
                 spin(0.05)
             }
-            spin(0.8)
+            spin(0.3)
         }
-        print(finished ? "CLICKTEST PASS: one click per step on Continue finished the guide" : "CLICKTEST FAIL: the guide did not finish")
+        print(finished ? "CLICKTEST PASS: a click on Not now finished the guide" : "CLICKTEST FAIL: the guide did not finish")
         window.close()
         defaults.removePersistentDomain(forName: suite)
     }

@@ -82,25 +82,19 @@ struct QuietButtonStyle: ButtonStyle {
 /// A keyboard key, drawn for the dark stage.
 struct WKey: View {
     let text: String
+    var large = false
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .font(.system(size: large ? 17 : 12, weight: .semibold, design: .rounded))
             .foregroundStyle(WelcomeStyle.text)
-            .frame(minWidth: 24, minHeight: 24)
+            .frame(minWidth: large ? 36 : 24, minHeight: large ? 36 : 24)
             .padding(.horizontal, text.count > 1 ? 5 : 0)
             .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: large ? 9 : 7, style: .continuous)
                     .fill(LinearGradient(colors: [Color.white.opacity(0.16), Color.white.opacity(0.07)], startPoint: .top, endPoint: .bottom))
             )
-            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Color.white.opacity(0.14), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: large ? 9 : 7, style: .continuous).strokeBorder(Color.white.opacity(0.14), lineWidth: 1))
             .shadow(color: .black.opacity(0.35), radius: 0, y: 1.5)
-    }
-}
-
-/// Flat, quiet ground. The only color that moves or glows in the guide is the effect the app itself draws.
-struct WelcomeBackdrop: View {
-    var body: some View {
-        WelcomeStyle.base.ignoresSafeArea().accessibilityHidden(true)
     }
 }

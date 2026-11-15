@@ -12,6 +12,9 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var eventMonitor: Any?
     private var cancellable: AnyCancellable?
 
+    /// The icon's frame in screen coordinates.
+    var buttonFrame: NSRect? { statusItem?.button?.window?.frame }
+
     func install(model: AppModel?) {
         guard statusItem == nil else { return }
         self.model = model

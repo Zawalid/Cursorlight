@@ -13,6 +13,8 @@ final class AppModel: ObservableObject {
     /// Set by the app delegate; opens the settings window on a page.
     var openSettings: (SettingsPage) -> Void = { _ in }
     var openWelcome: () -> Void = {}
+    /// Where the menu bar icon is on screen, for pointing at it. Nil until it is installed.
+    var statusItemFrame: () -> NSRect? = { nil }
     var toggleTimer: () -> Void = {}
     var quit: () -> Void = { NSApp.terminate(nil) }
 

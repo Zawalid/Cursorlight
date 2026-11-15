@@ -31,11 +31,15 @@ enum SnapshotRunner {
             renderWindowed(TriggersPage().environmentObject(model).tint(Theme.accent), size: CGSize(width: 780, height: 720), appearance: appearance, name: "page-keys-\(name)", into: directory)
         }
         render(PopoverView().environmentObject(model), name: "popover", into: directory)
-        for step in 0..<FirstRunView.stepCount {
-            renderWindowed(
-                FirstRunView(startAt: step, finish: {}).environmentObject(model), size: FirstRunView.size,
-                name: "firstrun-\(step + 1)", into: directory, settle: 1.8
-            )
+        let states: [(String, GuideStep, GuideView.Phase, Bool)] = [
+            ("guide-1-intro", .intro, .waiting, false), ("guide-2-shake", .shake, .waiting, false), ("guide-2-shake-done", .shake, .success, false),
+            ("guide-3-laser", .laser, .waiting, false), ("guide-4-ink", .ink, .waiting, false), ("guide-4-ink-drawing", .ink, .waiting, true),
+            ("guide-5-done", .done, .waiting, false),
+        ]
+        for (name, step, phase, inkSeen) in states {
+            let guide = GuideView(startAt: step, phase: phase, inkSeen: inkSeen, autonomous: false, finish: {})
+            let framed = ZStack { Color(red: 0.36, green: 0.42, blue: 0.52); guide.environmentObject(model) }
+            renderWindowed(framed, size: CGSize(width: 760, height: 460), name: name, into: directory, settle: 1.4)
         }
         defaults.removePersistentDomain(forName: suite)
     }
