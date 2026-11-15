@@ -15,6 +15,8 @@ final class AppModel: ObservableObject {
     var openWelcome: () -> Void = {}
     /// Where the menu bar icon is on screen, for pointing at it. Nil until it is installed.
     var statusItemFrame: () -> NSRect? = { nil }
+    /// Blinks the menu bar icon a few times so people can see where it is.
+    var pingStatusItem: () -> Void = {}
     var toggleTimer: () -> Void = {}
     var quit: () -> Void = { NSApp.terminate(nil) }
 

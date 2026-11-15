@@ -26,8 +26,8 @@ enum ClickSelfTest {
         window.setFrameOrigin(NSPoint(x: -9000, y: 100))
         window.orderFront(nil)
         spin(0.9)
-        // "Not now" sits left of "Show me": 28 points of shadow margin, then about 50 up to the middle of the button row.
-        let point = NSPoint(x: size.width / 2 - 58, y: 78)
+        // "Not now" sits left of "Show me": about 50 up to the middle of the button row.
+        let point = NSPoint(x: size.width / 2 - 58, y: 50)
         for _ in 0..<3 where !finished {
             for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
                 if let event = NSEvent.mouseEvent(

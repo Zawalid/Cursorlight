@@ -15,6 +15,15 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     /// The icon's frame in screen coordinates.
     var buttonFrame: NSRect? { statusItem?.button?.window?.frame }
 
+    /// Blinks the icon three times, to show where the app lives.
+    func ping() {
+        guard let button = statusItem?.button else { return }
+        for i in 0..<3 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7 + Double(i) * 0.6) { button.highlight(true) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.05 + Double(i) * 0.6) { button.highlight(false) }
+        }
+    }
+
     func install(model: AppModel?) {
         guard statusItem == nil else { return }
         self.model = model

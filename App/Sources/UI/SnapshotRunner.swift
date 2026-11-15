@@ -38,8 +38,8 @@ enum SnapshotRunner {
         ]
         for (name, step, phase, inkSeen) in states {
             let guide = GuideView(startAt: step, phase: phase, inkSeen: inkSeen, autonomous: false, finish: {})
-            let framed = ZStack { Color(red: 0.36, green: 0.42, blue: 0.52); guide.environmentObject(model) }
-            renderWindowed(framed, size: CGSize(width: 760, height: 460), name: name, into: directory, settle: 1.4)
+            let framed = ZStack { Color(red: 0.16, green: 0.15, blue: 0.2); guide.environmentObject(model) }.frame(width: step.panelSize.width, height: step.panelSize.height)
+            renderWindowed(framed, size: step.panelSize, name: name, into: directory, settle: 1.2)
         }
         defaults.removePersistentDomain(forName: suite)
     }

@@ -32,7 +32,6 @@ struct Reveal: ViewModifier {
         content
             .opacity(shown ? 1 : 0)
             .offset(y: shown || reduceMotion ? 0 : 14)
-            .blur(radius: shown || reduceMotion ? 0 : 6)
             .onAppear {
                 withAnimation(WelcomeStyle.ease.delay(reduceMotion ? 0 : 0.08 + Double(index) * 0.075)) { shown = true }
             }

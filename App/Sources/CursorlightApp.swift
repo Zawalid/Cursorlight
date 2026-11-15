@@ -78,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             coordinator.onTimerLink = { [weak timer] command in timer?.run(command) }
             statusItemController.install(model: model)
             model.statusItemFrame = { [weak statusItemController] in statusItemController?.buttonFrame }
+            model.pingStatusItem = { [weak statusItemController] in statusItemController?.ping() }
             if environment.opensSettingsAtLaunch {
                 windows.showSettings(environment.launchPage.flatMap(SettingsPage.init(rawValue:)) ?? .highlight)
             } else if environment.opensWelcomeAtLaunch {
