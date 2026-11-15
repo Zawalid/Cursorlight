@@ -5,7 +5,7 @@ enum MenuBarIconState: Equatable {
 }
 
 /// The menu bar icon: the app's ring and pointer, drawn as a template image so macOS tints it for light, dark and a busy
-/// wallpaper. Three states you can tell apart at a glance: outline (ready), solid (an effect is running), dashed (paused).
+/// wallpaper. Three states you can tell apart at a glance: outline (ready), outline with a dot (an effect is running), dashed (paused).
 enum MenuBarIcon {
     static func image(_ state: MenuBarIconState) -> NSImage {
         // Bitmap representations, not a drawing closure: a closure image can lose its template tint in the menu bar and
@@ -59,11 +59,13 @@ enum MenuBarIcon {
             ctx.setLineWidth(0.9)
             ctx.addPath(arrow); ctx.strokePath()
         case .active:
-            ctx.fillEllipse(in: CGRect(x: center.x - 8.1, y: center.y - 8.1, width: 16.2, height: 16.2))
-            ctx.setBlendMode(.clear)
+            // Same ring and pointer, plus a solid dot: no knocked-out shapes, so every tint and highlight keeps it readable.
+            ctx.setLineWidth(1.5)
+            ctx.strokeEllipse(in: CGRect(x: center.x - 7.4, y: center.y - 7.4, width: 14.8, height: 14.8))
             ctx.addPath(arrow); ctx.fillPath()
             ctx.setLineWidth(0.9)
             ctx.addPath(arrow); ctx.strokePath()
+            ctx.fillEllipse(in: CGRect(x: 14.4, y: 12.4, width: 4.8, height: 4.8))
         case .paused:
             ctx.setLineWidth(1.5)
             ctx.setLineDash(phase: 0, lengths: [2.4, 2.4])
