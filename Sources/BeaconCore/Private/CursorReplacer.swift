@@ -71,17 +71,29 @@ public final class SkyLightCursorReplacer: CursorReplacing {
             lock.lock(); running = false; lock.unlock()
         }
 
+        /// Polls fast for a moment after the window server touched the cursor, then slows down: a reset only follows
+        /// pointer movement, so an idle pointer needs no tight loop.
         func watch() {
+            var quietPolls = 0
             while true {
                 lock.lock()
                 let alive = running
                 let changed = seed() != lastSeed
                 lock.unlock()
                 if !alive { return }
-                if changed { apply() }
-                usleep(400)
+                if changed {
+                    apply()
+                    quietPolls = 0
+                } else {
+                    quietPolls = min(quietPolls + 1, Self.burstPolls + 1)
+                }
+                usleep(quietPolls > Self.burstPolls ? Self.idleSleep : Self.burstSleep)
             }
         }
+
+        private static let burstPolls = 600
+        private static let burstSleep: UInt32 = 400
+        private static let idleSleep: UInt32 = 4000
     }
 
     private let connection: ConnFn?

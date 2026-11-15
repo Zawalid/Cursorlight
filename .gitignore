@@ -14,3 +14,6 @@ spike/cursor-replace2
 spike/cursor-replace3
 spike/cursor-scale
 node_modules/
+
+# local design audit screenshots
+docs/audit/

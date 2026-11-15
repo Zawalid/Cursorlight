@@ -33,7 +33,7 @@ func redPixels(_ image: CGImage) -> Int {
 }
 
 func save(_ image: CGImage, _ name: String) {
-    let url = URL(fileURLWithPath: "~/Personal/Projects/Beacon/spike/\(name).png")
+    let url = URL(fileURLWithPath: "\(name).png")
     let rep = NSBitmapImageRep(cgImage: image)
     if let png = rep.representation(using: .png, properties: [:]) { try? png.write(to: url) }
 }
