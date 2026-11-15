@@ -9,12 +9,15 @@ struct AppEnvironment: Sendable {
     let opensSettingsAtLaunch: Bool
     /// CURSORLIGHT_OPEN=settings:ink opens that page (highlight, ink, triggers, profiles, displays, about).
     let launchPage: String?
+    /// CURSORLIGHT_OPEN=welcome opens the welcome guide at launch.
+    let opensWelcomeAtLaunch: Bool
 
     init(environment: [String: String] = ProcessInfo.processInfo.environment) {
         isAgentMode = environment["CURSORLIGHT_AGENT"] == "1"
         isDemo = environment["CURSORLIGHT_DEMO"] == "1"
         let open = environment["CURSORLIGHT_OPEN"] ?? ""
         opensSettingsAtLaunch = open.hasPrefix("settings")
+        opensWelcomeAtLaunch = open == "welcome"
         launchPage = open.split(separator: ":").dropFirst().first.map(String.init)
     }
 
