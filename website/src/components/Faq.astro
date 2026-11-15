@@ -1,0 +1,30 @@
+---
+import { faq } from '../data/faq';
+---
+<section class="section faq" id="faq" aria-labelledby="faq-title">
+  <div class="wrap">
+    <h2 id="faq-title" class="title" data-reveal>Questions.</h2>
+    <div class="list">
+      {faq.map((item) => (
+        <details data-faq>
+          <summary><span>{item.q}</span><span class="plus" aria-hidden="true"></span></summary>
+          <div class="a"><p>{item.a}</p></div>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq .title { margin-bottom: clamp(32px, 5vw, 64px); }
+  .list { border-top: 1px solid var(--line); max-width: 60rem; }
+  details { border-bottom: 1px solid var(--line); }
+  summary { list-style: none; display: flex; justify-content: space-between; gap: 24px; align-items: baseline; padding: 22px 0; cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: clamp(1.15rem, 1.8vw, 1.5rem); letter-spacing: -0.02em; line-height: 1.25; }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .plus { flex: none; position: relative; width: 16px; height: 16px; }
+  .plus::before, .plus::after { content: ""; position: absolute; left: 0; top: 7px; width: 16px; height: 2px; background: var(--ember); transition: transform 240ms var(--ease-out); }
+  .plus::after { transform: rotate(90deg); }
+  details[open] .plus::after { transform: rotate(0); }
+  .a { padding: 0 0 26px; max-width: 46rem; color: var(--muted); }
+</style>

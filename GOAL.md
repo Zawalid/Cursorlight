@@ -60,7 +60,7 @@ Anything needing the real desktop (multi-display, Stage Manager, real calls) is 
 ## Stack (proposed, follows the author's other Mac apps; confirm before building)
 - Swift 6, SwiftUI for settings, AppKit and Metal/Core Animation for overlay windows, macOS 14.6+, universal binary.
 - Core logic in a Swift package, app target generated with XcodeGen, same layout as Veil and Perch.
-- Direct distribution with Sparkle updates, Homebrew cask, signing and notarization per the mac-app-shipping skill.
+- Direct distribution (DMG from GitHub Releases) with Sparkle updates, signing and notarization per the mac-app-shipping skill. No Homebrew.
 - Reuse the shake recognizer approach from Veil (NSEvent global and local mouse monitors).
 
 ## Reference apps in ~/Personal/Projects

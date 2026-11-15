@@ -150,7 +150,6 @@ jobs:
             echo
             echo "### Install"
             echo "Download the DMG and drag Cursorlight to Applications. See docs/install.md for the first-launch steps."
-            echo "Or with Homebrew: \`brew install --cask zawalid/cursorlight/cursorlight\`."
             echo "SHA-256: \`$(cut -d' ' -f1 "build/Cursorlight-$VERSION.dmg.sha256")\`"
           } >> build/notes.md
 

@@ -1,0 +1,83 @@
+---
+import Shot from './Shot.astro';
+
+const rows = [
+  {
+    verb: 'Find',
+    text: 'Shake the mouse and a highlight finds your cursor, wherever it is. Six styles (Aura, Lens, Comet, Keyline, Sonar, Crosshair) in any color and size, and click ripples so people see where you press.',
+    keys: ['Control', 'Option', 'H'],
+  },
+  {
+    verb: 'Point',
+    text: 'A laser with a trail that fades behind it. Hold the shortcut, move, let go. It reads on a call where a plain arrow does not.',
+    keys: ['Control', 'Option', 'L'],
+  },
+  {
+    verb: 'Draw',
+    text: 'Ink that fades by itself. Draw a rough circle and it becomes a clean one. Five pens, arrows, boxes, text, number stamps, a whiteboard and a blackboard, and an eraser.',
+    keys: ['Control', 'Option', 'I'],
+  },
+  {
+    verb: 'Spotlight',
+    text: 'Light one region of the screen and dim the rest. Clicks still reach what is inside the light.',
+    keys: ['Control', 'Option', 'S'],
+  },
+  {
+    verb: 'Present',
+    text: 'A presenter timer, a keystroke display and click ripples. A floating toolbar holds the tools, and it can hide itself from screen shares. One key pauses everything.',
+    keys: ['Control', 'Option', 'P'],
+  },
+];
+---
+<section class="section features" id="features" aria-labelledby="features-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="features-title" class="title" data-reveal>A pointer people can follow.</h2>
+      <p class="lead" data-reveal>
+        When you share a screen, your cursor is a small arrow that video compression washes out. Cursorlight sits on top of every app
+        and gives you the tools presenters carry in their heads: find, point, draw.
+      </p>
+    </div>
+
+    <div data-reveal><Shot id="overview" loading="eager" /></div>
+
+    <dl class="ledger">
+      {rows.map((row) => (
+        <div class="row" data-ledger-row>
+          <dt>{row.verb}</dt>
+          <dd class="what">{row.text}</dd>
+          <dd class="keys-cell"><span class="keys">{row.keys.map((k, i) => <><kbd class="key">{k}</kbd>{i < row.keys.length - 1 && <span class="plus" aria-hidden="true">+</span>}</>)}</span></dd>
+        </div>
+      ))}
+    </dl>
+
+    <div class="pair">
+      <div class="pair-a" data-reveal>
+        <Shot id="popover" sizes="(min-width: 900px) 34vw, 92vw" />
+        <p class="cap">Your scenes, color and size from the menu bar. No Dock icon, no window in the way.</p>
+      </div>
+      <div class="pair-b" data-reveal>
+        <Shot id="welcome" sizes="(min-width: 900px) 56vw, 92vw" />
+        <p class="cap">The first launch is a guide that makes you try the shake, the laser and the ink for real before it lets go.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .features { padding-top: clamp(64px, 9vw, 128px); }
+  .ledger { margin-top: clamp(56px, 8vw, 120px); border-top: 1px solid var(--line); }
+  .row { position: relative; display: grid; gap: 10px 32px; padding: clamp(22px, 3vw, 38px) 0; border-bottom: 1px solid var(--line); grid-template-columns: 1fr; align-items: baseline; }
+  @media (min-width: 900px) { .row { grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr) minmax(0, 1.2fr); } }
+  dt { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.2rem, 5vw, 4.4rem); letter-spacing: -0.04em; line-height: 0.95; }
+  .what { color: var(--muted); max-width: 40rem; }
+  .keys-cell { justify-self: start; }
+  @media (min-width: 900px) { .keys-cell { justify-self: end; } }
+  .plus { color: var(--faint); margin-inline: 2px; }
+  .row::after { content: ""; position: absolute; left: 0; bottom: -1px; height: 1px; width: 100%; background: var(--ember); transform: scaleX(0); transform-origin: left; transition: transform 700ms var(--ease-out); }
+  @media (hover: hover) { .row:hover::after { transform: scaleX(1); } }
+
+  .pair { display: grid; gap: clamp(36px, 5vw, 64px); margin-top: clamp(64px, 9vw, 140px); grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 900px) { .pair { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1fr); } .pair-a { margin-top: clamp(40px, 6vw, 96px); } }
+  .cap { margin-top: 20px; color: var(--muted); max-width: 30rem; }
+</style>

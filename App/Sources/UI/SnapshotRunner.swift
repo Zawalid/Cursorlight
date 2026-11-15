@@ -55,6 +55,19 @@ enum SnapshotRunner {
             let framed = ZStack { Color(red: 0.86, green: 0.87, blue: 0.9); IllustrationRoot(state: state) }.frame(width: 620, height: 360)
             renderWindowed(framed, size: CGSize(width: 620, height: 360), name: "illustration-\(step.rawValue)", into: directory, settle: 1.1)
         }
+        // Marketing sheets: every highlight style on the demo desktop, and the pointer skins.
+        for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
+            let styles = LazyVGrid(columns: Array(repeating: GridItem(.fixed(600), spacing: 14), count: 3), spacing: 14) {
+                ForEach(HighlightStyle.allCases, id: \.self) { style in
+                    VStack(alignment: .leading, spacing: 6) {
+                        PreviewCanvas(style: style, look: .standard, height: 420).frame(width: 600, height: 420).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        Text(style.displayName).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+                    }
+                }
+            }.padding(24).background(Theme.window)
+            renderWindowed(styles, size: CGSize(width: 1890, height: 960), appearance: appearance, name: "styles-\(name)", into: directory, settle: 1.0)
+            renderWindowed(CursorSkinRow(settings: CursorSkinSettings(design: .bolt), available: true, edit: { _ in }).padding(24).frame(width: 760).background(Theme.window), size: CGSize(width: 760, height: 330), appearance: appearance, name: "skins-\(name)", into: directory, settle: 0.8)
+        }
         defaults.removePersistentDomain(forName: suite)
     }
 

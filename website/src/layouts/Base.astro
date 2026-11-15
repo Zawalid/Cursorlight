@@ -1,0 +1,185 @@
+---
+import '../styles/global.css';
+import icon from '../assets/icon.png';
+import { getImage } from 'astro:assets';
+import { site, links, version } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Path of the share image under /public. */
+  image?: string;
+  imageAlt?: string;
+  /** Structured data for this page. */
+  structuredData?: object[];
+  /** A page that should not be indexed (the 404). */
+  noindex?: boolean;
+}
+const {
+  title = site.title,
+  description = site.description,
+  image = '/og.png',
+  imageAlt = 'Cursorlight: be seen wherever you point. An ember pointer inside a ring on a dark background.',
+  structuredData,
+  noindex = false,
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, site.url).toString();
+const logo = await getImage({ src: icon, width: 72, height: 72, format: 'png' });
+const ogImage = new URL(image, site.url).toString();
+
+const appData = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: site.name,
+  description,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: `macOS ${site.minimumMacOS} or later`,
+  softwareVersion: version,
+  url: site.url,
+  downloadUrl: links.download,
+  license: 'https://opensource.org/license/mit',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  author: { '@type': 'Person', name: 'Walid Zakan', url: links.author },
+  codeRepository: links.repo,
+};
+const jsonLd = structuredData ?? [appData];
+const year = new Date().getFullYear();
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#14121a" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="preload" href="/fonts/Bricolage-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/InstrumentSans-var.woff2" as="font" type="font/woff2" crossorigin />
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        var m = window.matchMedia;
+        if (!m || m('(prefers-reduced-motion: reduce)').matches) return;
+        d.classList.add('motion');
+        // The pointer playground needs a real mouse; touch and reduced motion get the calm, static version.
+        if (m('(hover: hover) and (pointer: fine)').matches) d.classList.add('live');
+        // If the animation module never starts, fall back to the static layout.
+        setTimeout(function () { if (!window.__cursorlightMotion) d.classList.remove('motion', 'live'); }, 6000);
+      })();
+    </script>
+    {jsonLd.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the content</a>
+
+    <header class="nav" data-nav>
+      <div class="nav-inner">
+        <a class="brand" href="/" aria-label="Cursorlight, home">
+          <img src={logo.src} width="30" height="30" alt="" />
+          <span>Cursorlight</span>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a class="link" href="/#features">What it does</a>
+          <a class="link" href="/#scenes">Scenes</a>
+          <a class="link" href="/#sharing">Sharing</a>
+          <a class="link" data-keep href="/#install">Install</a>
+          <a class="link" href="/#privacy">Privacy</a>
+          <a class="link" href="/#faq">FAQ</a>
+          <a class="link" href={links.repo}>GitHub</a>
+        </nav>
+        <a class="btn btn-ember btn-sm nav-cta" href={links.download}>Download</a>
+      </div>
+    </header>
+
+    <main id="main"><slot /></main>
+
+    <footer class="foot">
+      <div class="wrap foot-grid">
+        <div class="foot-about">
+          <a class="brand" href="/" aria-label="Cursorlight, home">
+            <img src={logo.src} width="36" height="36" alt="" loading="lazy" />
+            <span>Cursorlight</span>
+          </a>
+          <p class="foot-line">{site.tagline}</p>
+          <p>A free Mac menu bar app for finding, pointing and drawing with your cursor while you share your screen.</p>
+          <p class="foot-author">Made by <a class="link" href={links.author}>Walid Zakan</a>.</p>
+        </div>
+        <nav class="foot-col" aria-label="Project">
+          <p class="foot-h">Project</p>
+          <a class="link" href={links.download}>Download</a>
+          <a class="link" href={links.repo}>Source code</a>
+          <a class="link" href={links.releases}>Releases</a>
+          <a class="link" href={links.changelog}>Changelog</a>
+          <a class="link" href={links.issues}>Report an issue</a>
+          <a class="link" href={links.license}>MIT licence</a>
+        </nav>
+        <nav class="foot-col" aria-label="On this page">
+          <p class="foot-h">This page</p>
+          <a class="link" href="/#features">What it does</a>
+          <a class="link" href="/#scenes">Scenes</a>
+          <a class="link" href="/#sharing">What viewers see</a>
+          <a class="link" href="/#install">Install</a>
+          <a class="link" href="/#privacy">Privacy</a>
+          <a class="link" href="/#faq">FAQ</a>
+        </nav>
+      </div>
+      <div class="wrap foot-base">
+        <p>Version {version}, for macOS {site.minimumMacOS} or later. This site has no analytics and no cookies, like the app.</p>
+        <p>&copy; {year} Walid Zakan. MIT licence; the name, icon and artwork are not covered.</p>
+      </div>
+    </footer>
+
+    <script>
+      import '../scripts/main';
+    </script>
+
+    <style>
+      .nav { position: fixed; inset: 0 0 auto 0; z-index: 40; transition: background-color 300ms var(--ease-out), box-shadow 300ms var(--ease-out); }
+      .nav-inner { display: flex; align-items: center; gap: clamp(16px, 3vw, 40px); height: 72px; padding-inline: var(--gutter); max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; transition: height 300ms var(--ease-out); }
+      .nav.is-scrolled { background: rgba(20, 18, 26, 0.94); box-shadow: 0 1px 0 var(--line); }
+      .nav.is-scrolled .nav-inner { height: var(--nav-h); }
+      .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; letter-spacing: -0.02em; }
+      .brand img { border-radius: 8px; }
+      .nav-links { display: flex; gap: clamp(14px, 2vw, 28px); margin-left: auto; font-size: 0.98rem; font-weight: 500; }
+      .nav-links a { color: var(--muted); }
+      .nav-links a:hover { color: var(--text); }
+      @media (max-width: 1020px) { .nav-links a:not([data-keep]) { display: none; } }
+      @media (max-width: 760px) { .nav-inner { height: 60px; gap: 14px; } .nav-links { margin-left: auto; } }
+
+      .foot { border-top: 1px solid var(--line); padding-top: clamp(56px, 8vw, 104px); }
+      .foot-grid { display: grid; gap: 40px; grid-template-columns: 1fr; }
+      @media (min-width: 760px) { .foot-grid { grid-template-columns: 2fr 1fr 1fr; } }
+      .foot-about { display: grid; gap: 14px; align-content: start; max-width: 28rem; color: var(--muted); }
+      .foot-about .brand { margin-bottom: 6px; }
+      .foot-line { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; letter-spacing: -0.025em; line-height: 1.1; color: var(--text); }
+      .foot-author { color: var(--text); }
+      .foot-col { display: grid; gap: 10px; align-content: start; }
+      .foot-col a { color: var(--muted); justify-self: start; }
+      .foot-col a:hover { color: var(--text); }
+      .foot-h { font: 500 0.82rem var(--font-mono); color: var(--faint); margin-bottom: 6px; }
+      .foot-base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: clamp(48px, 7vw, 88px); padding-top: 22px; padding-bottom: 28px; border-top: 1px solid var(--line); color: var(--faint); font-size: 0.92rem; }
+    </style>
+  </body>
+</html>

@@ -19,13 +19,13 @@ final class GuideController {
 
     var isVisible: Bool { panel?.isVisible ?? false }
 
-    func show() {
+    func show(startAt step: GuideStep = .intro) {
         if let panel {
             panel.orderFrontRegardless()
             return
         }
         let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
-        let frame = Self.frame(for: .intro, on: screen, model: model)
+        let frame = Self.frame(for: step, on: screen, model: model)
         let panel = GuidePanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -44,6 +44,7 @@ final class GuideController {
         material.autoresizingMask = [.width, .height]
 
         let view = GuideView(
+            startAt: step,
             stepChanged: { [weak self] step in self?.move(to: step) },
             succeeded: { [weak self] in self?.illustration.step = nil },
             finish: { [weak self] in self?.close() }
@@ -66,6 +67,7 @@ final class GuideController {
             panel.animator().alphaValue = 1
         }
         makeIllustrationPanel(on: screen)
+        illustration.step = step.isCoach ? step : nil
     }
 
     /// The click-through panel in the middle of the screen that draws what to do.

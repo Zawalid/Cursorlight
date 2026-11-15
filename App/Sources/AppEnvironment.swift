@@ -11,6 +11,14 @@ struct AppEnvironment: Sendable {
     let launchPage: String?
     /// CURSORLIGHT_OPEN=welcome opens the welcome guide at launch.
     let opensWelcomeAtLaunch: Bool
+    /// CURSORLIGHT_OPEN=popover opens the menu bar popover at launch.
+    let opensPopoverAtLaunch: Bool
+    /// CURSORLIGHT_DEFAULTS=name keeps all settings in a separate store, so a demo or capture run never touches the real ones.
+    let defaultsSuite: String?
+    /// CURSORLIGHT_GUIDE_STEP=intro|shake|laser|ink|done starts the welcome guide at that step (for captures).
+    let guideStep: String?
+    /// CURSORLIGHT_APPEARANCE=light or dark forces the app's appearance (for captures).
+    let appearance: String?
 
     init(environment: [String: String] = ProcessInfo.processInfo.environment) {
         isAgentMode = environment["CURSORLIGHT_AGENT"] == "1"
@@ -18,6 +26,10 @@ struct AppEnvironment: Sendable {
         let open = environment["CURSORLIGHT_OPEN"] ?? ""
         opensSettingsAtLaunch = open.hasPrefix("settings")
         opensWelcomeAtLaunch = open == "welcome"
+        opensPopoverAtLaunch = open == "popover"
+        defaultsSuite = environment["CURSORLIGHT_DEFAULTS"]
+        guideStep = environment["CURSORLIGHT_GUIDE_STEP"]
+        appearance = environment["CURSORLIGHT_APPEARANCE"]
         launchPage = open.split(separator: ":").dropFirst().first.map(String.init)
     }
 

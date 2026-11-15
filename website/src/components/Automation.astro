@@ -1,0 +1,38 @@
+---
+const links = [
+  ['Toggle the highlight', 'cursorlight://highlight/toggle'],
+  ['Switch to a scene', 'cursorlight://scene?name=Meeting'],
+  ['Start a 10 minute timer', 'cursorlight://timer/start?minutes=10'],
+  ['Draw on a whiteboard', 'cursorlight://whiteboard/white'],
+  ['Clear the drawings', 'cursorlight://clear'],
+];
+---
+<section class="section automation" id="automation" aria-labelledby="automation-title">
+  <div class="wrap grid">
+    <div class="copy">
+      <h2 id="automation-title" class="title" data-reveal>Run it from anywhere.</h2>
+      <p class="lead" data-reveal>
+        Every tool and scene has a <code>cursorlight://</code> link. Put one on a Stream Deck key, in a Raycast or Alfred command, in the
+        Shortcuts app, or send it from Terminal. Links only switch Cursorlight's own effects; nothing is read back.
+      </p>
+    </div>
+    <ul class="links" data-reveal>
+      {links.map(([what, link]) => (
+        <li><span class="what">{what}</span><code>{link}</code></li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .automation { padding-block: clamp(56px, 8vw, 120px); border-block: 1px solid var(--line); background: var(--ink-2); }
+  .grid { display: grid; gap: clamp(32px, 5vw, 80px); grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 960px) { .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
+  .copy { display: grid; gap: 22px; }
+  .title { font-size: clamp(2.2rem, 4.6vw, 4.2rem); }
+  .links { border-top: 1px solid var(--line); }
+  .links li { display: grid; gap: 4px 24px; padding: 14px 0; border-bottom: 1px solid var(--line); grid-template-columns: 1fr; }
+  @media (min-width: 620px) { .links li { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.3fr); align-items: baseline; } }
+  .what { color: var(--muted); }
+  .links code { color: var(--text); overflow-wrap: anywhere; }
+</style>

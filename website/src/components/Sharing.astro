@@ -1,0 +1,117 @@
+---
+---
+<section class="section on-paper sharing" id="sharing" aria-labelledby="sharing-title" data-sharing>
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="sharing-title" class="title">What viewers actually see.</h2>
+      <p class="lead">
+        Cursorlight draws its effects on your display, on top of your apps. So viewers see them when you share the whole screen, and they
+        do not when you share a single window. That is how macOS captures a window, and no setting in the app can change it.
+      </p>
+    </div>
+
+    <div class="switch" role="group" aria-label="What you share with viewers">
+      <button type="button" class="seg" data-share-set="screen" aria-pressed="true">Whole screen</button>
+      <button type="button" class="seg" data-share-set="window" aria-pressed="false">One window</button>
+    </div>
+
+    <div class="stage" data-share-stage data-share="screen">
+      <figure class="side">
+        <svg viewBox="0 0 480 300" role="img" aria-labelledby="you-t you-d">
+          <title id="you-t">What you see</title>
+          <desc id="you-d">Your display with a browser window, an ember highlight ring on the cursor, a laser trail and a circle of ink. A dashed outline shows what you are sharing.</desc>
+          <rect class="display" x="6" y="6" width="468" height="288" rx="14" />
+          <rect class="win" x="48" y="42" width="270" height="190" rx="8" />
+          <rect class="bar" x="48" y="42" width="270" height="24" rx="8" />
+          <g class="lines"><rect x="68" y="88" width="170" height="8" rx="4" /><rect x="68" y="108" width="214" height="8" rx="4" /><rect x="68" y="128" width="130" height="8" rx="4" /><rect x="68" y="168" width="190" height="8" rx="4" /></g>
+          <g class="fx">
+            <ellipse class="ink" cx="196" cy="118" rx="64" ry="26" />
+            <path class="laser" d="M330 232 C 350 214, 372 196, 396 170 S 420 150, 432 140" />
+            <circle class="aura" cx="436" cy="136" r="26" />
+            <path class="arrow" d="M431 125 l0 24 l7 -6 l5 12 l5 -2 l-5 -12 l9 -1z" />
+          </g>
+          <rect class="select sel-screen" x="2" y="2" width="476" height="296" rx="16" />
+          <rect class="select sel-window" x="42" y="36" width="282" height="202" rx="11" />
+        </svg>
+        <figcaption>You see the ring, the laser and the ink.</figcaption>
+      </figure>
+
+      <figure class="side">
+        <svg viewBox="0 0 480 300" role="img" aria-labelledby="them-t them-d">
+          <title id="them-t">What viewers see</title>
+          <desc id="them-d" data-share-desc>Viewers see the whole display, including the ring, the laser and the ink.</desc>
+          <g class="them-screen">
+            <rect class="display" x="6" y="6" width="468" height="288" rx="14" />
+            <rect class="win" x="48" y="42" width="270" height="190" rx="8" />
+            <rect class="bar" x="48" y="42" width="270" height="24" rx="8" />
+            <g class="lines"><rect x="68" y="88" width="170" height="8" rx="4" /><rect x="68" y="108" width="214" height="8" rx="4" /><rect x="68" y="128" width="130" height="8" rx="4" /><rect x="68" y="168" width="190" height="8" rx="4" /></g>
+            <g class="fx">
+              <ellipse class="ink" cx="196" cy="118" rx="64" ry="26" />
+              <path class="laser" d="M330 232 C 350 214, 372 196, 396 170 S 420 150, 432 140" />
+              <circle class="aura" cx="436" cy="136" r="26" />
+              <path class="arrow" d="M431 125 l0 24 l7 -6 l5 12 l5 -2 l-5 -12 l9 -1z" />
+            </g>
+          </g>
+          <g class="them-window">
+            <rect class="display" x="6" y="6" width="468" height="288" rx="14" />
+            <rect class="win" x="90" y="34" width="300" height="232" rx="9" />
+            <rect class="bar" x="90" y="34" width="300" height="28" rx="9" />
+            <g class="lines"><rect x="114" y="92" width="190" height="9" rx="4" /><rect x="114" y="116" width="238" height="9" rx="4" /><rect x="114" y="140" width="146" height="9" rx="4" /><rect x="114" y="188" width="210" height="9" rx="4" /></g>
+          </g>
+        </svg>
+        <figcaption data-share-cap>Viewers see everything you see.</figcaption>
+      </figure>
+    </div>
+
+    <div class="verdict" aria-live="polite">
+      <p data-share-verdict><strong>Whole screen:</strong> every effect reaches viewers.</p>
+    </div>
+
+    <div class="check">
+      <h3>So the app tells you before you start.</h3>
+      <p>
+        The share-safe check asks what you are sharing and warns you when viewers will not see your effects. It is a reminder, not a
+        detector: you tell Cursorlight, and it keeps you from drawing circles nobody can see. The floating toolbar can also hide itself
+        from the share, so it is yours alone.
+      </p>
+      <p class="tip">If viewers need to see the pointer, share the screen, not a window.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sharing { overflow: hidden; }
+  .switch { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--paper-text); border-radius: 10px; padding: 3px; margin-bottom: clamp(28px, 4vw, 48px); }
+  .seg { appearance: none; border: 0; background: transparent; color: var(--paper-text); font: 600 1rem/1 var(--font-body); padding: 14px 20px; border-radius: 8px; cursor: pointer; min-height: 48px; transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out); }
+  .seg[aria-pressed="true"] { background: var(--paper-text); color: var(--paper); }
+  .seg:focus-visible { outline: 2px solid var(--ember-deep); outline-offset: 3px; }
+
+  .stage { display: grid; gap: clamp(20px, 3vw, 40px); grid-template-columns: 1fr; }
+  @media (min-width: 800px) { .stage { grid-template-columns: 1fr 1fr; } }
+  .side { margin: 0; display: grid; gap: 14px; }
+  .side figcaption { font: 500 0.9rem var(--font-mono); color: var(--paper-muted); }
+  svg { width: 100%; height: auto; }
+  .display { fill: #1d1a26; }
+  .win { fill: #f6f2ec; }
+  .bar { fill: #cfc7ba; }
+  .lines rect { fill: #cfc7ba; }
+  .ink { fill: none; stroke: #ff5a36; stroke-width: 5; }
+  .laser { fill: none; stroke: #ff5a36; stroke-width: 6; stroke-linecap: round; opacity: 0.9; }
+  .aura { fill: rgba(255, 90, 54, 0.25); stroke: #ff5a36; stroke-width: 3; }
+  .arrow { fill: #14121a; stroke: #f6f2ec; stroke-width: 1.5; }
+  .select { fill: none; stroke: #ff7b5c; stroke-width: 3; stroke-dasharray: 10 8; transition: opacity 400ms var(--ease-out); }
+
+  .sel-window, .them-window { opacity: 0; }
+  .them-screen, .them-window { transition: opacity 500ms var(--ease-out); }
+  .stage[data-share="window"] .sel-screen { opacity: 0; }
+  .stage[data-share="window"] .sel-window { opacity: 1; }
+  .stage[data-share="window"] .them-screen { opacity: 0; }
+  .stage[data-share="window"] .them-window { opacity: 1; }
+
+  .verdict { margin-top: clamp(24px, 3vw, 36px); font-size: 1.15rem; }
+  .verdict strong { font-weight: 700; }
+  .check { margin-top: clamp(56px, 8vw, 112px); display: grid; gap: 16px; max-width: 46rem; border-top: 1px solid var(--paper-line); padding-top: clamp(28px, 4vw, 44px); }
+  .check h3 { font-weight: 700; font-size: clamp(1.7rem, 3.2vw, 2.7rem); letter-spacing: -0.03em; line-height: 1.05; }
+  .check p { color: var(--paper-muted); }
+  .check .tip { color: var(--paper-text); font-weight: 600; }
+</style>

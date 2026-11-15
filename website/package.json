@@ -1,0 +1,35 @@
+{
+  "name": "cursorlight-website",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "dev": "npm run sync && astro dev",
+    "sync": "node scripts/sync-shots.mjs",
+    "build": "node scripts/sync-shots.mjs && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "og": "node scripts/og.mjs",
+    "check:seo": "node scripts/check-seo.mjs",
+    "check:a11y": "node scripts/check-a11y.mjs",
+    "check:ui": "node scripts/check-ui.mjs",
+    "shots": "node scripts/shots.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.4.12",
+    "gsap": "3.15.1",
+    "lenis": "1.3.27"
+  },
+  "devDependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource/geist-mono": "^5.3.0",
+    "axe-core": "^4.14.0",
+    "playwright-core": "^1.65.1",
+    "sharp": "^0.35.5",
+    "wrangler": "^4.162.0"
+  }
+}

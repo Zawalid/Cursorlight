@@ -27,7 +27,9 @@ for w in info where (w[kCGWindowOwnerName as String] as? String) == "Cursorlight
     let isBar = ["Cursorlight bar", "Cursorlight timer", "Cursorlight keys"].contains(w[kCGWindowName as String] as? String ?? "")
     // CAPTURE_OVERLAY=1 also captures Cursorlight's own full-display effect layer (only its own pixels, never the screen).
     let wantsOverlay = ProcessInfo.processInfo.environment["CAPTURE_OVERLAY"] == "1" && layer == 1000
-    if isBar || wantsOverlay || (layer <= 200 && w1 > 100 && h1 > 100) { run(["-x", "-o", "-l", "\(id)", "\(out)/window-\(id).png"]) }
+    // --all also takes floating panels such as the welcome guide, but still never a full-display overlay.
+    let wantsPanel = CommandLine.arguments.contains("--all") && w1 > 100 && h1 > 60 && w1 < 1500
+    if isBar || wantsOverlay || wantsPanel || (layer <= 200 && w1 > 100 && h1 > 100) { run(["-x", "-o", "-l", "\(id)", "\(out)/window-\(id).png"]) }
 }
 try? report.joined(separator: "\n").write(toFile: "\(out)/windows.txt", atomically: true, encoding: .utf8)
 print(report.joined(separator: "\n"))

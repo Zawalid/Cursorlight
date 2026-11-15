@@ -61,8 +61,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if environment.startsCoordinator {
             // Before anything else: a previous run that died with the cursor resized left the marker set.
             cursorSize.restoreIfStale()
-            let coordinator = AppCoordinator(cursorSize: cursorSize)
+            if let appearance = environment.appearance {
+                NSApp.appearance = NSAppearance(named: appearance == "light" ? .aqua : .darkAqua)
+            }
+            let settingsStore = environment.defaultsSuite.flatMap(UserDefaults.init(suiteName:)).map { SettingsStore(defaults: $0) } ?? SettingsStore()
+            let coordinator = AppCoordinator(cursorSize: cursorSize, settings: settingsStore)
             coordinator.start()
+            if environment.isDemo { coordinator.shareSafe.declare(.wholeScreen) }
             self.coordinator = coordinator
             let updater = AppUpdater(startingUpdater: environment.allowsUpdater)
             let model = AppModel(coordinator: coordinator, updater: updater)
@@ -81,8 +86,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model.pingStatusItem = { [weak statusItemController] in statusItemController?.ping() }
             if environment.opensSettingsAtLaunch {
                 windows.showSettings(environment.launchPage.flatMap(SettingsPage.init(rawValue:)) ?? .highlight)
+            } else if environment.opensPopoverAtLaunch {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in self?.statusItemController.showPopover() }
             } else if environment.opensWelcomeAtLaunch {
-                windows.showWelcome()
+                windows.showWelcome(startAt: environment.guideStep.flatMap { name in GuideStep.allCases.first { "\($0)" == name } } ?? .intro)
             } else if !coordinator.settings.settings.welcomeSeen && !environment.isAgentMode {
                 // Shown once. Counting it as seen when it opens means an unfinished guide never pops up again on its own.
                 windows.showWelcome()

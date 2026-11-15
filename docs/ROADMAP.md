@@ -99,7 +99,7 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 ### I. Distribution and business
 | Item | Tier |
 |---|---|
-| Signing, notarization, DMG, Sparkle appcast, Homebrew cask (mac-app-shipping skill) | V1 |
+| Signing, notarization, DMG, Sparkle appcast (mac-app-shipping skill) | V1 |
 | Product site (Cloudflare Worker), demo video | V1 |
 | Pricing: free tier (Aura + shake) and one-time paid unlock, around 15 to 25 dollars, licensing decided after V1 works | V1 decision |
 | Viewer cursor (other person points back, needs a server) | LATER |
@@ -128,7 +128,7 @@ Find, point and mark up with your cursor while you share your screen, in a menu 
 
 **M7 Share-safe.** Status in popover and menu bar, manual reminder, detection research with a stated verdict. Exit: honest status shown, verdict documented.
 
-**M8 Ship V1.** Icon and name decision, Sparkle, signing, notarization, DMG, cask, site, demo video, whole-branch review. Exit: installable build on a clean account.
+**M8 Ship V1.** Icon and name decision, Sparkle, signing, notarization, DMG, site, demo video, whole-branch review. Exit: installable build on a clean account.
 
 **M9 V1.1.** Magnifier, pins, emphasis box, auto colour, localisation, auto-pause for full-screen video, profile import and export.
 

@@ -1,0 +1,75 @@
+---
+import Shot from './Shot.astro';
+
+const skins = ['Classic', 'Dart', 'Bolt', 'Ring', 'Target', 'Star', 'Heart', 'Ghost'];
+const looks = [
+  { name: 'Stream', text: 'Big and bright, so a small video tile still shows where you are.' },
+  { name: 'Meeting', text: 'Quiet. A light highlight and a laser when you need one.' },
+  { name: 'Recording', text: 'Click ripples and ink on, so a viewer later can follow every step.' },
+];
+---
+<section class="section scenes" id="scenes" aria-labelledby="scenes-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="scenes-title" class="title" data-reveal>One look for every situation.</h2>
+      <p class="lead" data-reveal>
+        A scene is a saved look: the highlight, laser and ink, their colors and sizes, and the pointer skin. Make one for a stream, one
+        for a meeting, one for a recording, or one of your own.
+      </p>
+    </div>
+
+    <div data-reveal><Shot id="scenes" /></div>
+
+    <ul class="looks">
+      {looks.map((look) => (
+        <li data-reveal><h3>{look.name}</h3><p>{look.text}</p></li>
+      ))}
+    </ul>
+
+    <div class="auto" data-reveal>
+      <p class="auto-line">Cursorlight switches by itself.</p>
+      <p class="auto-text">
+        Pick a scene for an app, or for a whole category such as calls, slides, code or video. When that app comes to the front, its scene
+        is on. A shortcut steps to the next scene by hand. Scenes can be reordered, duplicated, renamed, exported and imported, and there
+        are presets to start from: Teaching, Webinar, Tutorial, Pairing and High visibility.
+      </p>
+    </div>
+
+    <div class="skins">
+      <div class="section-head">
+        <h2 class="title" data-reveal>Or swap the pointer itself.</h2>
+        <p class="lead" data-reveal>
+          Each scene can replace the real pointer with a skin, in its own color and size.
+        </p>
+      </div>
+      <ul class="skin-list" aria-label="Pointer skins">
+        {skins.map((name, i) => (
+          <li data-skin><span class="n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{name}</li>
+        ))}
+      </ul>
+      <div class="skin-shot" data-reveal><Shot id="skins" /></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .looks { display: grid; gap: 0; margin-top: clamp(48px, 7vw, 100px); border-top: 1px solid var(--line); }
+  @media (min-width: 900px) { .looks { grid-template-columns: repeat(3, 1fr); border-top: 0; gap: clamp(24px, 4vw, 64px); } .looks li { border-top: 1px solid var(--line); } }
+  .looks li { padding: 22px 0 8px; display: grid; gap: 8px; align-content: start; }
+  .looks h3 { font-weight: 700; font-size: 1.7rem; letter-spacing: -0.03em; }
+  .looks p { color: var(--muted); max-width: 24rem; }
+
+  .auto { margin-top: clamp(56px, 8vw, 120px); display: grid; gap: 18px 48px; grid-template-columns: 1fr; padding: clamp(28px, 4vw, 52px) 0; border-block: 1px solid var(--line); }
+  @media (min-width: 900px) { .auto { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; } }
+  .auto-line { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.7rem, 3.2vw, 2.8rem); letter-spacing: -0.03em; line-height: 1.05; color: var(--ember); }
+  .auto-text { color: var(--muted); max-width: 40rem; }
+
+  .skins { margin-top: clamp(96px, 13vw, 200px); }
+  .skin-list { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--line); margin-bottom: clamp(48px, 7vw, 100px); }
+  @media (min-width: 760px) { .skin-list { grid-template-columns: repeat(4, 1fr); } }
+  .skin-list li { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; min-height: clamp(110px, 14vw, 190px); padding: 14px 0 16px; border-bottom: 1px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: clamp(1.9rem, 4.6vw, 4.2rem); letter-spacing: -0.04em; line-height: 1; transition: color 220ms var(--ease-out); }
+  @media (min-width: 760px) { .skin-list li:not(:nth-child(4n+1)) { padding-left: 18px; border-left: 1px solid var(--line); } }
+  @media (max-width: 759px) { .skin-list li:nth-child(even) { padding-left: 16px; border-left: 1px solid var(--line); } }
+  .skin-list .n { font: 400 0.8rem var(--font-mono); letter-spacing: 0; color: var(--faint); }
+  @media (hover: hover) { .skin-list li:hover { color: var(--ember); } }
+</style>

@@ -48,8 +48,8 @@ final class WindowControllers {
         Self.present(settings)
     }
 
-    func showWelcome() {
-        guide.show()
+    func showWelcome(startAt step: GuideStep = .intro) {
+        guide.show(startAt: step)
     }
 
     /// A menu bar app is an accessory app, and accessory apps are not reliably activated when one of their windows is

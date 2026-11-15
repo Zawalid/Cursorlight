@@ -1,0 +1,47 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import Features from '../components/Features.astro';
+import Scenes from '../components/Scenes.astro';
+import Sharing from '../components/Sharing.astro';
+import Automation from '../components/Automation.astro';
+import Install from '../components/Install.astro';
+import Privacy from '../components/Privacy.astro';
+import Faq from '../components/Faq.astro';
+import OpenSource from '../components/OpenSource.astro';
+import { faq } from '../data/faq';
+import { site, links, version } from '../data/site';
+
+const appData = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: site.name,
+  description: site.description,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: `macOS ${site.minimumMacOS} or later`,
+  softwareVersion: version,
+  url: site.url,
+  downloadUrl: links.download,
+  license: 'https://opensource.org/license/mit',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  author: { '@type': 'Person', name: 'Walid Zakan', url: links.author },
+  codeRepository: links.repo,
+};
+const faqData = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((item) => ({ '@type': 'Question', name: item.q, acceptedAnswer: { '@type': 'Answer', text: item.a } })),
+};
+---
+<Base structuredData={[appData, faqData]}>
+  <Hero />
+  <Features />
+  <Scenes />
+  <Sharing />
+  <Automation />
+  <Install />
+  <Privacy />
+  <Faq />
+  <OpenSource />
+</Base>

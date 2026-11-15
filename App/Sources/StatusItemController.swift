@@ -113,5 +113,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     @objc private func openSettings() { model?.openSettings(.highlight) }
     @objc private func togglePause() { model.map { $0.setPaused(!$0.isPaused) } }
 
+    func showPopover() {
+        guard let button = statusItem?.button, model != nil, !popover.isShown else { return }
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
     func closePopover() { popover.performClose(nil) }
 }

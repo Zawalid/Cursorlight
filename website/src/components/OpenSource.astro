@@ -1,0 +1,28 @@
+---
+import { links } from '../data/site';
+---
+<section class="section oss" id="open-source" aria-labelledby="oss-title">
+  <div class="wrap grid">
+    <h2 id="oss-title" class="title" data-reveal>Read it. Build it. Fix it.</h2>
+    <div class="side" data-reveal>
+      <p class="lead">
+        Cursorlight is open source under the MIT licence. The two places that use private macOS API, the system cursor size and the
+        pointer skins, sit behind a protocol with a public fallback, in one folder.
+      </p>
+      <ul class="links">
+        <li><a class="btn btn-line" href={links.repo}>Source on GitHub</a></li>
+        <li><a class="btn btn-line" href={links.changelog}>Changelog</a></li>
+        <li><a class="btn btn-line" href={links.releases}>Releases</a></li>
+        <li><a class="btn btn-line" href={links.issues}>Report an issue</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .oss { padding-top: clamp(32px, 4vw, 64px); }
+  .grid { display: grid; gap: 32px clamp(32px, 6vw, 96px); grid-template-columns: 1fr; padding-top: clamp(40px, 6vw, 80px); border-top: 1px solid var(--line); align-items: start; }
+  @media (min-width: 960px) { .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .side { display: grid; gap: 28px; }
+  .links { display: flex; flex-wrap: wrap; gap: 12px; }
+</style>

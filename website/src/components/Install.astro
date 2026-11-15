@@ -1,0 +1,95 @@
+---
+import { links, version, site } from '../data/site';
+---
+<section class="section install" id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <div class="install-head">
+      <h2 id="install-title" class="title" data-reveal>Free. Download, drag, open.</h2>
+      <div class="dl" data-reveal>
+        <a class="btn btn-ember btn-lg" href={links.download}>
+          Download Cursorlight.dmg
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3.5v11m0 0 4.5-4.5M10 14.5 5.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <p class="fine">Version {version}. macOS {site.minimumMacOS} or later. Apple silicon and Intel.</p>
+      </div>
+    </div>
+
+    <ol class="steps">
+      <li data-reveal>
+        <span class="n" aria-hidden="true">1</span>
+        <div>
+          <h3>Drag it to Applications.</h3>
+          <p>Open the disk image and drag Cursorlight onto the Applications folder.</p>
+        </div>
+      </li>
+      <li data-reveal>
+        <span class="n" aria-hidden="true">2</span>
+        <div>
+          <h3>Confirm the first launch.</h3>
+          <p>
+            Cursorlight is not notarized yet, because there is no Apple Developer account behind it. macOS will refuse the first launch and
+            say it cannot verify the app. That message is about the missing notarization, not a finding about the app. You confirm once.
+          </p>
+          <div class="how">
+            <div>
+              <h4>macOS 15 or later</h4>
+              <ol>
+                <li>Open Cursorlight from Applications. When the warning appears, click Done. Do not choose Move to Trash.</li>
+                <li>Open System Settings, then Privacy &amp; Security, and scroll to Security.</li>
+                <li>Click Open Anyway next to Cursorlight, confirm with your password or Touch ID, then click Open.</li>
+              </ol>
+            </div>
+            <div>
+              <h4>macOS 14</h4>
+              <ol>
+                <li>Control-click Cursorlight in Applications and choose Open.</li>
+                <li>Click Open in the dialog.</li>
+              </ol>
+            </div>
+          </div>
+          <div class="term">
+            <p>Or, if you trust the source, remove the quarantine flag in Terminal:</p>
+            <div class="cmd">
+              <code id="xattr-cmd">xattr -dr com.apple.quarantine /Applications/Cursorlight.app</code>
+              <button type="button" class="copy" data-copy="#xattr-cmd" aria-label="Copy the Terminal command">Copy</button>
+            </div>
+          </div>
+        </div>
+      </li>
+      <li data-reveal>
+        <span class="n" aria-hidden="true">3</span>
+        <div>
+          <h3>Try it for real.</h3>
+          <p>A short welcome makes you shake the mouse, use the laser and draw ink before it finishes. No permission is needed for any of that.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<style>
+  .install-head { display: grid; gap: 32px; grid-template-columns: 1fr; align-items: end; margin-bottom: clamp(48px, 7vw, 104px); }
+  @media (min-width: 960px) { .install-head { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } .dl { justify-self: end; } }
+  .dl { display: grid; gap: 14px; }
+  .btn-lg { min-height: 64px; padding: 0 32px; font-size: 1.15rem; }
+  .fine { color: var(--faint); font-size: 0.92rem; }
+
+  .steps { border-top: 1px solid var(--line); counter-reset: none; }
+  .steps > li { display: grid; gap: 14px 28px; grid-template-columns: 1fr; padding: clamp(28px, 4vw, 52px) 0; border-bottom: 1px solid var(--line); }
+  @media (min-width: 760px) { .steps > li { grid-template-columns: clamp(64px, 9vw, 140px) minmax(0, 1fr); } }
+  .n { font-family: var(--font-display); font-weight: 800; font-size: clamp(3rem, 7vw, 6.5rem); line-height: 0.85; letter-spacing: -0.05em; color: var(--ember); }
+  .steps h3 { font-weight: 700; font-size: clamp(1.6rem, 2.8vw, 2.4rem); letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 12px; }
+  .steps p { color: var(--muted); max-width: 44rem; }
+  .how { display: grid; gap: 28px 48px; grid-template-columns: 1fr; margin-top: 26px; }
+  @media (min-width: 900px) { .how { grid-template-columns: 1.3fr 1fr; } }
+  .how h4 { font: 500 0.88rem var(--font-mono); color: var(--text); margin: 0 0 10px; }
+  .how ol { display: grid; gap: 10px; counter-reset: s; }
+  .how ol li { position: relative; padding-left: 30px; color: var(--muted); counter-increment: s; }
+  .how ol li::before { content: counter(s); position: absolute; left: 0; top: 0.12em; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line-strong); font: 500 0.72rem var(--font-mono); color: var(--text); }
+  .term { margin-top: 28px; display: grid; gap: 12px; }
+  .cmd { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; padding: 12px 14px; background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; max-width: 44rem; }
+  .cmd code { color: var(--text); overflow-wrap: anywhere; }
+  .copy { appearance: none; background: transparent; border: 1px solid var(--line-strong); color: var(--text); font: 500 0.85rem var(--font-mono); padding: 8px 14px; min-height: 36px; border-radius: 8px; cursor: pointer; transition: border-color 200ms, background-color 200ms; }
+  .copy:hover { border-color: var(--text); }
+  .copy[data-copied="true"] { background: var(--ember); border-color: var(--ember); color: var(--ember-ink); }
+</style>

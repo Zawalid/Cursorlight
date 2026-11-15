@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+.checks/
+.wrangler/
+# Copied from ../docs/images by scripts/sync-shots.mjs at build time; the originals are the source of truth.
+src/assets/shots/
