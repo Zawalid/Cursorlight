@@ -240,12 +240,12 @@ struct OnChip: View {
 /// The product mark: a bright core inside a glowing ring, in the accent color.
 struct BrandMark: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(red: 0.16, green: 0.08, blue: 0.06))
-            .overlay(
-                Circle().fill(RadialGradient(colors: [.white, Theme.accent, Theme.accent.opacity(0)], center: .center, startRadius: 0, endRadius: 13))
-            )
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.line))
+        // The app icon carries transparent padding, so it is drawn a little larger than its frame.
+        Image(nsImage: NSImage(named: "AppIcon") ?? NSApplication.shared.applicationIconImage)
+            .resizable()
+            .interpolation(.high)
+            .scaleEffect(1.24)
+            .accessibilityHidden(true)
     }
 }
 
