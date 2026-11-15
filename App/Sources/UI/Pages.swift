@@ -176,7 +176,7 @@ struct LookPage: View {
                 } else if model.cursorSkinFailed {
                     Text("The system refused this pointer. Pick another one or switch back to System.")
                 } else {
-                    Text("Replaces the real pointer everywhere, in every app. It is saved with the current scene, so each scene can have its own pointer, and it goes back to normal while Beacon is paused. Quitting Beacon gives your normal pointer back.")
+                    Text("Replaces the real pointer everywhere, in every app, including over text and links. It is saved with the current scene, so each scene can have its own pointer, and it goes back to normal while Beacon is paused. Quitting Beacon gives your normal pointer back.")
                 }
             }
             Section {
