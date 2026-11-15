@@ -4,10 +4,9 @@ enum MenuBarIconState: Equatable {
     case idle, active, paused
 }
 
-/// The menu bar icon: the app's ring and pointer, drawn as a template image so macOS tints it for light, dark and a busy
-/// wallpaper. Three states you can tell apart at a glance: outline (ready), outline with a dot (an effect is running), dashed (paused).
+/// The menu bar icon: the app's ring and pointer, drawn in the color the menu bar needs (white on a dark bar, black on a light one). Three states you can tell apart at a glance: outline (ready), outline with a dot (an effect is running), dashed (paused).
 enum MenuBarIcon {
-    static func image(_ state: MenuBarIconState) -> NSImage {
+    static func image(_ state: MenuBarIconState, color: NSColor) -> NSImage {
         // Bitmap representations, not a drawing closure: a closure image can lose its template tint in the menu bar and
         // come out black on a dark bar. Bitmaps are tinted by macOS from their alpha, like any system symbol.
         let image = NSImage(size: NSSize(width: 20, height: 18))
@@ -20,19 +19,20 @@ enum MenuBarIcon {
             NSGraphicsContext.current = context
             let ctx = context.cgContext
             ctx.scaleBy(x: CGFloat(scale), y: CGFloat(scale))
-            draw(state, in: ctx)
+            draw(state, color: color, in: ctx)
             NSGraphicsContext.restoreGraphicsState()
             rep.size = NSSize(width: 20, height: 18)
             image.addRepresentation(rep)
         }
-        image.isTemplate = true
+        // Not a template: macOS did not tint a custom template on this menu bar, so the app picks black or white itself.
+        image.isTemplate = false
         return image
     }
 
-    private static func draw(_ state: MenuBarIconState, in ctx: CGContext) {
+    private static func draw(_ state: MenuBarIconState, color: NSColor, in ctx: CGContext) {
         let center = CGPoint(x: 10, y: 9)
-        ctx.setFillColor(NSColor.black.cgColor)
-        ctx.setStrokeColor(NSColor.black.cgColor)
+        ctx.setFillColor(color.cgColor)
+        ctx.setStrokeColor(color.cgColor)
         ctx.setLineJoin(.round)
         ctx.setLineCap(.round)
 

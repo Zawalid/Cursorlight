@@ -13,6 +13,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var cancellable: AnyCancellable?
     private var iconState = MenuBarIconState.idle
     private var iconTimer: Timer?
+    private var appearanceObservation: NSKeyValueObservation?
 
     /// The icon's frame in screen coordinates.
     var buttonFrame: NSRect? { statusItem?.button?.window?.frame }
@@ -30,19 +31,23 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         guard statusItem == nil else { return }
         self.model = model
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = MenuBarIcon.image(.idle)
         item.button?.setAccessibilityLabel(Branding.appName)
         item.button?.target = self
         item.button?.action = #selector(clicked(_:))
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         statusItem = item
+        // The bar can be light or dark depending on the wallpaper, so follow the button's own appearance and redraw when it changes.
+        appearanceObservation = item.button?.observe(\.effectiveAppearance, options: [.initial, .new]) { [weak self] _, _ in
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.redrawIcon() } }
+        }
 
         if let model {
             // Tint the icon amber while the share status needs attention.
             cancellable = model.objectWillChange.sink { [weak self, weak model] _ in
                 DispatchQueue.main.async {
                     let attention = model?.shareStatus.needsAttention ?? false
-                    self?.statusItem?.button?.contentTintColor = attention ? .systemOrange : nil
+                    self?.needsAttention = attention
+                    self?.redrawIcon()
                     self?.refreshIcon()
                 }
             }
@@ -57,12 +62,22 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         }
     }
 
+    private var needsAttention = false
+
     private func refreshIcon() {
         guard let model else { return }
         let state: MenuBarIconState = model.isPaused ? .paused : (model.anyEffectRunning ? .active : .idle)
         guard state != iconState else { return }
         iconState = state
-        statusItem?.button?.image = MenuBarIcon.image(state)
+        redrawIcon()
+    }
+
+    private func redrawIcon() {
+        guard let button = statusItem?.button else { return }
+        let dark = button.effectiveAppearance.bestMatch(from: [.vibrantDark, .darkAqua, .vibrantLight, .aqua]).map { [.vibrantDark, .darkAqua].contains($0) } ?? false
+        let color: NSColor = needsAttention ? .systemOrange : (dark ? .white : .black)
+        button.image = MenuBarIcon.image(iconState, color: color)
+        button.setAccessibilityLabel(Branding.appName)
     }
 
     @objc private func clicked(_ sender: NSStatusBarButton) {

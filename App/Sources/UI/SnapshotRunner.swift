@@ -32,10 +32,9 @@ enum SnapshotRunner {
         }
         for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
             renderWindowed(PopoverView().environmentObject(model).background(Theme.window), size: CGSize(width: 360, height: 560), appearance: appearance, name: "popover-\(name)", into: directory)
-            let tint: Color = appearance == .darkAqua ? .white : .black
             let icons = HStack(spacing: 26) {
                 ForEach([MenuBarIconState.idle, .active, .paused], id: \.self) { state in
-                    Image(nsImage: MenuBarIcon.image(state)).renderingMode(.template).resizable().frame(width: 100, height: 90).foregroundStyle(tint)
+                    Image(nsImage: MenuBarIcon.image(state, color: appearance == .darkAqua ? .white : .black)).resizable().frame(width: 100, height: 90)
                 }
             }.padding(24).background(appearance == .darkAqua ? Color(white: 0.16) : Color(white: 0.93))
             renderWindowed(icons, size: CGSize(width: 440, height: 140), appearance: appearance, name: "menubar-icon-\(name)", into: directory)
