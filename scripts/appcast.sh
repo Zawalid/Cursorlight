@@ -51,7 +51,7 @@ fi
 
 "$BIN/generate_appcast" "${KEY_ARGS[@]}" \
   --download-url-prefix "https://github.com/Zawalid/Cursorlight/releases/download/v$VERSION/" \
-  --link "https://cursorlight.example.com" \
+  --link "https://cursorlight.zawalid.com" \
   --maximum-versions 1 \
   --embed-release-notes \
   "$OUT"
