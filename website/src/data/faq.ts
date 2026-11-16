@@ -38,6 +38,6 @@ export const faq: Faq[] = [
   },
   {
     q: 'Does it phone home?',
-    a: 'No. The only network call it can make is an update check, and that is optional. There is no analytics and no account. This website counts visits with Cloudflare Web Analytics, which sets no cookies and collects nothing from visitors in the EU.',
+    a: 'No. The only network call it can make is an update check, and that is optional. There is no analytics and no account. This website has no analytics and no cookies either.',
   },
 ];

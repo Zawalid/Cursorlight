@@ -29,7 +29,7 @@ for (const path of pages) {
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 120)));
   page.on('request', (r) => {
     const url = new URL(r.url());
-    if (url.origin !== new URL(base).origin && !r.url().startsWith('data:') && url.hostname !== 'static.cloudflareinsights.com' && url.hostname !== 'cloudflareinsights.com') external.push(r.url());
+    if (url.origin !== new URL(base).origin && !r.url().startsWith('data:')) external.push(r.url());
     if (/\.(woff2?|ttf|otf)$/.test(url.pathname)) fonts.push(url.pathname);
   });
   await page.addInitScript(() => {
