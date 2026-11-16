@@ -1,79 +1,59 @@
 ---
 import Shot from './Shot.astro';
 
-const skins = ['Classic', 'Dart', 'Bolt', 'Ring', 'Target', 'Star', 'Heart', 'Ghost'];
-const looks = [
-  { name: 'Stream', text: 'Big and bright, so a small video tile still shows where you are.' },
-  { name: 'Meeting', text: 'Quiet. A light highlight and a laser when you need one.' },
-  { name: 'Recording', text: 'Click ripples and ink on, so a viewer later can follow every step.' },
+const skins = [
+  { id: 'system', name: 'System', x: 98 },
+  { id: 'classic', name: 'Classic', x: 258 },
+  { id: 'dart', name: 'Dart', x: 419 },
+  { id: 'bolt', name: 'Bolt', x: 580 },
+  { id: 'ring', name: 'Ring', x: 740 },
+  { id: 'target', name: 'Target', x: 900 },
+  { id: 'star', name: 'Star', x: 1061 },
+  { id: 'heart', name: 'Heart', x: 1221 },
+  { id: 'ghost', name: 'Ghost', x: 1382 },
 ];
 ---
-<section class="section scenes" id="scenes" aria-labelledby="scenes-title">
+<section class="section scenes" id="scenes" aria-labelledby="scenes-title" data-surface="dark">
   <div class="wrap">
-    <div class="section-head">
-      <h2 id="scenes-title" class="title" data-reveal>One look for every situation.</h2>
-      <p class="lead" data-reveal>
-        A scene is a saved look: the highlight, laser and ink, their colors and sizes, and the pointer skin. Make one for a stream, one
-        for a meeting, one for a recording, or one of your own.
+    <div class="scenes-top">
+      <h2 id="scenes-title" class="h2" data-reveal>One look per situation.</h2>
+      <p class="scenes-say" data-reveal>
+        <strong>Stream</strong> is big and bright. <strong>Meeting</strong> is quiet. <strong>Recording</strong> keeps the ripples and the ink on.
+        Make your own, or start from Teaching, Webinar, Tutorial, Pairing or High visibility.
       </p>
     </div>
 
-    <div data-reveal>
-      <Shot id="scenes" />
-      <p class="cap">Rules by app category, and the scene strip: Stream, Meeting, Recording and a slot for your own.</p>
-    </div>
-
-    <ul class="looks">
-      {looks.map((look) => (
-        <li data-reveal><h3>{look.name}</h3><p>{look.text}</p></li>
-      ))}
-    </ul>
-
-    <div class="auto" data-reveal>
-      <p class="auto-line">Cursorlight switches by itself.</p>
-      <p class="auto-text">
-        Pick a scene for an app, or for a whole category such as calls, slides, code or video. When that app comes to the front, its scene
-        is on. A shortcut steps to the next scene by hand. Scenes can be reordered, duplicated, renamed, exported and imported, and there
-        are presets to start from: Teaching, Webinar, Tutorial, Pairing and High visibility.
+    <div class="collage" data-reveal>
+      <figure class="panel panel-rules">
+        <Shot id="app-rules" sizes="(min-width: 900px) 520px, 80vw" widths={[640, 1320]} />
+      </figure>
+      <figure class="panel panel-strip">
+        <Shot id="scene-strip" sizes="(min-width: 900px) 640px, 92vw" widths={[640, 1050]} />
+      </figure>
+      <p class="collage-note">
+        Pick a scene for an app, or for a whole kind of app, such as calls, slides, code or video. When it comes to the front, its scene is on.
+        A shortcut steps to the next scene by hand, and scenes can be reordered, duplicated, renamed, exported and imported.
       </p>
     </div>
 
-    <div class="skins">
-      <div class="section-head">
-        <h2 class="title" data-reveal>Or swap the pointer itself.</h2>
+    <div class="skins" data-skins>
+      <div class="skins-head">
+        <h2 class="h2" data-reveal>Or swap the pointer itself.</h2>
         <p class="lead" data-reveal>
-          Each scene can replace the real pointer with a skin, in its own color and size.
+          A scene can replace the real pointer with a skin, in its own color and size.{' '}
+          <span class="only-live">Click one below: it is your pointer on this page until you press Escape.</span>
         </p>
       </div>
-      <ul class="skin-list" aria-label="Pointer skins">
-        {skins.map((name, i) => (
-          <li data-skin><span class="n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{name}</li>
-        ))}
-      </ul>
-      <div class="skin-shot" data-reveal><Shot id="skins" /></div>
+      <div class="skins-panel" data-reveal>
+        <Shot id="skins-row" sizes="(min-width: 1000px) 1000px, 92vw" widths={[640, 1000, 1480]} />
+        <div class="skin-hits" role="group" aria-label="Pointer skins">
+          {skins.map((s) => (
+            <button type="button" class="skin-hit" data-skin-pick={s.id} aria-pressed="false" style={`left:${((s.x - 20) / 1480) * 100}%`}>
+              <span class="sr-only">{s.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   </div>
 </section>
-
-<style>
-  .cap { margin-top: 20px; color: var(--muted); max-width: 34rem; }
-  .looks { display: grid; gap: 0; margin-top: clamp(48px, 7vw, 100px); border-top: 1px solid var(--line); }
-  @media (min-width: 900px) { .looks { grid-template-columns: repeat(3, 1fr); border-top: 0; gap: clamp(24px, 4vw, 64px); } .looks li { border-top: 1px solid var(--line); } }
-  .looks li { padding: 22px 0 8px; display: grid; gap: 8px; align-content: start; }
-  .looks h3 { font-weight: 700; font-size: 1.7rem; letter-spacing: -0.03em; }
-  .looks p { color: var(--muted); max-width: 24rem; }
-
-  .auto { margin-top: clamp(56px, 8vw, 120px); display: grid; gap: 18px 48px; grid-template-columns: 1fr; padding: clamp(28px, 4vw, 52px) 0; border-block: 1px solid var(--line); }
-  @media (min-width: 900px) { .auto { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; } }
-  .auto-line { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.7rem, 3.2vw, 2.8rem); letter-spacing: -0.03em; line-height: 1.05; color: var(--ember); }
-  .auto-text { color: var(--muted); max-width: 40rem; }
-
-  .skins { margin-top: clamp(96px, 13vw, 200px); }
-  .skin-list { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--line); margin-bottom: clamp(48px, 7vw, 100px); }
-  @media (min-width: 760px) { .skin-list { grid-template-columns: repeat(4, 1fr); } }
-  .skin-list li { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; min-height: clamp(110px, 14vw, 190px); padding: 14px 0 16px; border-bottom: 1px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: clamp(1.9rem, 4.6vw, 4.2rem); letter-spacing: -0.04em; line-height: 1; transition: color 220ms var(--ease-out); }
-  @media (min-width: 760px) { .skin-list li:not(:nth-child(4n+1)) { padding-left: 18px; border-left: 1px solid var(--line); } }
-  @media (max-width: 759px) { .skin-list li:nth-child(even) { padding-left: 16px; border-left: 1px solid var(--line); } }
-  .skin-list .n { font: 400 0.8rem var(--font-mono); letter-spacing: 0; color: var(--faint); }
-  @media (hover: hover) { .skin-list li:hover { color: var(--ember); } }
-</style>

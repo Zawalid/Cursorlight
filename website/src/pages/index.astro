@@ -1,14 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
-import Features from '../components/Features.astro';
+import Tour from '../components/Tour.astro';
+import Styles from '../components/Styles.astro';
 import Scenes from '../components/Scenes.astro';
 import Sharing from '../components/Sharing.astro';
-import Automation from '../components/Automation.astro';
+import Links from '../components/Links.astro';
 import Install from '../components/Install.astro';
 import Privacy from '../components/Privacy.astro';
 import Faq from '../components/Faq.astro';
-import OpenSource from '../components/OpenSource.astro';
+import Finale from '../components/Finale.astro';
 import { faq } from '../data/faq';
 import { site, links, version } from '../data/site';
 
@@ -36,12 +37,13 @@ const faqData = {
 ---
 <Base structuredData={[appData, faqData]}>
   <Hero />
-  <Features />
+  <Tour />
+  <Styles />
   <Scenes />
   <Sharing />
-  <Automation />
+  <Links />
   <Install />
   <Privacy />
   <Faq />
-  <OpenSource />
+  <Finale />
 </Base>

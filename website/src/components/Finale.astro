@@ -1,0 +1,24 @@
+---
+import { handLoop } from '../data/ink';
+import Footer from './Footer.astro';
+import { links, version, site } from '../data/site';
+const loop = handLoop(200, 60, 192, 54, 12);
+---
+<section class="finale" id="download" aria-labelledby="finale-title" data-surface="ember" data-iris>
+  <div class="wrap finale-in">
+    <h2 id="finale-title" class="display finale-title">Be seen.</h2>
+    <p class="lead">Free, open source, and ready for your next call.</p>
+    <div class="finale-cta">
+      <span class="cta-wrap" data-mark>
+        <a class="btn btn-ink btn-lg" href={links.download}>
+          Download for macOS
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3.5v11m0 0 4.5-4.5M10 14.5 5.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <svg class="cta-loop" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><path class="ink-path" d={loop} /></svg>
+      </span>
+      <a class="btn btn-line-ink btn-lg" href={links.repo}>Source on GitHub</a>
+    </div>
+    <p class="finale-fine">Version {version}. macOS {site.minimumMacOS} or later. Apple silicon and Intel.</p>
+  </div>
+  <Footer />
+</section>

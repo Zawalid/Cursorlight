@@ -1,0 +1,49 @@
+---
+const tools = [
+  { id: 'highlight', label: 'Highlight', key: 'H', icon: '<circle cx="10" cy="10" r="2.6" fill="currentColor"/><circle cx="10" cy="10" r="7.2" stroke="currentColor" stroke-width="1.6"/>' },
+  { id: 'laser', label: 'Laser', key: 'L', icon: '<path d="M3 16.5c4-.5 7.5-3 9.8-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="14.6" cy="6.3" r="2.5" fill="currentColor"/>' },
+  { id: 'ink', label: 'Ink', key: 'I', icon: '<path d="M4 16.2l.9-3.9 7.9-7.9 3 3-7.9 7.9-3.9.9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' },
+  { id: 'spotlight', label: 'Spotlight', key: 'S', icon: '<circle cx="10" cy="10" r="5.6" stroke="currentColor" stroke-width="1.6"/><path d="M10 1.6v2.6M10 15.8v2.6M1.6 10h2.6M15.8 10h2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' },
+];
+---
+<aside class="fxbar-region" aria-label="Pointer tools"><div class="fxbar" data-fxbar role="toolbar" aria-label="Pointer tools, a web preview of the app" hidden>
+  <span class="fxbar-tag" aria-hidden="true">Web preview</span>
+  <div class="fxbar-group">
+    {tools.map((t) => (
+      <button type="button" class="fx-btn" data-tool={t.id} aria-pressed="false" title={`${t.label}: Control + Option + ${t.key}`}>
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" set:html={t.icon} />
+        <span class="fx-label">{t.label}</span>
+        <kbd class="fx-key" aria-hidden="true">{t.key}</kbd>
+      </button>
+    ))}
+  </div>
+  <span class="fx-sep" aria-hidden="true"></span>
+  <button type="button" class="fx-btn fx-text" data-style-cycle title="Change the highlight style">
+    <span class="fx-label-s">Style</span> <strong data-style-name>Aura</strong>
+  </button>
+  <button type="button" class="fx-btn fx-dot" data-color-cycle aria-label="Color: Ember. Change" title="Change the color"><span class="dot" data-color-dot></span></button>
+  <button type="button" class="fx-btn" data-clear aria-label="Clear the ink" title="Clear the ink">
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+  </button>
+  <p class="sr-only" role="status" aria-live="polite" data-fx-status></p>
+</div></aside>
+
+<style is:global>
+  .fxbar { position: fixed; left: 50%; bottom: 16px; z-index: var(--z-toolbar); display: none; align-items: center; gap: 4px; padding: 5px; transform: translateX(-50%); background: #1b1822; border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
+  .live .fxbar:not([hidden]) { display: flex; }
+  .fxbar-tag { white-space: nowrap; padding: 0 10px 0 8px; font: 400 0.72rem var(--font-mono); color: var(--faint); }
+  .fxbar-group { display: flex; gap: 2px; }
+  .fx-btn { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 0.84rem; font-weight: 550; cursor: pointer; transition: background-color 140ms, color 140ms, transform 120ms var(--ease-out); }
+  .fx-btn svg { width: 17px; height: 17px; flex: none; }
+  .fx-btn:hover { background: rgba(244, 239, 232, 0.1); color: var(--text); }
+  .fx-btn:active { transform: scale(0.96); }
+  .fx-btn[aria-pressed="true"] { background: var(--ember); color: var(--ember-ink); }
+  .fx-key { font: 400 0.7rem var(--font-mono); padding: 1px 5px; border-radius: 4px; background: rgba(244, 239, 232, 0.1); color: inherit; }
+  .fx-btn[aria-pressed="true"] .fx-key { background: rgba(20, 18, 26, 0.18); }
+  .fx-sep { width: 1px; height: 20px; margin-inline: 4px; background: var(--line-strong); }
+  .fx-text strong { font-weight: 650; color: var(--text); }
+  .fx-label-s { color: var(--faint); }
+  .fx-dot .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 0 2px #1b1822, 0 0 0 3px var(--line-strong); }
+  @media (max-width: 1180px) { .fx-label, .fxbar-tag { display: none; } }
+  @media (max-width: 860px) { .fx-label-s { display: none; } .fx-key { display: none; } }
+</style>

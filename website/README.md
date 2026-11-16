@@ -3,18 +3,29 @@
 The product site for Cursorlight. Astro (static output), GSAP and Lenis for motion, deployed to Cloudflare as a Worker with
 static assets. Same tooling as the Lopper and Apropos sites; its own design.
 
-## Design
+## The idea: the page is the product
 
-- **The visitor's pointer is the hero.** On a desktop with a mouse, the hero is a small web sketch of the app: shake the
-  mouse and a highlight finds the cursor (the headline lights up in ember inside it), press and hold for a laser trail, press
-  and drag for ink that fades, and a rough loop snaps to a clean ellipse. Code: `src/scripts/hero.ts`.
-- **Calm fallback.** Touch devices, `prefers-reduced-motion` and no-JS get no canvas: the last word of the headline is circled
-  in ink (the static version of the same idea) and the three gestures are described in plain text.
-- **Capture frames.** Screenshots sit in a frame with four ember corners, the way a screen-share selection looks.
-- **Paper section.** The sharing section is the one light section, on purpose: it is the honest page. Its diagram (whole
-  screen versus one window) is interactive and works without motion.
-- Colors: ember `#FF5A36` on charcoal `#14121A`, warm off-white text. Fonts (self-hosted, `public/fonts/`): Bricolage
-  Grotesque for display, Instrument Sans for text, Geist Mono for keys and code. No gradients, glows or emoji.
+The site presents itself with the app's own tools, and lets the visitor use them.
+
+- **Opening demo.** A presenter's cursor (an arrow in a ring) shakes until the highlight finds it, then circles the headline
+  with a rough loop that snaps clean. The visitor's first mouse move or key press hands the page over. `src/scripts/ghost.ts`.
+- **A web version of the app, site wide.** One fixed canvas (`src/scripts/engine.ts`) draws highlight (six styles), laser, ink
+  and spotlight over the whole page. Shake the mouse anywhere and a highlight finds the cursor. In the hero, press and hold for a
+  laser, press and drag for ink. A floating bar (`Toolbar.astro`) and the app's own shortcuts work on the page:
+  Control+Option+H, L, I, S, P, and Escape to stop. The menu bar icon at the top right shows idle, on or paused.
+- **The header is a menu bar**, with the current section highlighted like an open menu, and the real menu bar popover hanging
+  under the icon in the hero.
+- **Pointer skins on the page.** Click a skin in the Scenes section and it replaces the visitor's pointer until Escape
+  (`src/scripts/skins.ts`). The skins are drawn for the page; the app's own are in the screenshot.
+- **Links that run.** In the links table, each `cursorlight://` row has a Run button that does the same thing on the page.
+- **Pinned tour.** A scroll-driven camera moves across the real captures, swaps captures, and draws ink around what the caption
+  is about (`Tour.astro`, `src/scripts/tour.ts`, beats in `src/data/tour.ts`). Real pixels only; nothing is mocked.
+- **Ink marks** (loops and underlines, `Mark.astro`) are generated at build time with hand-like wobble, and drawn on scroll.
+- **Iris openings.** The light sharing section and the ember finale open like an aura from their top edge as they arrive.
+- **Calm fallback.** Touch devices, narrow windows, `prefers-reduced-motion` and no-JS get no canvas, no pin and no iris: the
+  headline word is circled in static ink, the tour becomes a stacked list from the same beats, and everything is visible.
+- Colors: ember `#FF5A36` on charcoal `#14121A`, warm paper for the sharing section, full ember for the finale. Fonts, self-hosted
+  in `public/fonts/`: Mona Sans (one variable file, weight and width axes) and Geist Mono for keys and code.
 
 ## Run it
 
@@ -31,8 +42,8 @@ With the preview running, in another terminal (all use `playwright-core` with th
 ```bash
 node scripts/check-seo.mjs http://localhost:4380    # titles, canonical, JSON-LD, share image, links, dashes, emoji, external requests, layout shift
 node scripts/check-a11y.mjs http://localhost:4380   # axe at 1440 and 390, with and without motion, plus horizontal scroll
-node scripts/check-ui.mjs http://localhost:4380     # the hero with real mouse events, sharing toggle, FAQ, keyboard focus, touch and reduced motion fallbacks
-node scripts/shots.mjs http://localhost:4380        # one screenshot per section, desktop and phone, into .checks/
+node scripts/check-ui.mjs http://localhost:4380     # the demo, hero gestures, shortcuts, toolbar, style picker, skins, links table, tour, sharing, FAQ, focus, fallbacks
+node scripts/shots.mjs http://localhost:4380        # the hero, the tour at six scroll positions, every section, desktop and phone, into .checks/
 npm run og                                          # redraws public/og.png from scripts/og.html
 ```
 
@@ -40,10 +51,12 @@ npm run og                                          # redraws public/og.png from
 
 ## Screenshots
 
-Every product picture is named in `src/data/shots.ts`. The files live in `../docs/images/` (the main project captures them);
-`scripts/sync-shots.mjs` copies them into `src/assets/shots/` before every build and Astro optimises them. A picture that
-does not exist yet renders as a clearly marked placeholder frame. To swap one: drop the file in `docs/images/` with the name
-in `shots.ts`, rebuild. `check-seo.mjs` prints a warning while any placeholder remains.
+The files live in `../docs/images/` (the main project captures them). `npm run build` first copies them into `src/assets/shots/`
+(`scripts/sync-shots.mjs`), then cuts the macro crops the page uses (`scripts/make-crops.mjs`, rectangles in
+`src/data/crop-defs.json`) from the lossless originals. Full captures are named in `src/data/shots.ts`; a missing file renders
+as a clearly marked placeholder frame, and `check-seo.mjs` warns while any remains. To swap a picture: drop the file in
+`docs/images/` with the same name and rebuild. If a capture changes layout, re-check the crop rectangles and the ink coordinates
+in `src/data/tour.ts` (picture pixels).
 
 ## Configuration in one place
 
@@ -53,7 +66,8 @@ in `shots.ts`, rebuild. `check-seo.mjs` prints a warning while any placeholder r
 version shown on the page is read from `../App/project.yml` (`MARKETING_VERSION`) at build time.
 
 The download button points at `https://github.com/Zawalid/Cursorlight/releases/latest/download/Cursorlight.dmg`. It 404s
-until a published release carries an asset with exactly that name.
+until a published release carries an asset with exactly that name (the install guide names it `Cursorlight-<version>.dmg`, so
+the release workflow needs a fixed-name copy, or change `links.download` in `src/data/site.ts`).
 
 ## Deploy (prepared, not run)
 
@@ -61,15 +75,16 @@ until a published release carries an asset with exactly that name.
 `website/**`, or by hand. To go live:
 
 1. Create the GitHub repository (confirm the name; change `REPO` in `site.config.mjs` if it is not `Zawalid/Cursorlight`) and push.
-2. Confirm the domain. Change `DOMAIN` in `site.config.mjs` and the `routes` host in `wrangler.jsonc`, rerun `npm run og` only if the
-   image text changes. The zone must be on the same Cloudflare account, so Cloudflare can create the DNS record and certificate.
+2. Confirm the domain. Change `DOMAIN` in `site.config.mjs` and the `routes` host in `wrangler.jsonc`, and rerun `npm run og`
+   only if the image text changes. The zone must be on the same Cloudflare account, so Cloudflare can create the DNS record and certificate.
 3. Create a Cloudflare API token (Workers Scripts: Edit and DNS: Edit) and set two repository secrets, reading the values from
    stdin so they never print: `gh secret set CLOUDFLARE_API_TOKEN --repo OWNER/REPO` and
    `gh secret set CLOUDFLARE_ACCOUNT_ID --repo OWNER/REPO`.
-4. Drop the real screenshots into `docs/images/` (see above) and rebuild locally to check there are no placeholder warnings.
+4. Rebuild locally with the final screenshots in `docs/images/` and run the checks above.
 5. Push to `main`, or run the Website workflow by hand. Then publish the first release so the download link stops 404ing.
 
 ## Not verified
 
-The live deploy, the domain, the download link, the pointer playground on a trackpad (tested with synthetic mouse events in
-headless Chrome only) and Safari/Firefox rendering (Chrome only here).
+The live deploy, the domain, the download link, the pointer effects on a trackpad (tested with synthetic mouse events in
+headless Chrome only), the tour's camera on high-DPI displays beyond what the 2360 px captures resolve, and Safari or Firefox
+(Chrome only here; the FAQ height animation and `interpolate-size` fall back to instant open elsewhere).

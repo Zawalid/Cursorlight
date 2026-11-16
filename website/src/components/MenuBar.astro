@@ -1,0 +1,55 @@
+---
+import icon from '../assets/icon.png';
+import { getImage } from 'astro:assets';
+import { links } from '../data/site';
+
+const logo = await getImage({ src: icon, width: 40, height: 40, format: 'png' });
+const items = [
+  ['tour', 'Tour'],
+  ['styles', 'Styles'],
+  ['scenes', 'Scenes'],
+  ['sharing', 'Sharing'],
+  ['links', 'Links'],
+  ['install', 'Install'],
+  ['privacy', 'Privacy'],
+  ['faq', 'FAQ'],
+];
+---
+<header class="bar" data-bar>
+  <div class="bar-in">
+    <a class="bar-brand" href="/" aria-label="Cursorlight, top of the page">
+      <img src={logo.src} width="20" height="20" alt="" />
+      <span>Cursorlight</span>
+    </a>
+    <nav class="bar-nav" aria-label="Sections">
+      {items.map(([id, label]) => <a href={`/#${id}`} data-spy={id} data-keep={id === 'install' ? '' : undefined}>{label}</a>)}
+    </nav>
+    <div class="bar-extras">
+      <a class="bar-gh" href={links.repo}>GitHub</a>
+      <a class="btn btn-ember btn-sm" href={links.download}>Download</a>
+      <span class="bar-status" aria-hidden="true" data-bar-status>
+        <svg viewBox="0 0 20 20" fill="none"><circle class="ring" cx="10" cy="10" r="7.6" stroke="currentColor" stroke-width="1.6"/><path class="arrow" d="M7.6 6.4v7.2l1.9-1.8 1.5 3 1.6-.8-1.5-2.9h2.7z" fill="currentColor"/></svg>
+      </span>
+    </div>
+  </div>
+</header>
+
+<style is:global>
+  .bar { position: fixed; inset: 0 0 auto 0; z-index: var(--z-bar); height: var(--bar-h); background: rgba(14, 12, 18, 0.94); box-shadow: 0 1px 0 var(--line); }
+  .bar-in { display: flex; align-items: center; gap: 4px; height: 100%; padding-inline: var(--gutter); max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; font-size: 0.8125rem; font-weight: 500; }
+  .bar-brand { display: inline-flex; align-items: center; gap: 8px; margin-right: 10px; padding: 0 8px 0 0; color: var(--text); text-decoration: none; font-weight: 750; letter-spacing: -0.005em; }
+  .bar-brand img { border-radius: 5px; }
+  .bar-nav { display: flex; gap: 2px; }
+  .bar-nav a, .bar-gh { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 6px; color: var(--muted); text-decoration: none; transition: background-color 140ms, color 140ms; }
+  .bar-nav a:hover, .bar-gh:hover { background: rgba(244, 239, 232, 0.1); color: var(--text); }
+  .bar-nav a[aria-current="true"] { background: rgba(244, 239, 232, 0.16); color: var(--text); }
+  .bar-extras { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .bar-status { display: grid; place-items: center; width: 28px; height: 26px; margin-right: -6px; border-radius: 6px; color: var(--text); }
+  .bar-status svg { width: 18px; height: 18px; }
+  .bar-status .arrow { opacity: 0.9; }
+  html[data-fx="on"] .bar-status { background: rgba(244, 239, 232, 0.16); color: var(--ember); }
+  html[data-fx="paused"] .bar-status { color: var(--faint); }
+  html[data-fx="paused"] .bar-status .arrow { opacity: 0.4; }
+  @media (max-width: 1080px) { .bar-nav a:not([data-keep]) { display: none; } .bar-gh { display: none; } }
+  @media (max-width: 720px) { .bar { height: 44px; } .bar-in { font-size: 0.9rem; } .bar-status { display: none; } .bar .btn-sm { min-height: 34px; padding: 0 14px; font-size: 0.9rem; } :root { --bar-h: 44px; } }
+</style>

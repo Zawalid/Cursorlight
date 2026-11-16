@@ -1,0 +1,92 @@
+{
+  "styles-aura": {
+    "from": "styles-dark.webp",
+    "rect": [
+      48,
+      48,
+      1056,
+      672
+    ]
+  },
+  "styles-lens": {
+    "from": "styles-dark.webp",
+    "rect": [
+      1133,
+      48,
+      1056,
+      672
+    ]
+  },
+  "styles-comet": {
+    "from": "styles-dark.webp",
+    "rect": [
+      2218,
+      48,
+      1056,
+      672
+    ]
+  },
+  "styles-keyline": {
+    "from": "styles-dark.webp",
+    "rect": [
+      48,
+      812,
+      1056,
+      672
+    ]
+  },
+  "styles-sonar": {
+    "from": "styles-dark.webp",
+    "rect": [
+      1133,
+      812,
+      1056,
+      672
+    ]
+  },
+  "styles-crosshair": {
+    "from": "styles-dark.webp",
+    "rect": [
+      2218,
+      812,
+      1056,
+      672
+    ]
+  },
+  "scene-strip": {
+    "from": "overview-dark.webp",
+    "rect": [
+      20,
+      1255,
+      1050,
+      225
+    ]
+  },
+  "app-rules": {
+    "from": "apps-dark.webp",
+    "rect": [
+      1690,
+      745,
+      660,
+      520
+    ]
+  },
+  "about-privacy": {
+    "from": "about-dark.webp",
+    "rect": [
+      1690,
+      150,
+      670,
+      860
+    ]
+  },
+  "skins-row": {
+    "from": "skins-dark.webp",
+    "rect": [
+      20,
+      96,
+      1480,
+      160
+    ]
+  }
+}

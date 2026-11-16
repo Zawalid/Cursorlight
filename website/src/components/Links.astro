@@ -1,0 +1,44 @@
+---
+const rows = [
+  { what: 'Toggle the highlight', link: 'cursorlight://highlight/toggle', run: 'highlight:toggle' },
+  { what: 'Turn the laser on', link: 'cursorlight://laser/on', run: 'laser:on' },
+  { what: 'Start drawing', link: 'cursorlight://ink/on', run: 'ink:on' },
+  { what: 'Spotlight a region', link: 'cursorlight://spotlight/toggle', run: 'spotlight:toggle' },
+  { what: 'Next scene', link: 'cursorlight://scene/next', run: 'scene:next' },
+  { what: 'Clear the drawings', link: 'cursorlight://clear', run: 'clear' },
+  { what: 'Pause everything', link: 'cursorlight://pause/toggle', run: 'pause:toggle' },
+];
+---
+<section class="section links" id="links" aria-labelledby="links-title" data-surface="dark">
+  <div class="wrap links-grid">
+    <div class="links-copy">
+      <h2 id="links-title" class="h2" data-reveal>Press a key. Or a link.</h2>
+      <p class="lead" data-reveal>
+        Every tool and scene has a shortcut and a <code>cursorlight://</code> link. Put a link on a Stream Deck key, in a Raycast or Alfred
+        command, in the Shortcuts app, or send it from Terminal. Links only switch Cursorlight's own effects, and nothing is read back.
+      </p>
+      <p class="keys-line" data-reveal>
+        <span class="keys"><kbd class="key">Control</kbd><span class="plus" aria-hidden="true">+</span><kbd class="key">Option</kbd><span class="plus" aria-hidden="true">+</span><kbd class="key">H</kbd></span>
+        <span class="keys-what">highlight</span>
+        <span class="keys"><kbd class="key">L</kbd></span><span class="keys-what">laser</span>
+        <span class="keys"><kbd class="key">I</kbd></span><span class="keys-what">ink</span>
+        <span class="keys"><kbd class="key">S</kbd></span><span class="keys-what">spotlight</span>
+        <span class="keys"><kbd class="key">P</kbd></span><span class="keys-what">pause</span>
+      </p>
+    </div>
+
+    <div class="console" data-reveal>
+      <p class="console-head"><span class="only-live">Try them on this page.</span><span class="only-static">In the app, or from Terminal.</span></p>
+      <ul>
+        {rows.map((r) => (
+          <li>
+            <span class="c-what">{r.what}</span>
+            <code class="c-link">{r.link}</code>
+            <button type="button" class="c-run only-live-b" data-run={r.run}>Run</button>
+          </li>
+        ))}
+      </ul>
+      <p class="console-foot"><code>open "cursorlight://scene?name=Meeting"</code></p>
+    </div>
+  </div>
+</section>

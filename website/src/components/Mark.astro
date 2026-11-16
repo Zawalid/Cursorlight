@@ -1,0 +1,13 @@
+---
+/**
+ * A hand-drawn mark around or under a few words, like the ink the app draws. The words stay real text; the stroke is decoration.
+ * Without motion the stroke is simply there; with motion it is drawn when it scrolls into view.
+ */
+import { handLoop, handLine } from '../data/ink';
+
+interface Props { kind?: 'loop' | 'line'; seed?: number }
+const { kind = 'loop', seed = 4 } = Astro.props;
+const d = kind === 'loop' ? handLoop(100, 40, 92, 33, seed) : handLine(4, 8, 196, 8, seed);
+const box = kind === 'loop' ? '0 0 200 80' : '0 0 200 16';
+---
+<span class:list={['mk', kind === 'loop' ? 'mk-loop' : 'mk-line']} data-mark><slot /><svg viewBox={box} preserveAspectRatio="none" aria-hidden="true"><path class="ink-path" d={d} /></svg></span>

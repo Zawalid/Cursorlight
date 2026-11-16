@@ -1,0 +1,43 @@
+---
+import Shot from './Shot.astro';
+import type { CropId } from '../data/shots';
+
+const styles: Array<{ id: string; name: string; crop: CropId; text: string }> = [
+  { id: 'aura', name: 'Aura', crop: 'styles-aura', text: 'A soft light that follows you and breathes when you stop.' },
+  { id: 'lens', name: 'Lens', crop: 'styles-lens', text: 'Dims everything except a bright circle around the pointer.' },
+  { id: 'comet', name: 'Comet', crop: 'styles-comet', text: 'A small bright head with a short tail behind it.' },
+  { id: 'keyline', name: 'Keyline', crop: 'styles-keyline', text: 'A thin ring that leaves the content readable.' },
+  { id: 'sonar', name: 'Sonar', crop: 'styles-sonar', text: 'Rings that spread out from the pointer, on and on.' },
+  { id: 'crosshair', name: 'Crosshair', crop: 'styles-crosshair', text: 'Thin lines across the screen, through the pointer.' },
+];
+---
+<section class="section styles" id="styles" aria-labelledby="styles-title" data-surface="dark" data-styles>
+  <div class="wrap">
+    <div class="styles-head">
+      <h2 id="styles-title" class="h2" data-reveal>Six ways to be found.</h2>
+      <p class="lead" data-reveal>
+        The same slide and the same pointer, with six highlights.{' '}
+        <span class="only-live">Pick one and your pointer on this page becomes it.</span>
+      </p>
+    </div>
+
+    <div class="styles-body">
+    <div class="styles-pic" data-reveal>
+      {styles.map((s, i) => (
+        <div class="styles-img" data-style-img={s.id} data-active={i === 0 ? 'true' : 'false'}>
+          <Shot id={s.crop} sizes="(min-width: 1000px) 900px, 92vw" widths={[640, 1056]} />
+        </div>
+      ))}
+    </div>
+
+    <div class="styles-pick" role="group" aria-label="Highlight style" data-reveal>
+      {styles.map((s, i) => (
+        <button type="button" class="style-btn" data-style-pick={s.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+          <span class="style-name">{s.name}</span>
+          <span class="style-text">{s.text}</span>
+        </button>
+      ))}
+    </div>
+    </div>
+  </div>
+</section>

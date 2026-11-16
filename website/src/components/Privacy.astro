@@ -1,5 +1,6 @@
 ---
 import Shot from './Shot.astro';
+
 const rows = [
   ['Accessibility', 'Not used.'],
   ['Screen Recording', 'Not needed. Cursorlight draws on your screen, it never reads it.'],
@@ -9,31 +10,20 @@ const rows = [
   ['Accounts and analytics', 'None.'],
 ];
 ---
-<section class="section privacy" id="privacy" aria-labelledby="privacy-title">
+<section class="section privacy" id="privacy" aria-labelledby="privacy-title" data-surface="dark">
   <div class="wrap">
-    <h2 id="privacy-title" class="statement" data-statement>
-      A pointer tool has no business knowing anything about you. It does not.
-    </h2>
-    <dl class="perm">
-      {rows.map(([k, v]) => (
-        <div class="p-row" data-reveal><dt>{k}</dt><dd>{v}</dd></div>
-      ))}
-    </dl>
-    <div class="about" data-reveal>
-      <Shot id="about" sizes="(min-width: 960px) 62vw, 92vw" />
-      <p class="note">The app's own About page says the same.</p>
+    <h2 id="privacy-title" class="statement" data-statement>A pointer tool has no business knowing anything about you. It does not.</h2>
+    <div class="privacy-grid">
+      <dl class="perm">
+        {rows.map(([k, v]) => (
+          <div class="p-row" data-reveal><dt>{k}</dt><dd>{v}</dd></div>
+        ))}
+      </dl>
+      <figure class="about" data-reveal>
+        <Shot id="about-privacy" sizes="(min-width: 1000px) 460px, 92vw" widths={[640, 1340]} />
+        <figcaption>The app's own About page says the same.</figcaption>
+      </figure>
     </div>
     <p class="note" data-reveal>This website has no analytics, no cookies and loads nothing from other domains.</p>
   </div>
 </section>
-
-<style>
-  .statement { font-weight: 700; font-size: clamp(2.2rem, 5.8vw, 5.4rem); line-height: 1; letter-spacing: -0.04em; max-width: 22ch; margin-bottom: clamp(40px, 6vw, 88px); }
-  .perm { border-top: 1px solid var(--line); max-width: 60rem; }
-  .p-row { display: grid; gap: 4px 32px; padding: 16px 0; border-bottom: 1px solid var(--line); grid-template-columns: 1fr; }
-  @media (min-width: 720px) { .p-row { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.6fr); } }
-  dt { font-weight: 600; }
-  dd { color: var(--muted); }
-  .about { margin-top: clamp(48px, 7vw, 96px); max-width: 62rem; }
-  .note { margin-top: 28px; color: var(--faint); }
-</style>

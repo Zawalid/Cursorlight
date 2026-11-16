@@ -1,51 +1,31 @@
 ---
 import { Image } from 'astro:assets';
-import { shots, shotImage, type ShotId } from '../data/shots';
+import { shots, shotImage, cropImage, cropAlt, type ShotId, type CropId } from '../data/shots';
 
 interface Props {
-  id: ShotId;
+  /** A full capture from shots.ts, or a crop from crop-defs.json. */
+  id: ShotId | CropId;
   /** Responsive sizes hint for the browser, so phones are not sent the largest file. */
   sizes?: string;
   loading?: 'lazy' | 'eager';
   class?: string;
-  /** Draw the ember capture corners around it. */
-  framed?: boolean;
+  alt?: string;
+  widths?: number[];
 }
-const { id, sizes = '(min-width: 1320px) 1320px, 92vw', loading = 'lazy', class: className, framed = true } = Astro.props;
-const shot = shots[id];
-const image = shotImage(id);
-const [rw, rh] = shot.ratio;
+const { id, sizes = '(min-width: 1320px) 1320px, 92vw', loading = 'lazy', class: className, alt, widths = [640, 960, 1440, 2000] } = Astro.props;
+const isShot = id in shots;
+const image = isShot ? shotImage(id as ShotId) : cropImage(id as CropId);
+const text = alt ?? (isShot ? shots[id as ShotId].alt : cropAlt[id as CropId]);
+const brief = isShot ? shots[id as ShotId].brief : String(id);
+const file = isShot ? shots[id as ShotId].file : `crops/${id}.webp`;
+const ratio = isShot ? shots[id as ShotId].ratio : ([16, 10] as [number, number]);
 ---
-<figure class:list={['shot', framed && 'frame', className]} data-shot={id}>
-  {image ? (
-    <Image
-      src={image}
-      alt={shot.alt}
-      widths={[640, 960, 1440, 2000]}
-      sizes={sizes}
-      loading={loading}
-      decoding="async"
-      format="webp"
-      quality={86}
-    />
-  ) : (
-    <div class="ph" data-placeholder={shot.file} style={`aspect-ratio:${rw} / ${rh}`} role="img" aria-label={`Screenshot to come: ${shot.brief}`}>
-      <p class="ph-tag">Placeholder</p>
-      <p class="ph-name">{shot.file}</p>
-      <p class="ph-brief">{shot.brief}</p>
-    </div>
-  )}
-</figure>
-
-<style>
-  .shot { margin: 0; }
-  .shot :global(img) { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2); }
-  .ph {
-    display: grid; place-content: center; gap: 6px; text-align: center; padding: 24px;
-    border-radius: 12px; border: 1px dashed var(--line-strong);
-    background: repeating-linear-gradient(135deg, var(--ink-2) 0 14px, var(--ink) 14px 28px);
-  }
-  .ph-tag { font: 500 0.8rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ember); }
-  .ph-name { font: 500 1rem var(--font-mono); color: var(--text); }
-  .ph-brief { color: var(--muted); font-size: 0.95rem; }
-</style>
+{image ? (
+  <Image src={image} alt={text} widths={widths} sizes={sizes} loading={loading} decoding="async" format="webp" quality={88} class={className} />
+) : (
+  <div class:list={['ph', className]} data-placeholder={file} style={`aspect-ratio:${ratio[0]} / ${ratio[1]}`} role="img" aria-label={`Screenshot to come: ${brief}`}>
+    <p class="ph-tag">Placeholder</p>
+    <p class="ph-name">{file}</p>
+    <p class="ph-brief">{brief}</p>
+  </div>
+)}

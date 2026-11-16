@@ -1,0 +1,70 @@
+---
+import Shot from './Shot.astro';
+import { beats, IMG } from '../data/tour';
+
+const ia = IMG.h / IMG.w;
+const R = 16 / 11;
+/** Placement of a capture inside a small cropped frame, for the stacked (no scroll scene) version. */
+const place = (b: (typeof beats)[number]) => {
+  const s = b.focus.zoom;
+  return { w: s * 100, l: (0.5 - b.focus.x * s) * 100, t: (0.5 - b.focus.y * s * ia * R) * 100 };
+};
+const kinds = ['overview', 'draw', 'apps'] as const;
+const fileFor = { overview: 'overview', draw: 'draw', apps: 'scenes' } as const;
+---
+<section class="tour" id="tour" aria-labelledby="tour-title" data-tour data-surface="dark">
+  <div class="tour-pin" data-tour-pin>
+    <div class="tour-stage" data-tour-stage>
+      <div class="tour-cam" data-tour-cam>
+        <div class="tour-win" data-tour-win>
+          {kinds.map((k, i) => (
+            <div class="tour-img" data-tour-img={k} data-active={i === 0 ? 'true' : 'false'}>
+              <Shot id={fileFor[k]} sizes="2360px" widths={[2360]} loading={i === 0 ? 'eager' : 'lazy'} />
+            </div>
+          ))}
+          <svg class="tour-marks" viewBox={`0 0 ${IMG.w} ${IMG.h}`} aria-hidden="true">
+            {beats.map((b, i) => b.mark && <path data-tour-mark={i} d={b.mark.d} />)}
+          </svg>
+        </div>
+      </div>
+      <div class="tour-caps">
+        {beats.map((b, i) => (
+          <div class="tour-cap" data-tour-cap={i} data-side={b.side ?? 'left'} aria-hidden={i === 0 ? 'false' : 'true'}>
+            {i === 0 ? <h2 id="tour-title" class="h2">{b.title}</h2> : <h3 class="h2">{b.title}</h3>}
+            <p class="lead">{b.text}</p>
+            {b.keys && (
+              <p class="keys" aria-label="Control Option, then H, L, I or S">
+                {b.keys.flatMap((combo, ci) => combo.map((k, ki) => <><kbd class="key">{k}</kbd>{ki < combo.length - 1 && <span class="plus" aria-hidden="true">+</span>}</>).concat(ci < (b.keys?.length ?? 0) - 1 ? [<span class="plus" aria-hidden="true">/</span>] : []))}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+      <ol class="tour-dots" aria-hidden="true">
+        {beats.map((_, i) => <li data-tour-dot={i}></li>)}
+      </ol>
+    </div>
+  </div>
+
+  <div class="wrap tour-list">
+    <h2 class="h2 tour-list-title">{beats[0]?.title}</h2>
+    <p class="lead">{beats[0]?.text}</p>
+    <ol class="tour-items">
+      {beats.slice(1).map((b) => {
+        const p = place(b);
+        return (
+          <li class="tour-item">
+            <figure class="tour-fig">
+              <div class="tour-fig-in" style={`width:${p.w}%;left:${p.l}%;top:${p.t}%`}>
+                <Shot id={fileFor[b.image]} sizes="(min-width: 700px) 600px, 92vw" widths={[960, 1440, 2360]} />
+                {b.mark && <svg viewBox={`0 0 ${IMG.w} ${IMG.h}`} aria-hidden="true"><path d={b.mark.d} /></svg>}
+              </div>
+            </figure>
+            <h3 class="h3">{b.title}</h3>
+            <p>{b.text}</p>
+          </li>
+        );
+      })}
+    </ol>
+  </div>
+</section>

@@ -1,18 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
+import Footer from '../components/Footer.astro';
 ---
 <Base title="Page not found: Cursorlight" description="This page does not exist. Go back to the Cursorlight home page for the download and the install steps." noindex>
-  <section class="nf">
+  <section class="nf" data-surface="dark">
     <div class="wrap">
       <h1 class="display">Lost your cursor?</h1>
       <p class="lead">That page does not exist. Shake the mouse, or head back to the start.</p>
       <p><a class="btn btn-ember" href="/">Back to the home page</a></p>
     </div>
   </section>
+  <div class="nf-foot" data-surface="ember"><Footer /></div>
 </Base>
-
-<style>
-  .nf { min-height: 80svh; display: grid; align-content: center; gap: 24px; padding-top: 120px; }
-  .nf .wrap { display: grid; gap: 24px; justify-items: start; }
-  .nf .display { font-size: clamp(3rem, 9vw, 8rem); }
-</style>

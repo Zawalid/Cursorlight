@@ -83,10 +83,27 @@ export const shots = {
 
 export type ShotId = keyof typeof shots;
 
-/** Resolved at build time: every image that exists in src/assets/shots, keyed by file name. */
-const found = import.meta.glob<{ default: ImageMetadata }>('../assets/shots/*.{png,jpg,jpeg,webp,avif}', { eager: true });
+/** Macro crops cut from the captures by scripts/make-crops.mjs (definitions in crop-defs.json). */
+export const cropAlt = {
+  'styles-aura': 'The Aura highlight on a slide: a soft light around the pointer.',
+  'styles-lens': 'The Lens highlight on a slide: everything dims except a bright circle around the pointer.',
+  'styles-comet': 'The Comet highlight on a slide: a small glowing head with a short tail.',
+  'styles-keyline': 'The Keyline highlight on a slide: a thin ring around the pointer.',
+  'styles-sonar': 'The Sonar highlight on a slide: rings that spread out from the pointer.',
+  'styles-crosshair': 'The Crosshair highlight on a slide: thin lines across the screen through the pointer.',
+  'scene-strip': 'The scene strip: Stream, Meeting, Recording and a slot for a new scene.',
+  'app-rules': 'Scene rules by kind of app: video calls, code and terminals, browsers, slide decks, design tools and video players.',
+  'about-privacy': 'The About page: no accounts and no analytics, Screen Recording not needed, Accessibility not needed.',
+  'skins-row': 'The pointer skins: System, Classic, Dart, Bolt, Ring, Target, Star, Heart and Ghost, with color and size controls.',
+} as const;
+export type CropId = keyof typeof cropAlt;
 
-export function shotImage(id: ShotId): ImageMetadata | undefined {
-  const key = Object.keys(found).find((path) => path.endsWith(`/${shots[id].file}`));
+/** Resolved at build time: every image that exists in src/assets/shots (and its crops folder), keyed by file name. */
+const found = import.meta.glob<{ default: ImageMetadata }>('../assets/shots/**/*.{png,jpg,jpeg,webp,avif}', { eager: true });
+
+function byName(name: string): ImageMetadata | undefined {
+  const key = Object.keys(found).find((path) => path.endsWith(`/${name}`));
   return key ? found[key]?.default : undefined;
 }
+export const shotImage = (id: ShotId) => byName(shots[id].file);
+export const cropImage = (id: CropId) => byName(`crops/${id}.webp`);

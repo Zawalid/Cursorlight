@@ -1,20 +1,24 @@
 ---
+import Shot from './Shot.astro';
 import { links, version, site } from '../data/site';
+import { handLoop } from '../data/ink';
 
 const lines = [
-  [{ w: 'Be' }, { w: 'seen' }, { w: 'wherever' }],
+  [{ w: 'Be' }, { w: 'seen' }],
+  [{ w: 'wherever' }],
   [{ w: 'you' }, { w: 'point.', point: true }],
 ];
+const ring = handLoop(200, 70, 188, 62, 8);
 const tries = [
   { id: 'shake', name: 'Shake', text: 'Shake the mouse and a highlight finds your cursor.' },
   { id: 'hold', name: 'Hold', text: 'Press and hold, then move: a laser trail follows.' },
   { id: 'draw', name: 'Drag', text: 'Click and drag to draw. Circle a word and it snaps clean.' },
 ];
 ---
-<section class="hero" id="top" aria-labelledby="hero-title" data-hero data-mode="idle">
-  <canvas class="hero-canvas" aria-hidden="true" data-hero-canvas></canvas>
+<section class="hero" id="top" aria-labelledby="hero-title" data-hero data-gesture-zone data-surface="dark" data-mode="idle">
+  <div class="wrap hero-pop-wrap"><div class="hero-pop"><Shot id="popover" sizes="300px" widths={[300, 600]} loading="eager" /></div></div>
 
-  <div class="wrap hero-inner">
+  <div class="wrap hero-grid">
     <h1 id="hero-title" class="display hero-title">
       <span class="h-stack">
         <span class="h-base">
@@ -22,7 +26,7 @@ const tries = [
             <span class="h-line">
               {line.map((word, j) => (
                 <><span class={word.point ? 'h-point' : undefined}>{word.w}{word.point && (
-                  <svg class="h-ring" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true"><path d="M44 28C120 6 300 4 366 36c40 22 22 66-40 82-78 20-234 22-296-6C-6 88 6 44 62 24" pathLength="1" /></svg>
+                  <svg class="h-ring" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true"><path d={ring} /></svg>
                 )}</span>{j < line.length - 1 ? ' ' : ''}</>
               ))}{' '}
             </span>
@@ -33,19 +37,13 @@ const tries = [
 
     <div class="hero-foot">
       <div class="hero-pitch">
-        <p class="lead">
-          A free Mac menu bar app that makes your pointer easy to follow while you share your screen or present. Find it, point with it,
-          draw with it.
-        </p>
+        <p class="lead">A free Mac menu bar app. Find your cursor, point with a laser, draw on the screen, light up one region. For calls, streams and talks.</p>
         <div class="hero-actions">
           <a class="btn btn-ember" href={links.download} data-hero-download>
             Download for macOS
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3.5v11m0 0 4.5-4.5M10 14.5 5.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
-          <a class="btn btn-line" href={links.repo}>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-            Source on GitHub
-          </a>
+          <a class="btn btn-line" href={links.repo}>Source on GitHub</a>
         </div>
         <p class="fine">Version {version}. macOS {site.minimumMacOS} or later, Apple silicon and Intel. Free, open source, MIT.</p>
       </div>
@@ -60,66 +58,9 @@ const tries = [
             </li>
           ))}
         </ol>
-        <p class="try-done only-live" data-try-done hidden>That is all of it. On your own screen it works over every app.</p>
+        <p class="try-done only-live" data-try-done>That is all of it. Keys H, L, I and S in the bar below do the same, anywhere on this page.</p>
       </div>
     </div>
   </div>
   <p class="sr-only" role="status" aria-live="polite" data-hero-status></p>
 </section>
-
-<style is:global>
-  .hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; padding-top: 72px; }
-  .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-  .hero-inner { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: clamp(36px, 6vw, 96px); padding-top: clamp(28px, 5vh, 72px); padding-bottom: clamp(28px, 5vh, 56px); }
-
-  .hero-title { font-size: clamp(3.2rem, 11.6vw, 12.6rem); }
-  .h-stack { display: grid; }
-  .h-stack > * { grid-area: 1 / 1; }
-  .h-line { display: block; }
-  .h-point { position: relative; display: inline-block; }
-
-  /* The static version of the pointer demo: the last word is circled in ink, the way the app cleans up a rough loop. */
-  .h-ring { position: absolute; left: -12%; top: -14%; width: 124%; height: 130%; overflow: visible; pointer-events: none; }
-  .h-ring path { fill: none; stroke: var(--ember); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-  .live .h-ring { display: none; }
-
-  /* The live version: the same headline in ember, shown only inside a circle that follows the pointer. */
-  .h-ember { color: var(--ember); pointer-events: none; user-select: none; display: none; }
-  .live .h-ember {
-    display: block;
-    -webkit-mask-image: radial-gradient(circle var(--mr, 0px) at var(--mx, -999px) var(--my, -999px), #000 0 98%, transparent 100%);
-    mask-image: radial-gradient(circle var(--mr, 0px) at var(--mx, -999px) var(--my, -999px), #000 0 98%, transparent 100%);
-  }
-  .live .hero { user-select: none; -webkit-user-select: none; }
-
-  .hero-foot { display: grid; gap: clamp(28px, 4vw, 56px); grid-template-columns: 1fr; align-items: end; }
-  @media (min-width: 980px) { .hero-foot { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); } }
-  .hero-pitch { display: grid; gap: 22px; max-width: 36rem; }
-  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-  .fine { color: var(--faint); font-size: 0.92rem; }
-
-  .hero-try { display: grid; gap: 14px; max-width: 34rem; justify-self: start; }
-  @media (min-width: 980px) { .hero-try { justify-self: end; } }
-  .try-lead { font: 500 0.84rem/1.4 var(--font-mono); color: var(--muted); }
-  .tries { display: grid; border-top: 1px solid var(--line); }
-  .tries li { display: grid; grid-template-columns: 22px 1fr; gap: 14px; align-items: start; padding: 13px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 1rem; line-height: 1.45; transition: color 300ms var(--ease-out); }
-  .tries strong { color: var(--text); font-weight: 600; }
-  .try-mark { width: 14px; height: 14px; margin-top: 4px; border-radius: 50%; border: 2px solid var(--faint); transition: background-color 300ms var(--ease-out), border-color 300ms var(--ease-out), box-shadow 300ms var(--ease-out); }
-  .tries li[data-done="true"] { color: var(--text); }
-  .tries li[data-done="true"] .try-mark { background: var(--ember); border-color: var(--ember); }
-  .try-done { font-weight: 600; color: var(--ember); }
-    html:not(.live) .tries li { grid-template-columns: 1fr; }
-  html:not(.live) .try-mark { display: none; }
-
-  .only-live, .only-live-sr { display: none; }
-  .live .only-live { display: inline; }
-  .live .only-live-sr { display: inline; }
-  .live .only-static { display: none; }
-  .live .try-done.only-live { display: block; }
-  /* The line is hidden with visibility, not display, so the list does not jump when it appears. */
-  .try-done[hidden] { display: block !important; visibility: hidden; }
-
-  /* entrance, only while the motion module runs */
-  
-
-</style>
