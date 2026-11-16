@@ -16,4 +16,6 @@ All notable changes. Format follows Keep a Changelog.
 - Share-safe reminder: tell Cursorlight what you share and it warns when viewers will not see effects. The bar can hide from screen sharing.
 - Hide automatically in full-screen apps and video players, and follow Reduce Motion.
 - System cursor size, restored on quit and after a crash.
-- Settings window with a live preview canvas, a menu bar popover and a first-run guide.
+- Settings window with a live preview canvas, light and dark appearance.
+- Menu bar popover with the tools, scenes, color and size, quick toggles (keys, clicks, bar, timer, board) and the share check, and a menu bar icon that shows ready, running and paused.
+- A guided welcome that asks you to shake the mouse, press the laser key and draw, on your own screen, with hints drawn in the middle of the screen.
