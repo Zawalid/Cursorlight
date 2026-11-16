@@ -4,6 +4,8 @@ All notable changes. Format follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-16
+
 ### Added
 - Highlight in six styles (Aura, Lens, Comet, Keyline, Sonar, Crosshair) with color, custom colors, size, intensity, one option per style, click effects (ripple, double ring, burst, pulse), an optional click sound, a hold focus ring, fading when the pointer is still and a locator ring when it jumps displays.
 - Laser trail and Ink with five pens, eight colors plus custom, thickness, snapped shapes, arrows (straight, curved, double), brackets, boxes, a cover box, text labels, number and symbol stamps, a speech bubble, a whiteboard, an eraser, undo and persistent strokes.
